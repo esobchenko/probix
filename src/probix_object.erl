@@ -11,44 +11,17 @@ acceptable_value(none) ->
 	true;
 acceptable_value({_K, V}) when is_binary(V); is_integer(V) ->
 	true;
-acceptable_value(Pair) ->
+acceptable_value(_Pair) ->
 	false.
 
-missing_params([]) -> true;
-missing_params(Missing) -> erlang:throw( {missing_params, Missing} ).
+required_fields() ->
+	[name].
 
-bad_values([]) -> true;
-bad_values(Bad) -> erlang:throw( {bad_values, Bad} ).
+record_name() ->
+	object.
 
-json_to_object_record(Json) when is_list(Json) ->
-	Required = [ name ], %% list of required fields 
-	{struct, Proplist} = mochijson2:decode( Json ),
-	%% get list of fields that missing but required
-	Missing = lists:filter(
-		fun(Key) ->
-			not proplists:is_defined( atom_to_binary(Key), Proplist )
-		end,
-		Required
-	),
-	missing_params(Missing),
-	Bad = lists:filter(
-		fun(Key) ->
-			not acceptable_value( proplists:lookup( atom_to_binary(Key), Proplist ) )
-		end,
-		record_info( fields, object )
-	),
-	bad_values(Bad),
-	Values = [
-		proplists:get_value( atom_to_binary(Key), Proplist ) || Key <- record_info( fields, object )
-	],
-	list_to_tuple( [object|Values] ).
-
-object_record_to_json(R) when is_record(R, object) ->
-	Keys = [ atom_to_binary(X) || X <- record_info( fields, object ) ],
-	L = tuple_to_list(R),
-	[_Name | Values] = L,
-	Pairs = [ { lists:nth(N, Keys), lists:nth(N, Values) } || N <- lists:seq(1, length(Keys)) ],
-	mochijson2:encode( {struct, Pairs} ).
+record_fields() ->
+	record_info(fields,object).
 
 read_all() ->
 	probix_db:read_all(object).
