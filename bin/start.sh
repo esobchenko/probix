@@ -1,3 +1,3 @@
 #!/bin/sh
 cd `dirname $0`
-exec erl -pa ../ebin -boot start_sasl -s probix -mnesia
+exec erl -pa ../ebin -pa /home/glorybox/devel/mochiweb/ebin -boot start_sasl -s probix -mnesia -name probix
