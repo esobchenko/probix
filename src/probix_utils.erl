@@ -36,7 +36,7 @@ correct_record(R, Module) when is_tuple(R), is_atom(Module) ->
 	Tag = Module:record_name(),
 	case element(1, R) =:= Tag of
 		true -> true;
-		false -> throw({incorrect_record, R}) %% it's probably should be error, not throw?
+		false -> erlang:error({incorrect_record, R})
 	end.
 
 record_to_json(R, Module) when is_tuple(R), is_atom(Module) ->
