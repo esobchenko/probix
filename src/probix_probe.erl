@@ -24,4 +24,16 @@ record_fields() ->
 read_all() ->
 	probix_db:read_all(probe).
 
+create(R) when is_record(R, probe) ->
+	Id = probix_db:new_id(probe),
+	Probe = R#probe{ id = Id },
+	{atomic, ok} = probix_db:write(Probe),
+	Probe.
 
+read(Id) when is_integer(Id) ->
+	case probix_db:read({object, Id}) of
+		[ Object ] ->
+			Object;
+		[] ->
+			throw({not_found, Id})
+	end.
