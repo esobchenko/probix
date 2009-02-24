@@ -40,19 +40,20 @@ read(Id) when is_integer(Id) ->
 			Object;
 		[] ->
 			throw({not_found, Id})
-	
+	end.
+
 read_as_json(Id) when is_integer(Id) ->
 	Object = read(Id),
 	probix_utils:record_to_json(Object, ?MODULE).
 
-update(Id, R) when is_record(R,object),is_integer(Id) ->
-	R#object{id = Id},
-	{atomic, ok} = probix_db:write(R),
-	R.
-
 update_from_json(Id, Json) when is_list(Json),is_integer(Id) ->
 	Object = probix_utils:json_to_record(Json,?MODULE),
 	update(Id, Object).
+
+update(Id, R) when is_record(R,object),is_integer(Id) ->
+	Object = R#object{id = Id},
+	{atomic, ok} = probix_db:write(Object),
+	Object.
 
 delete(Id) when is_integer(Id) ->
 	{atomic, ok} = probix_db:delete({object, Id}),
