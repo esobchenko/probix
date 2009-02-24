@@ -31,9 +31,19 @@ create(R) when is_record(R, probe) ->
 	Probe.
 
 read(Id) when is_integer(Id) ->
-	case probix_db:read({object, Id}) of
-		[ Object ] ->
-			Object;
+	case probix_db:read({probe, Id}) of
+		[ Probe ] ->
+			Probe;
 		[] ->
 			throw({not_found, Id})
 	end.
+
+update(R) when is_record(R, probe) ->
+	{atomic, ok} = probix_db:write(R),
+	R.
+
+delete(Id) when is_integer(Id) ->
+	{atomic, ok} = probix_db:delete({probe, Id}),
+	Id.
+
+
