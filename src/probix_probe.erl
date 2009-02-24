@@ -19,16 +19,22 @@ record_name() ->
 	probe.
 
 record_fields() ->
-	record_info(fields,probe).
+	record_info(fields, probe).
 
-read_all() ->
-	probix_db:read_all(probe).
+create_from_json(Json) when is_list(Json) ->
+	R = probix_utils:json_to_record(Json, ?MODULE),
+	Probe = create(R),
+	probix_utils:record_to_json(Probe, ?MODULE).
 
 create(R) when is_record(R, probe) ->
 	Id = probix_db:new_id(probe),
 	Probe = R#probe{ id = Id },
 	{atomic, ok} = probix_db:write(Probe),
 	Probe.
+
+read_as_json(Id) when is_integer(Id) ->
+	Probe = read(Id),
+	probix_utils:record_to_json(Probe, ?MODULE).
 
 read(Id) when is_integer(Id) ->
 	case probix_db:read({probe, Id}) of
@@ -37,10 +43,6 @@ read(Id) when is_integer(Id) ->
 		[] ->
 			throw({not_found, Id})
 	end.
-
-update(R) when is_record(R, probe) ->
-	{atomic, ok} = probix_db:write(R),
-	R.
 
 delete(Id) when is_integer(Id) ->
 	{atomic, ok} = probix_db:delete({probe, Id}),
