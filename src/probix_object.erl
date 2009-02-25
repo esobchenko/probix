@@ -33,7 +33,16 @@ create_from_json(Json) ->
 	R = probix_utils:json_to_record(Json, ?MODULE),
 	Object = create(R),
 	probix_utils:record_to_json(Object, ?MODULE).
-	
+
+read_all() ->
+	probix_db:read_all(object).
+
+read_all_as_json() ->
+	lists:map(fun(X) ->
+					  probix_utils:record_to_json(X, ?MODULE)
+			  end,
+			  read_all()).
+
 read(Id) when is_integer(Id) ->
 	case probix_db:read({object, Id}) of
 		[ Object ] ->
@@ -46,11 +55,11 @@ read_as_json(Id) when is_integer(Id) ->
 	Object = read(Id),
 	probix_utils:record_to_json(Object, ?MODULE).
 
-update_from_json(Id, Json) when is_list(Json),is_integer(Id) ->
+update_from_json(Id, Json) when is_list(Json), is_integer(Id) ->
 	Object = probix_utils:json_to_record(Json,?MODULE),
 	update(Id, Object).
 
-update(Id, R) when is_record(R,object),is_integer(Id) ->
+update(Id, R) when is_record(R,object), is_integer(Id) ->
 	Object = R#object{id = Id},
 	{atomic, ok} = probix_db:write(Object),
 	Object.
@@ -58,5 +67,3 @@ update(Id, R) when is_record(R,object),is_integer(Id) ->
 delete(Id) when is_integer(Id) ->
 	{atomic, ok} = probix_db:delete({object, Id}),
 	Id.
-
-
