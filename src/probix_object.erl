@@ -2,8 +2,6 @@
 -author('Eugen Sobchenko <eugen@sobchenko.com>').
 -compile(export_all).
 
--import(probix_utils, [atom_to_binary/1]).
-
 -include("probix.hrl").
 
 %% acceptable value type checking functions
