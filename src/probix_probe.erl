@@ -2,7 +2,9 @@
 -author('Eugen Sobchenko <eugen@sobchenko.com>').
 -compile(export_all).
 
+-include_lib("stdlib/include/qlc.hrl").
 -include("probix.hrl").
+
 
 %% acceptable value type checking functions
 acceptable_value(none) ->
@@ -20,6 +22,18 @@ record_name() ->
 
 record_fields() ->
 	record_info(fields, probe).
+
+probes_by_object_id(Id) when is_integer(Id) ->
+	Q = qlc:q(
+		[ P || P <- mnesia:table(probe), P#probe.id_object =:= Id ]
+	),
+	probix_db:find(Q).
+
+probes_by_object_id_as_json(Id) when is_integer(Id) ->
+	lists:map(
+		fun(X) -> probix_utils:record_to_json(X, ?MODULE) end,
+		probes_by_object_id(Id)
+	).
 
 create_from_json(Json) when is_list(Json) ->
 	R = probix_utils:json_to_record(Json, ?MODULE),

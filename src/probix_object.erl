@@ -2,8 +2,6 @@
 -author('Eugen Sobchenko <eugen@sobchenko.com>').
 -compile(export_all).
 
--import(probix_utils, [atom_to_binary/1]).
-
 -include("probix.hrl").
 
 %% acceptable value type checking functions
@@ -21,7 +19,7 @@ record_name() ->
 	object.
 
 record_fields() ->
-	record_info(fields,object).
+	record_info(fields, object).
 
 create(R) when is_record(R, object) ->
 	Id = probix_db:new_id(object),
@@ -38,10 +36,10 @@ read_all() ->
 	probix_db:read_all(object).
 
 read_all_as_json() ->
-	lists:map(fun(X) ->
-					  probix_utils:record_to_json(X, ?MODULE)
-			  end,
-			  read_all()).
+	lists:map(
+		fun(X) -> probix_utils:record_to_json(X, ?MODULE) end,
+		read_all()
+	).
 
 read(Id) when is_integer(Id) ->
 	case probix_db:read({object, Id}) of
@@ -56,7 +54,7 @@ read_as_json(Id) when is_integer(Id) ->
 	probix_utils:record_to_json(Object, ?MODULE).
 
 update_from_json(Id, Json) when is_list(Json), is_integer(Id) ->
-	Object = probix_utils:json_to_record(Json,?MODULE),
+	Object = probix_utils:json_to_record(Json, ?MODULE),
 	update(Id, Object).
 
 update(Id, R) when is_record(R,object), is_integer(Id) ->
@@ -67,3 +65,4 @@ update(Id, R) when is_record(R,object), is_integer(Id) ->
 delete(Id) when is_integer(Id) ->
 	{atomic, ok} = probix_db:delete({object, Id}),
 	Id.
+
