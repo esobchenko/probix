@@ -20,6 +20,23 @@ dispatch_requests(Req) ->
 	Response = handle(Method, Path, Post),
 	Req:respond(Response).
 
+handle('GET', "/object", _) ->
+	{200, [], probix_object:read_all_as_json()};
+
+handle('GET', "/object/" ++ Id, _) ->
+	{200, [], probix_object:read_as_json(list_to_integer(Id))};
+
+handle('PUT', "/object/" ++ Id, Post) ->
+	Json = poplists:get_value("json",Post),
+	{200, [], probix_object:update_from_json(list_to_integer(Id),Json)};
+
+handle('DELETE', "/object/" ++ Id, _) ->
+	{200, [], integer_to_list(probix_object:delete(list_to_integer(Id)))};
+
+handle('POST', "/object", Post) ->
+	Json = proplists:get_value("json",Post),
+	{200, [], probix_object:create_from_json(Json)};
+
 handle(_, _, _) ->
 	{404, [{"Content-Type", "text/plain"}], <<"Unknown Request">>}.
 
