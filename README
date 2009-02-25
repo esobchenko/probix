@@ -1,0 +1,60 @@
+-----------------------------
+Author: Sergey Sinkovskiy
+Version: 0.1
+
+REST interface to Probix core
+------------------------------
+
+Currently there are two main entities implemented:
+object, probe.
+
+Object - is a representation of monitoring object,
+parameter that is monitored.
+Probe - is a single measurement value for a specific Object.
+
+All data should be represented in JSON format for interaction.
+
+Following REST interface should be used to access data:
+
+| Method  | URL                    |  Request data | Response data |
+--------------------------------------------------------------------
+| GET     | /objects               |  []           | [ object ]    |
+| GET     | /object/Id             |  []           | object        |
+| PUT     | /object/Id             | object        | object        |
+| POST    | /object                | object        | object        |
+| DELETE  | /object/Id             |  []           | ????          |
+| GET     | /object/Id/probes      |  []           | [ probe ]     |
+| GET     | /object/Id/probes?Args |  []           | [ probe ]     |
+| GET     | /object/Id/probe/Id    |  []           | probe         |
+| POST    | /object/Id/probe       | probe         | probe         |
+| POST    | /object/Id/probe       | [ probe ]     | [ probe ]     |
+| DELETE  | /object/Id/probe/Id    |  []           | ????          |
+--------------------------------------------------------------------
+
+object:
+  { id: Integer,
+    name: String,
+	info: String
+  }
+[ object ]:
+    array of objects
+	
+probe:
+   { id: Integer,
+     id_object: Integer,
+	 timestamp: Timestamp,
+	 value: Value
+   }
+[ probe ]:
+     array of probes
+	 
+Args:
+	from=Timestamp1&to=Timestamp2
+
+Notes:
+1) We have to provide interface for creating a number of probes for Object
+from JSON Array
+2) Result of operation is reflected in HTTP code: 400 Bad request, 201 Created, 304 Not Modified, 200 Ok, 404 Not found, 409 Conflict, 501 Not implemented
+
+Questions:
+1) What should be result for DELETE operation
