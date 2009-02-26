@@ -20,7 +20,7 @@ dispatch_requests(Req) ->
 	Response = handle(Method, Path, Post),
 	Req:respond(Response).
 
-handle('GET', "/object", _) ->
+handle('GET', "/objects", _) ->
 	{200, [], probix_object:read_all_as_json()};
 
 handle('GET', "/object/" ++ Id, _) ->
