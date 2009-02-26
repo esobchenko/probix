@@ -36,10 +36,7 @@ read_all() ->
 	probix_db:read_all(object).
 
 read_all_as_json() ->
-	lists:map(
-		fun(X) -> probix_utils:record_to_json(X, ?MODULE) end,
-		read_all()
-	).
+	probix_utils:list_to_json(read_all(),?MODULE).
 
 read(Id) when is_integer(Id) ->
 	case probix_db:read({object, Id}) of
