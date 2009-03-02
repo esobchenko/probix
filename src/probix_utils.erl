@@ -1,6 +1,8 @@
 -module(probix_utils).
 -compile(export_all).
 
+-include_lib("eunit/include/eunit.hrl").
+
 atom_to_binary(A) when is_atom(A) -> list_to_binary( atom_to_list(A) ).
 
 json_object_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
@@ -24,6 +26,14 @@ json_object_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
 	Values = [ proplists:get_value( atom_to_binary(Key), Proplist ) || Key <- Fields ],
 	list_to_tuple( [Module:record_name()|Values] ).
 
+record_to_json_object(R, Module) when is_tuple(R), is_atom(Module) ->
+	Module:record_name() =:= element(1, R) orelse erlang:error({incorrect_record, R}),
+	Keys = [ atom_to_binary(X) || X <- Module:record_fields() ],
+	L = tuple_to_list(R),
+	[_Name | Values] = L,
+	Pairs = [ { lists:nth(N, Keys), lists:nth(N, Values) } || N <- lists:seq(1, length(Keys)) ],
+	{struct, Pairs}.
+
 json_to_record(Json, Module) when is_list(Json), is_atom(Module) ->
 	case mochijson2:decode( Json ) of
 		{struct, Proplist} ->
@@ -32,14 +42,6 @@ json_to_record(Json, Module) when is_list(Json), is_atom(Module) ->
 			lists:map( fun(X) -> json_object_to_record(X, Module) end, List );
 		Object -> erlang:throw({unknown_json_type, Object})
 	end.
-
-record_to_json_object(R, Module) when is_tuple(R), is_atom(Module) ->
-	Module:record_name() =:= element(1, R) orelse erlang:error({incorrect_record, R}),
-	Keys = [ atom_to_binary(X) || X <- Module:record_fields() ],
-	L = tuple_to_list(R),
-	[_Name | Values] = L,
-	Pairs = [ { lists:nth(N, Keys), lists:nth(N, Values) } || N <- lists:seq(1, length(Keys)) ],
-	{struct, Pairs}.
 
 record_to_json(R, Module) when is_tuple(R), is_atom(Module) ->
 	mochijson2:encode( record_to_json_object(R, Module) ).
