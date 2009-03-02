@@ -12,21 +12,20 @@ bad_values(Bad) -> throw( {bad_values, Bad} ).
 json_object_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
 	Required = Module:required_fields(), %% list of required fields 
 	Fields = Module:record_fields(),
-	
 	Missing = lists:filter(
-				fun(Key) ->
-						not proplists:is_defined( atom_to_binary(Key), Proplist )
-				end,
-				Required
-			   ),
+		fun(Key) ->
+			not proplists:is_defined( atom_to_binary(Key), Proplist )
+		end,
+		Required
+	),
 	missing_params(Missing),
 	%% get list of keys that have unacceptable values
 	Bad = lists:filter(
-			fun(Key) ->
-					not Module:acceptable_value( proplists:lookup( atom_to_binary(Key), Proplist ) )
-			end,
-			Fields
-		   ),
+		fun(Key) ->
+				not Module:acceptable_value( proplists:lookup( atom_to_binary(Key), Proplist ) )
+		end,
+		Fields
+	),
 	bad_values(Bad),
 	Values = [ proplists:get_value( atom_to_binary(Key), Proplist ) || Key <- Fields ],
 	list_to_tuple( [Module:record_name()|Values] ).
@@ -36,10 +35,7 @@ json_to_record(Json, Module) when is_list(Json), is_atom(Module) ->
 		{struct, Proplist} ->
 			json_object_to_record({struct, Proplist}, Module);
 		List when is_list(List) ->
-			lists:map(fun(X) ->
-							  json_object_to_record(X, Module)
-					  end,
-					  List);
+			lists:map( fun(X) -> json_object_to_record(X, Module) end, List );
 		Object -> erlang:throw({unknown_json_type, Object})
 	end.
 
@@ -62,9 +58,7 @@ record_to_json(R, Module) when is_tuple(R), is_atom(Module) ->
 	mochijson2:encode( record_to_json_object(R, Module) ).
 
 list_to_json(L, Module) when is_list(L), is_atom(Module) ->
-	List = lists:map(fun(X)->
-							 record_to_json_object(X,Module) end,
-					 L
-					),
+	List = lists:map( fun(X)-> record_to_json_object(X,Module) end, L ),
 	mochijson2:encode(List).
-				
+
+
