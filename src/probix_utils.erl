@@ -26,8 +26,13 @@ json_object_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
 	Values = [ proplists:get_value( atom_to_binary(Key), Proplist ) || Key <- Fields ],
 	list_to_tuple( [Module:record_name()|Values] ).
 
+is_valid_record(R, Module) when is_tuple(R), is_atom(Module) ->
+	Tag = Module:record_name(),
+	Fields = Module:record_fields(),
+	element(1, R) =:= Tag andalso length(Fields) =:= (tuple_size(R) - 1).
+
 record_to_json_object(R, Module) when is_tuple(R), is_atom(Module) ->
-	Module:record_name() =:= element(1, R) orelse erlang:error({incorrect_record, R}),
+	is_valid_record(R, Module) orelse erlang:error({invalid_record, R}),
 	Keys = [ atom_to_binary(X) || X <- Module:record_fields() ],
 	L = tuple_to_list(R),
 	[_Name | Values] = L,

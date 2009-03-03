@@ -30,13 +30,12 @@ record_to_json_object_test_() ->
 			probix_utils:record_to_json_object({object,1,2,3}, probix_object)
 		),
 		?_assertError(
-			{incorrect_record, {foo,1,2,3}},
+			{invalid_record, {foo,1,2,3}},
 			probix_utils:record_to_json_object({foo,1,2,3}, probix_object)
+		),
+		?_assertError(
+			{invalid_record, {object,1,2}},
+			probix_utils:record_to_json_object({object,1,2}, probix_object)
 		)
-%		,
-%		?_assertError(
-%			{incorrect_record, {object,1,2}},
-%			probix_utils:record_to_json_object({object,1,2}, probix_object)
-%		)
 	].
 
