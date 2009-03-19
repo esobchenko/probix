@@ -31,13 +31,15 @@ json_object_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
 	Values = [ proplists:get_value( atom_to_binary(Key), Proplist ) || Key <- Fields ],
 	list_to_tuple( [Module:record_name()|Values] ).
 
-json_to_record(Json, Module) when is_list(Json), is_atom(Module) ->
+json_to_record(Json, Module) when is_atom(Module) ->
 	case mochijson2:decode( Json ) of
 		{struct, Proplist} ->
 			json_object_to_record({struct, Proplist}, Module);
 		List when is_list(List) ->
-			lists:map(fun(X) ->
-							  json_object_to_record(X, Module)
+			lists:map(fun({struct, X}) ->
+							  json_object_to_record({struct, X}, Module);
+						 (Y) ->
+							  erlang:throw({unknown_json_type, Y})
 					  end,
 					  List);
 		Object -> erlang:throw({unknown_json_type, Object})
