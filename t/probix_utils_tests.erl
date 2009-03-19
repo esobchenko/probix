@@ -59,3 +59,27 @@ record_to_json_object_test_() ->
 		)
 	].
 
+record_to_json_test_() ->
+	[
+		?_assertMatch(
+			%% {"foo":1,"bar":2}
+			[123,[34,<<"foo">>,34],58,"1",44,[34,<<"bar">>,34],58,"2",125],
+			probix_utils:record_to_json({foo,1,2}, ?MODULE)
+		)
+	].
+
+json_to_record_test_() ->
+	[
+%		?_assertError(
+%			{bad_json, <<"[1]">>},
+%			probix_utils:json_to_record(<<"[1]">>, ?MODULE)
+%		),
+		?_assertMatch(
+			{foo,1,2},
+			probix_utils:json_to_record(
+				%% {"foo":1,"bar":2}
+				[123,[34,<<"foo">>,34],58,"1",44,[34,<<"bar">>,34],58,"2",125],
+				?MODULE
+			)
+		)
+	].
