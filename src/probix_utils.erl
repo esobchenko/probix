@@ -44,13 +44,16 @@ json_to_record(Json, Module) when is_atom(Module) ->
 		{struct, Proplist} ->
 			json_object_to_record({struct, Proplist}, Module);
 		List when is_list(List) ->
-			lists:map(fun({struct, X}) ->
-							  json_object_to_record({struct, X}, Module);
-						 (Y) ->
-							  erlang:throw({unknown_json_type, Y})
-					  end,
-					  List);
-		Object -> erlang:throw({unknown_json_type, Object})
+			lists:map(
+				fun
+					({struct, X}) ->
+						json_object_to_record({struct, X}, Module);
+					(T) ->
+						erlang:throw({improper_json_term, T})
+				end,
+				List
+			);
+		Term -> erlang:throw({improper_json_term, Term})
 	end.
 
 record_to_json(R, Module) when is_tuple(R), is_atom(Module) ->
