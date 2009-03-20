@@ -26,20 +26,6 @@ json_object_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
 	Values = [ proplists:get_value( atom_to_binary(Key), Proplist ) || Key <- Fields ],
 	list_to_tuple( [Module:record_name()|Values] ).
 
-json_to_record(Json, Module) when is_atom(Module) ->
-	case mochijson2:decode( Json ) of
-		{struct, Proplist} ->
-			json_object_to_record({struct, Proplist}, Module);
-		List when is_list(List) ->
-			lists:map(fun({struct, X}) ->
-							  json_object_to_record({struct, X}, Module);
-						 (Y) ->
-							  erlang:throw({unknown_json_type, Y})
-					  end,
-					  List);
-		Object -> erlang:throw({unknown_json_type, Object})
-	end.
-
 is_valid_record(R, Module) when is_tuple(R), is_atom(Module) ->
 	Tag = Module:record_name(),
 	Fields = Module:record_fields(),
@@ -53,12 +39,17 @@ record_to_json_object(R, Module) when is_tuple(R), is_atom(Module) ->
 	Pairs = [ { lists:nth(N, Keys), lists:nth(N, Values) } || N <- lists:seq(1, length(Keys)) ],
 	{struct, Pairs}.
 
-json_to_record(Json, Module) when is_list(Json), is_atom(Module) ->
+json_to_record(Json, Module) when is_atom(Module) ->
 	case mochijson2:decode( Json ) of
 		{struct, Proplist} ->
 			json_object_to_record({struct, Proplist}, Module);
 		List when is_list(List) ->
-			lists:map( fun(X) -> json_object_to_record(X, Module) end, List );
+			lists:map(fun({struct, X}) ->
+							  json_object_to_record({struct, X}, Module);
+						 (Y) ->
+							  erlang:throw({unknown_json_type, Y})
+					  end,
+					  List);
 		Object -> erlang:throw({unknown_json_type, Object})
 	end.
 
