@@ -1,15 +1,10 @@
------------------------------
-Author: Sergey Sinkovskiy
-Version: 0.1
-
+------------------------------
 REST interface to Probix core
 ------------------------------
 
-Currently there are two main entities implemented:
-object, probe.
+Currently there are two main entities implemented: object, probe.
 
-Object - is a representation of monitoring object,
-parameter that is monitored.
+Object - is a representation of monitoring object, parameter that is monitored.
 Probe - is a single measurement value for a specific Object.
 
 All data should be represented in JSON format for interaction.
@@ -18,43 +13,54 @@ Following REST interface should be used to access data:
 
 | Method  | URL                    |  Request data | Response data |
 --------------------------------------------------------------------
-| GET     | /objects               |  []           | [ object ]    |
-| GET     | /object/Id             |  []           | object        |
+| GET     | /objects               | none          | [ object ]    |
+| GET     | /object/Id             | none          | object        |
 | PUT     | /object/Id             | object        | object        |
 | POST    | /object                | object        | object        |
-| DELETE  | /object/Id             |  []           | ????          |
-| GET     | /object/Id/probes      |  []           | [ probe ]     |
-| GET     | /object/Id/probes?Args |  []           | [ probe ]     |
-| GET     | /object/Id/probe/Id    |  []           | probe         |
+| DELETE  | /object/Id             | none          | none          |
+| GET     | /object/Id/probes      | none          | [ probe ]     |
+| GET     | /object/Id/probes?Args | none          | [ probe ]     |
+| GET     | /object/Id/probe/Id    | none          | probe         |
 | POST    | /object/Id/probe       | probe         | probe         |
 | POST    | /object/Id/probe       | [ probe ]     | [ probe ]     |
-| DELETE  | /object/Id/probe/Id    |  []           | ????          |
 --------------------------------------------------------------------
 
-object:
-  { id: Integer,
+object: {
+    id: Integer,
     name: String,
-	info: String
-  }
+    info: String
+}
+
 [ object ]:
     array of objects
-	
-probe:
-   { id: Integer,
-     id_object: Integer,
-	 timestamp: Timestamp,
-	 value: Value
-   }
+
+probe: {
+    id: Integer,
+    id_object: Integer,
+    timestamp: Timestamp,
+    value: Value
+}
+
 [ probe ]:
-     array of probes
-	 
+    array of probes
+
 Args:
-	from=Timestamp1&to=Timestamp2
+    from=Timestamp1&to=Timestamp2
 
-Notes:
-1) We have to provide interface for creating a number of probes for Object
-from JSON Array
-2) Result of operation is reflected in HTTP code: 400 Bad request, 201 Created, 304 Not Modified, 200 Ok, 404 Not found, 409 Conflict, 501 Not implemented
 
-Questions:
-1) What should be result for DELETE operation
+The API attempts to return appropriate HTTP status codes for every request.
+Here's what's going on with our various status codes:
+
+200 OK: everything went awesome.
+400 Bad Request: your request is invalid, and we'll return an error message that tells you why.
+401 Not Authorized: either you need to provide authentication credentials, or the credentials provided aren't valid.
+403 Forbidden: we understand your request, but are refusing to fulfill it. An accompanying error message should explain why.
+404 Not Found: either you're requesting an invalid URI or the resource in question doesn't exist (ex: no such object).
+500 Internal Server Error: we did something wrong.
+
+Error message format:
+
+error: {
+	request: String,
+	error: String
+}
