@@ -1,10 +1,9 @@
 -module(probix_probe).
--author('Eugen Sobchenko <eugen@sobchenko.com>').
 -compile(export_all).
 
 -include_lib("stdlib/include/qlc.hrl").
 -include("probix.hrl").
-
+-include_lib("eunit/include/eunit.hrl").
 
 %% acceptable value type checking functions
 acceptable_value(none) ->
@@ -30,12 +29,9 @@ probes_by_object_id(Id) when is_integer(Id) ->
 	probix_db:find(Q).
 
 probes_by_object_id_as_json(Id) when is_integer(Id) ->
-	lists:map(
-		fun(X) -> probix_utils:record_to_json(X, ?MODULE) end,
-		probes_by_object_id(Id)
-	).
+	probix_utils:list_to_json(probes_by_object_id(Id), ?MODULE).
 
-create_from_json(Json) when is_list(Json) ->
+create_from_json(Json) ->
 	R = probix_utils:json_to_record(Json, ?MODULE),
 	Probe = create(R),
 	probix_utils:record_to_json(Probe, ?MODULE).
