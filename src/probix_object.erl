@@ -1,8 +1,8 @@
 -module(probix_object).
--author('Eugen Sobchenko <eugen@sobchenko.com>').
 -compile(export_all).
 
 -include("probix.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 %% acceptable value type checking functions
 acceptable_value(none) ->
@@ -36,7 +36,7 @@ read_all() ->
 	probix_db:read_all(object).
 
 read_all_as_json() ->
-	probix_utils:list_to_json(read_all(),?MODULE).
+	probix_utils:list_to_json(read_all(), ?MODULE).
 
 read(Id) when is_integer(Id) ->
 	case probix_db:read({object, Id}) of

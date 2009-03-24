@@ -1,5 +1,4 @@
 -module(probix).
--author('Eugen Sobchenko <eugen@sobchenko.com>').
 -export([start/0, stop/0]).
 
 ensure_started(App) ->
