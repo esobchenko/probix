@@ -4,11 +4,8 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-%% -define(O1, #object{id = 1, name = <<"foo">>, info = <<"bar">>}).
 -define(P1, #probe{id = 1, id_object = 1, timestamp = <<"1237923724">>, value = <<"0">>}).
-%% -define(P2, #probe{id = 1, id_object = 1, timestamp = <<"1237923725">>, value = <<"1">>}).
 -define(J1, probix_utils:record_to_json(?P1, probix_probe)).
-%% -define(J2, probix_utils:record_to_json(?P2, probix_probe)).
 
 basic_crud_test_() ->
 	{
