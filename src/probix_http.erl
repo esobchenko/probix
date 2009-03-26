@@ -1,7 +1,7 @@
 -module(probix_http).
--author('Eugen Sobchenko <eugen@sobchenko.com>').
 -export([start/1,stop/0,dispatch_requests/1]).
 
+-include_lib("eunit/include/eunit.hrl").
 
 %% start() ->
 %%	mochiweb_http:start([{port, 8888},{loop, fun dispatch_requests/1}]).
