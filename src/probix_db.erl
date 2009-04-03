@@ -1,18 +1,18 @@
 -module(probix_db).
--author('Eugen Sobchenko <eugen@sobchenko.com>').
 -compile(export_all).
 
 -include("probix.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
 init() ->
+	mnesia:create_schema([node()]),
+	mnesia:start(),
 	try
-		mnesia:table_info(object, type)
+		mnesia:table_info(counter, type),
+		mnesia:table_info(object, type),
+		mnesia:table_info(probe, type)
 	catch
 		exit: _ ->
-			mnesia:stop(),
-			mnesia:create_schema([node()]),
-			mnesia:start(),
 			mnesia:create_table(counter,
 				[
 					{disc_copies, [node()]},
