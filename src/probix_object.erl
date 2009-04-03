@@ -50,9 +50,11 @@ read_as_json(Id) when is_integer(Id) ->
 	Object = read(Id),
 	probix_utils:record_to_json(Object, ?MODULE).
 
-update_from_json(Id, Json) when is_list(Json), is_integer(Id) ->
+update_from_json(Id, Json) when is_integer(Id) ->
 	Object = probix_utils:json_to_record(Json, ?MODULE),
-	update(Id, Object).
+	%% need to delete Id key here from Object
+	update(Id, Object),
+	probix_utils:record_to_json(Object, ?MODULE).
 
 update(Id, R) when is_record(R,object), is_integer(Id) ->
 	Object = R#object{id = Id},

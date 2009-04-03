@@ -8,7 +8,7 @@
 -define(URL, "http://127.0.0.1:8000").
 
 -define(O1, #object{id = 1, name = <<"foo">>, info = <<"bar">>}).
--define(J1, probix_utils:record_to_json(?P1, probix_object)).
+-define(J1, probix_utils:record_to_json(?O1, probix_object)).
 
 rest_req('GET', Path) ->
 	Result = http:request(get, {?URL ++ Path, []}, [], []),
@@ -46,9 +46,17 @@ basic_object_crud_test_() ->
 
 generate_basic_object_crud_tests(_) ->
 	[
-		?_assertMatch(
-			{200, "[]"},
-			rest_req('GET', "/objects")
-		)
+	 ?_assertMatch(
+		{200, "[]"},
+		rest_req('GET', "/objects")
+	   ),
+	 ?_assertMatch(
+		{404, _},
+		rest_req('GET', "/object/1")
+	   ),
+	 ?_assertEqual(
+		{200, ?J1},
+		rest_req('POST', "/object", ?J1)
+	   )
 	].
 

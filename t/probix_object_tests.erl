@@ -70,7 +70,7 @@ generate_basic_json_tests(_) ->
 			probix_object:read_as_json(1)
 		),
 		?_assertEqual(
-			?O2,
+			?J2,
 			probix_object:update_from_json(1, ?J2)
 		),
 		?_assertEqual(
