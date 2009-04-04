@@ -46,17 +46,21 @@ basic_object_crud_test_() ->
 
 generate_basic_object_crud_tests(_) ->
 	[
-	 ?_assertMatch(
-		{200, "[]"},
-		rest_req('GET', "/objects")
-	   ),
-	 ?_assertMatch(
-		{404, _},
-		rest_req('GET', "/object/1")
-	   ),
-	 ?_assertEqual(
-		{200, ?J1},
-		rest_req('POST', "/object", ?J1)
-	   )
+		?_assertMatch(
+			{200, "[]"},
+			rest_req('GET', "/objects")
+		),
+		?_assertMatch(
+			{404, _},
+			rest_req('GET', "/object/1")
+		),
+		?_assertMatch(
+			{400, _},
+			rest_req('POST', "/object", "improper json")
+		),
+		?_assertEqual(
+			{200, ?J1},
+			rest_req('POST', "/object", ?J1)
+		)
 	].
 
