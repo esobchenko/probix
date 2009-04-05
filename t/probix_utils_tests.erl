@@ -62,9 +62,8 @@ record_to_json_object_test_() ->
 record_to_json_test_() ->
 	[
 		?_assertMatch(
-			%% {"foo":1,"bar":2}
-			[123,[34,<<"foo">>,34],58,"1",44,[34,<<"bar">>,34],58,"2",125],
-			probix_utils:record_to_json({foo,1,2}, ?MODULE)
+		   <<"{\"foo\":1,\"bar\":2}">>,
+		   probix_utils:record_to_json({foo,1,2}, ?MODULE)
 		)
 	].
 
@@ -77,9 +76,8 @@ json_to_record_test_() ->
 		?_assertMatch(
 			{foo,1,2},
 			probix_utils:json_to_record(
-				%% {"foo":1,"bar":2}
-				[123,[34,<<"foo">>,34],58,"1",44,[34,<<"bar">>,34],58,"2",125],
-				?MODULE
+			  <<"{\"foo\":1,\"bar\":2}">>,
+			   ?MODULE
 			)
 		)
 	].
@@ -87,9 +85,23 @@ json_to_record_test_() ->
 list_to_json_test_() ->
 	[
 		?_assertMatch(
-			%% [{"foo":1,"bar":2},{"foo":3,"bar":4}]
-			[91,[123,[34,<<"foo">>,34],58,"1",44,[34,<<"bar">>,34],58,"2",125],44,
-			[123,[34,<<"foo">>,34],58,"3",44,[34,<<"bar">>,34],58,"4",125],93],
-			probix_utils:list_to_json([{foo,1,2},{foo,3,4}], ?MODULE)
+		   <<"[{\"foo\":1,\"bar\":2},{\"foo\":3,\"bar\":4}]">>,
+		   probix_utils:list_to_json([{foo,1,2},{foo,3,4}], ?MODULE)
 		)
+	].
+
+reversibility_test_() ->
+	[
+	 ?_assertEqual(
+		<<"{\"foo\":\"bar\",\"bar\":\"baz\"}">>,
+		probix_utils:record_to_json( 
+		  probix_utils:json_to_record(
+			"{\"foo\":\"bar\",\"bar\":\"baz\"}", ?MODULE), ?MODULE)
+		),
+	 ?_assertEqual(
+		#foo{foo = <<"bar">>, bar = <<"baz">>},
+		probix_utils:json_to_record(
+		  probix_utils:record_to_json(
+			#foo{foo = <<"bar">>, bar = <<"baz">>}, ?MODULE), ?MODULE)
+	   )
 	].

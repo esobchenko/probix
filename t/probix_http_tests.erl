@@ -10,23 +10,26 @@
 -define(O1, #object{id = 1, name = <<"foo">>, info = <<"bar">>}).
 -define(J1, probix_utils:record_to_json(?O1, probix_object)).
 
+
+%% converting all body answers to binary, cause http:requests returns string
+%% and probix_utils:*_to_json return binary
 rest_req('GET', Path) ->
 	Result = http:request(get, {?URL ++ Path, []}, [], []),
 	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, Body};
+	{Status, list_to_binary(Body)};
 rest_req('DELETE', Path) ->
 	Result = http:request(delete, {?URL ++ Path, []}, [], []),
 	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, Body}.
+	{Status, list_to_binary(Body)}.
 
 rest_req('POST', Path, Data) ->
 	Result = http:request(post, {?URL ++ Path, [], [], Data}, [], []),
 	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, Body};
+	{Status, list_to_binary(Body)};
 rest_req('PUT', Path, Data) ->
 	Result = http:request(put, {?URL ++ Path, [], [], Data}, [], []),
 	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, Body}.
+	{Status, list_to_binary(Body)}.
 
 basic_object_crud_test_() ->
 	{
@@ -47,7 +50,7 @@ basic_object_crud_test_() ->
 generate_basic_object_crud_tests(_) ->
 	[
 		?_assertMatch(
-			{200, "[]"},
+			{200, <<"[]">>},
 			rest_req('GET', "/objects")
 		),
 		?_assertMatch(
