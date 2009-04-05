@@ -1,4 +1,11 @@
 ------------------------------
+Prerequisites
+------------------------------
+
+Mochiweb >= r89 from http://code.google.com/p/mochiweb/
+(with utf8 support in mochijson2)
+
+------------------------------
 REST interface to Probix core
 ------------------------------
 
