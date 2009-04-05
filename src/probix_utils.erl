@@ -57,8 +57,8 @@ json_to_record(Json, Module) when is_atom(Module) ->
 	end.
 
 record_to_json(R, Module) when is_tuple(R), is_atom(Module) ->
-	Fun = mochijson2:encoder([{utf8, true}]),
-	list_to_binary( Fun( record_to_json_object(R, Module) ) ).
+	Encode = mochijson2:encoder([{utf8, true}]),
+	list_to_binary(Encode(record_to_json_object(R, Module))).
 
 list_to_json(L, Module) when is_list(L), is_atom(Module) ->
 	Fun = mochijson2:encoder([{utf8, true}]),
@@ -66,7 +66,7 @@ list_to_json(L, Module) when is_list(L), is_atom(Module) ->
 	case Fun(Json ) of
 		List when is_list(List) ->
 			list_to_binary(List);
-		Other -> 
+		Other ->
 			Other
 	end.
 
