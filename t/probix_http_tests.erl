@@ -59,11 +59,31 @@ generate_basic_object_crud_tests(_) ->
 		),
 		?_assertMatch(
 			{400, _},
-			rest_req('POST', "/object", "improper json")
+			rest_req('POST', "/object", <<"improper json">>)
 		),
 		?_assertEqual(
-			{200, ?J1},
-			rest_req('POST', "/object", ?J1)
+		     {200, ?J1},
+		     rest_req('POST', "/object", ?J1)
+		),
+	    ?_assertEqual(
+		   {200, ?J1},
+		   rest_req('GET',"/object/1")
+		),
+	    ?_assertMatch(
+		   {404, _},
+		   rest_req('GET',"/object/2")
+		),
+	    ?_assertMatch(
+		   {404, _},
+		   rest_req('DELETE',"/object/2")
+		),
+	    ?_assertMatch(
+		   {200, _},
+		   rest_req('DELETE',"/object/1")
+        ),	    
+     	?_assertMatch(
+		   {404, _},
+		   rest_req('GET',"/object/1")
 		)
 	].
 
