@@ -43,8 +43,10 @@ handle('PUT', "/object/" ++ Id, Post) ->
 	try probix_object:update_from_json(list_to_integer(Id),Post) of
 		Json -> {200, [], Json}
 	catch
-		Exception ->
-			{400, [], Exception}
+		%% todo - differentiate bad json and internal error
+		error:_Any -> {400, [], "Bad request"};
+		  
+    	_Other -> {500, [], "Something happened"}
 	end;
 
 handle('DELETE', "/object/" ++ IdString, _) ->
