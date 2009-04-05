@@ -19,50 +19,95 @@ dispatch_requests(Req) ->
 
 handle('GET', "/objects", _) ->
 	try probix_object:read_all_as_json() of
-		Objects -> {200, [], Objects}
+		Objects -> {200, [{"Content-Type", "text/json"}], Objects}
 	catch
-		Exception ->
-			{400, [], Exception}
+		_Exception ->
+			{500, [{"Content-Type", "text/json"}],
+				probix_error:create(
+					"/objects",
+					"something bad happened"
+				)
+			}
 	end;
 
 handle('GET', "/object/" ++ Id_string, _) ->
 	Id = list_to_integer(Id_string),
 	try probix_object:read_as_json(Id) of
-		Json -> {200, [], Json}
+		Json -> {200, [{"Content-Type", "text/json"}], Json}
 	catch
 		{not_found, Id} ->
-			{404, [], "Object with ID: " ++ Id_string ++ " not found"};
+			{404, [{"Content-Type", "text/json"}],
+				probix_error:create(
+					"/object/" ++ Id_string,
+					"no object with that id found"
+				)
+			};
 		_Exception ->
-			{500, [], "Something happened"}
+			{500, [{"Content-Type", "text/json"}],
+				probix_error:create(
+					"/object/" ++ Id_string,
+					"something bad happened"
+				)
+			}
 	end;
 
 handle('PUT', "/object/" ++ Id, Post) ->
 	try probix_object:update_from_json(list_to_integer(Id), Post) of
-		Json -> {200, [], Json}
+		Json -> {200, [{"Content-Type", "text/json"}], Json}
 	catch
 		%% todo - differentiate bad json and internal error
-		error:_Any -> {400, [], "Bad request"};
-		_Other -> {500, [], "Something happened"}
+		error:_Any -> {400, [{"Content-Type", "text/json"}],
+			probix_error:create(
+				"/object/" ++ Id,
+				"improper put data"
+			)
+		};
+		_Exception -> {500, [{"Content-Type", "text/json"}],
+			probix_error:create(
+				"/object/" ++ Id,
+				"something bad happened"
+			)
+		}
 	end;
 
 handle('DELETE', "/object/" ++ Id_string, _) ->
 	Id = list_to_integer(Id_string),
 	try probix_object:read(Id) of
 		_Object ->
-			{200, [], integer_to_list(probix_object:delete(Id))}
+			{200, [{"Content-Type", "text/json"}], integer_to_list(probix_object:delete(Id))}
 	catch
 		{not_found, Id} ->
-			{404, [], "Object with ID: " ++ Id_string ++ " not found"}
+			{404, [{"Content-Type", "text/json"}],
+				probix_error:create(
+					"/object/" ++ Id_string,
+					"no object with that id found"
+				)
+			}
 	end;
 
 handle('POST', "/object", Post) ->
 	try probix_object:create_from_json(Post) of
-		Json -> {200, [], Json}
+		Json -> {200, [{"Content-Type", "text/json"}], Json}
 	catch
 		%% todo - differentiate bad json and internal error
-		error:_Any -> {400, [], "Bad request"};
-		_Other -> {500, [], "Something happened"}
+		error:_Any -> {400, [{"Content-Type", "text/json"}],
+			probix_error:create(
+				"/object",
+				"improper post data"
+			)
+		};
+		_Exception -> {500, [{"Content-Type", "text/json"}],
+			probix_error:create(
+				"/object",
+				"something bad happened"
+			)
+		}
 	end;
 
-handle(_, _, _) ->
-	{400, [{"Content-Type", "text/plain"}], <<"Unknown Request">>}.
+handle(_, Path, _) ->
+	{400, [{"Content-Type", "text/json"}],
+		probix_error:create(
+			Path,
+			"unknown request"
+		)
+	}.
