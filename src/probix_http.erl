@@ -61,9 +61,11 @@ handle('POST', "/object", Post) ->
 	try probix_object:create_from_json(Post) of
 		Json -> {200, [], Json}
 	catch
-		Exception ->
-			{400, [], Exception}
+		%% todo - differentiate bad json and internal error
+		error:_Any -> {400, [], "Bad request"};
+		  
+		_Other -> {500, [], "Something happened"}
 	end;
 
 handle(_, _, _) ->
-	{404, [{"Content-Type", "text/plain"}], <<"Unknown Request">>}.
+	{400, [{"Content-Type", "text/plain"}], <<"Unknown Request">>}.
