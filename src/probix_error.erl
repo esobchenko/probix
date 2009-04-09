@@ -24,3 +24,7 @@ record_fields() ->
 create(Request, Error) ->
 	R = #error{request = Request, error = Error},
 	probix_utils:record_to_json(R, ?MODULE).
+
+http_error(Status, Request, Error) ->
+	{Status, [{"Content-Type", "text/json"}], create(Request, Error)}.
+
