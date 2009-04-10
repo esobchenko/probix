@@ -2,8 +2,8 @@
 Prerequisites
 ------------------------------
 
-Mochiweb >= r89 from http://code.google.com/p/mochiweb/
-(with utf8 support in mochijson2)
+Erlang >= R12B-5 is required;
+Mochiweb >= r99 required from http://code.google.com/p/mochiweb/ (with utf8 support in mochijson2).
 
 ------------------------------
 REST interface to Probix core
