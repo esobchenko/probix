@@ -9,15 +9,17 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-	Ip = case os:getenv("MOCHIWEB_IP") of false -> "0.0.0.0"; Any -> Any end,
-	WebConfig = [
+	Ip = case os:getenv("PROBIX_IP") of false -> "0.0.0.0"; Env_ip -> Env_ip end,
+	Port = case os:getenv("PROBIX_PORT") of false -> "8000"; Env_port -> Env_port end,
+	Config = [
 		{ip, Ip},
-		{port, 8000}
+		{port, Port}
 	],
 	Web = {
 		probix_http,
-		{probix_http, start, [WebConfig]},
-		permanent, 5000, worker, dynamic
+		{probix_http, start, [Config]},
+		% we’ll set our maximum to 100k connections. (default: 2048)
+		permanent, 100000, worker, dynamic
 	},
 
 	Processes = [Web],
