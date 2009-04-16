@@ -13,7 +13,7 @@ dispatch_requests(Req) ->
 	Path = Req:get(path),
 	Method = Req:get(method),
 	Post = Req:recv_body(),
-	io:format("~p request for ~p with post: ~p~n", [Method, Path, Post]),
+%%	io:format("~p request for ~p with post: ~p~n", [Method, Path, Post]),
 	Response = handle(Method, Path, Post),
 	Req:respond(Response).
 
