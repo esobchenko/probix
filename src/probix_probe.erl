@@ -28,8 +28,42 @@ probes_by_object_id(Id) when is_integer(Id) ->
 	),
 	probix_db:find(Q).
 
+probes_by_object_id(Id, {to, To}) ->
+	Q = qlc:q(
+		  [ P || P <- mnesia:table(probe), 
+				 P#probe.id_object =:= Id,
+				 P#probe.timestamp =< To ]
+		 ),
+	probix_db:find(Q);
+
+probes_by_object_id(Id, {from, From}) ->
+	Q = qlc:q(
+		  [ P || P <- mnesia:table(probe), 
+				 P#probe.id_object =:= Id,
+				 P#probe.timestamp >= From ]
+		 ),
+	probix_db:find(Q).
+
+probes_by_object_id(Id, From, To) ->
+	Q = qlc:q(
+		  [ P || P <- mnesia:table(probe), 
+				 P#probe.id_object =:= Id, 
+				 P#probe.timestamp >= From,
+				 P#probe.timestamp =< To ]
+		 ),
+	probix_db:find(Q).
+
 probes_by_object_id_as_json(Id) when is_integer(Id) ->
 	probix_utils:list_to_json(probes_by_object_id(Id), ?MODULE).
+
+probes_by_object_id_as_json(Id, {to, To}) when is_integer(Id) ->
+	probix_utils:list_to_json(probes_by_object_id(Id, {to, To}), ?MODULE);
+
+probes_by_object_id_as_json(Id, {from, From}) when is_integer(Id) ->
+	probix_utils:list_to_json(probes_by_object_id(Id, {from, From}), ?MODULE).
+
+probes_by_object_id_as_json(Id, From, To) when is_integer(Id) ->
+	probix_utils:list_to_json(probes_by_object_id(Id, From, To), ?MODULE).
 
 create_from_json(Json) ->
 	R = probix_utils:json_to_record(Json, ?MODULE),
