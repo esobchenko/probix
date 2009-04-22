@@ -35,13 +35,21 @@ handle('GET', "/object/" ++ Id_string, _) ->
 		_Exception -> probix_error:http_error( 500, "/object/" ++ Id_string, "something bad happened" )
 	end;
 
-handle('PUT', "/object/" ++ Id, Post) ->
-	try probix_object:update_from_json(list_to_integer(Id), Post) of
-		Json -> {200, [{"Content-Type", "text/json"}], Json}
-	catch
-		%% todo - differentiate bad json and internal error
-		error:_Any -> probix_error:http_error( 400, "/object/" ++ Id, "improper put data");
-		_Exception -> probix_error:http_error( 500, "/object/" ++ Id, "something bad happened" )
+handle('PUT', "/object/" ++ Id_string, Post) ->
+	Id = list_to_integer(Id_string),
+	try 
+		probix_object:read(Id),
+		{200, [{"Content-Type", "text/json"}], probix_object:update_from_json(Id, Post)}
+	catch 
+		{not_found, Id} -> probix_error:http_error(
+		    404, "/object/" ++ Id_string, "no object with that id found" 
+        );
+		error:_Any -> probix_error:http_error( 
+            400, "/object/" ++ Id_string, "improper put data" 
+        );
+		_Exception -> probix_error:http_error( 
+            500, "/object/" ++ Id_string, "something bad happened" 
+        )
 	end;
 
 handle('DELETE', "/object/" ++ Id_string, _) ->

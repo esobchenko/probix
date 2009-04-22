@@ -83,6 +83,10 @@ generate_basic_object_crud_tests(_) ->
 			{200, ?J2},
 			rest_req('PUT', "/object/1", ?J2)
 		),
+		?_assertMatch(
+			{404, _},
+			rest_req('PUT', "/object/2", ?J2)
+		),
 		?_assertEqual(
 			{200, ?J2},
 			rest_req('GET', "/object/1")
