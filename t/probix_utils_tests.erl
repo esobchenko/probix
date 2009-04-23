@@ -73,6 +73,10 @@ json_to_record_test_() ->
 			{improper_json_term, 1},
 			probix_utils:json_to_record(<<"[1]">>, ?MODULE)
 		),
+		?_assertThrow(
+			{bad_json, <<"bad json">>},
+			probix_utils:json_to_record(<<"bad json">>, ?MODULE)
+		),
 		?_assertMatch(
 			{foo,1,2},
 			probix_utils:json_to_record(

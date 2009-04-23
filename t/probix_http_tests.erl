@@ -63,6 +63,10 @@ generate_basic_object_crud_tests(_) ->
 			{400, _},
 			rest_req('POST', "/object", <<"improper json">>)
 		),
+		?_assertMatch(
+			{400, _},
+			rest_req('POST', "/object", <<"1">>) %% proper json but invalid data
+		),
 		?_assertEqual(
 			{200, ?J1},
 			rest_req('POST', "/object", ?J1)
@@ -78,6 +82,10 @@ generate_basic_object_crud_tests(_) ->
 		?_assertMatch(
 			{400, _},
 			rest_req('PUT', "/object/1", <<"improper json">>)
+		),
+		?_assertMatch(
+			{400, _},
+			rest_req('PUT', "/object/1", <<"1">>) %% proper json but invalid data
 		),
 		?_assertEqual(
 			{200, ?J2},

@@ -40,7 +40,7 @@ record_to_json_object(R, Module) when is_tuple(R), is_atom(Module) ->
 	{struct, Pairs}.
 
 json_to_record(Json, Module) when is_atom(Module) ->
-	case mochijson2:decode( Json ) of
+	try mochijson2:decode( Json ) of
 		{struct, Proplist} ->
 			json_object_to_record({struct, Proplist}, Module);
 		List when is_list(List) ->
@@ -54,6 +54,8 @@ json_to_record(Json, Module) when is_atom(Module) ->
 				List
 			);
 		Term -> erlang:throw({improper_json_term, Term})
+	catch
+		error:_Any -> erlang:throw({bad_json, Json})
 	end.
 
 record_to_json(R, Module) when is_tuple(R), is_atom(Module) ->
