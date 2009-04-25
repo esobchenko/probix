@@ -32,7 +32,9 @@ handle('GET', "/object/" ++ Id_string, _) ->
 		{not_found, Id} -> probix_error:http_error(
 			404, "/object/" ++ Id_string, "no object with that id found"
 		);
-		_Exception -> probix_error:http_error( 500, "/object/" ++ Id_string, "something bad happened" )
+		_Exception -> probix_error:http_error(
+			500, "/object/" ++ Id_string, "something bad happened"
+		)
 	end;
 
 handle('PUT', "/object/" ++ Id_string, Post) ->
@@ -44,11 +46,8 @@ handle('PUT', "/object/" ++ Id_string, Post) ->
 		{not_found, Id} -> probix_error:http_error(
 			404, "/object/" ++ Id_string, "no object with that id found" 
 		);
-		{bad_json, _Json} -> probix_error:http_error( 
-			400, "/object/" ++ Id_string, "bad json" 
-		);
-		{improper_json_term, _} -> probix_error:http_error(
-			400, "/object", "improper post data"
+		{bad_input, _Message} -> probix_error:http_error( 
+			400, "/object/" ++ Id_string, "bad input"
 		);
 		_Exception -> probix_error:http_error( 
 			500, "/object/" ++ Id_string, "something bad happened" 
@@ -70,11 +69,8 @@ handle('POST', "/object", Post) ->
 	try probix_object:create_from_json(Post) of
 		Json -> {200, [{"Content-Type", "text/json"}], Json}
 	catch
-		{bad_json, _} -> probix_error:http_error(
-			400, "/object", "bad json"
-		);
-		{improper_json_term, _} -> probix_error:http_error(
-			400, "/object", "improper post data"
+		{bad_input, _Message} -> probix_error:http_error(
+			400, "/object", "bad input"
 		);
 		_Exception -> probix_error:http_error(
 			500, "/object", "something bad happened"

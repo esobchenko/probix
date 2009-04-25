@@ -54,16 +54,16 @@ probes_by_object_id(Id, From, To) ->
 	probix_db:find(Q).
 
 probes_by_object_id_as_json(Id) when is_integer(Id) ->
-	probix_utils:list_to_json(probes_by_object_id(Id), ?MODULE).
+	probix_utils:record_to_json(probes_by_object_id(Id), ?MODULE).
 
 probes_by_object_id_as_json(Id, {to, To}) when is_integer(Id) ->
-	probix_utils:list_to_json(probes_by_object_id(Id, {to, To}), ?MODULE);
+	probix_utils:record_to_json(probes_by_object_id(Id, {to, To}), ?MODULE);
 
 probes_by_object_id_as_json(Id, {from, From}) when is_integer(Id) ->
-	probix_utils:list_to_json(probes_by_object_id(Id, {from, From}), ?MODULE).
+	probix_utils:record_to_json(probes_by_object_id(Id, {from, From}), ?MODULE).
 
 probes_by_object_id_as_json(Id, From, To) when is_integer(Id) ->
-	probix_utils:list_to_json(probes_by_object_id(Id, From, To), ?MODULE).
+	probix_utils:record_to_json(probes_by_object_id(Id, From, To), ?MODULE).
 
 create_from_json(Json) ->
 	R = probix_utils:json_to_record(Json, ?MODULE),

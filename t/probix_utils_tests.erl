@@ -27,35 +27,35 @@ atom_to_binary_test_() ->
 		?_assertEqual(<<"foo">>, probix_utils:atom_to_binary(foo))
 	].
 
-json_object_to_record_test_() ->
+json_term_to_record_test_() ->
 	[
 		?_assertMatch(
 			{foo,1,2},
-			probix_utils:json_object_to_record({struct,[{<<"foo">>,1},{<<"bar">>,2}]}, ?MODULE)
+			probix_utils:json_term_to_record({struct,[{<<"foo">>,1},{<<"bar">>,2}]}, ?MODULE)
 		),
 		?_assertThrow(
-			{missing_params, [foo]},
-			probix_utils:json_object_to_record({struct,[{<<"bar">>,3}]}, ?MODULE)
+			{bad_input, _}, %% missing parameters
+			probix_utils:json_term_to_record({struct,[{<<"bar">>,3}]}, ?MODULE)
 		),
 		?_assertThrow(
-			{bad_values, [foo]},
-			probix_utils:json_object_to_record({struct,[{<<"foo">>,{struct,[<<"baz">>,1]}}]}, ?MODULE)
+			{bad_input, _}, %% bad values
+			probix_utils:json_term_to_record({struct,[{<<"foo">>,{struct,[<<"baz">>,1]}}]}, ?MODULE)
 		)
 	].
 
-record_to_json_object_test_() ->
+record_to_json_term_test_() ->
 	[
 		?_assertMatch(
 			{struct,[{<<"foo">>,1},{<<"bar">>,2}]},
-			probix_utils:record_to_json_object({foo,1,2}, ?MODULE)
+			probix_utils:record_to_json_term({foo,1,2}, ?MODULE)
 		),
 		?_assertError(
 			{invalid_record, {baz,1,2,3}},
-			probix_utils:record_to_json_object({baz,1,2,3}, ?MODULE)
+			probix_utils:record_to_json_term({baz,1,2,3}, ?MODULE)
 		),
 		?_assertError(
 			{invalid_record, {foo,1}},
-			probix_utils:record_to_json_object({foo,1}, ?MODULE)
+			probix_utils:record_to_json_term({foo,1}, ?MODULE)
 		)
 	].
 
@@ -70,11 +70,11 @@ record_to_json_test_() ->
 json_to_record_test_() ->
 	[
 		?_assertThrow(
-			{improper_json_term, 1},
+			{bad_input, _}, %% improper json term
 			probix_utils:json_to_record(<<"[1]">>, ?MODULE)
 		),
 		?_assertThrow(
-			{bad_json, <<"bad json">>},
+			{bad_input, _}, %% bad json
 			probix_utils:json_to_record(<<"bad json">>, ?MODULE)
 		),
 		?_assertMatch(
@@ -83,14 +83,10 @@ json_to_record_test_() ->
 				<<"{\"foo\":1,\"bar\":2}">>,
 				?MODULE
 			)
-		)
-	].
-
-list_to_json_test_() ->
-	[
+		),
 		?_assertMatch(
 			<<"[{\"foo\":1,\"bar\":2},{\"foo\":3,\"bar\":4}]">>,
-			probix_utils:list_to_json([{foo,1,2},{foo,3,4}], ?MODULE)
+			probix_utils:record_to_json([{foo,1,2},{foo,3,4}], ?MODULE)
 		)
 	].
 

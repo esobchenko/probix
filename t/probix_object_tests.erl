@@ -74,7 +74,7 @@ generate_basic_json_tests(_) ->
 			probix_object:update_from_json(1, ?J2)
 		),
 		?_assertEqual(
-			probix_utils:list_to_json([?O2], probix_object),
+			probix_utils:record_to_json([?O2], probix_object),
 			probix_object:read_all_as_json()
 		),
 		?_assertEqual(
@@ -82,7 +82,7 @@ generate_basic_json_tests(_) ->
 			probix_object:delete(1)
 		),
 		?_assertEqual(
-			probix_utils:list_to_json([], probix_object),
+			probix_utils:record_to_json([], probix_object),
 			probix_object:read_all_as_json()
 		)
 	].

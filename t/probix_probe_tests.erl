@@ -100,7 +100,7 @@ generate_basic_json_tests(_) ->
 			probix_probe:read_as_json(1)
 		),
 		?_assertEqual(
-			probix_utils:list_to_json([?P1], probix_probe),
+			probix_utils:record_to_json([?P1], probix_probe),
 			probix_probe:probes_by_object_id_as_json(1)
 		),
 		?_assertEqual(
@@ -108,7 +108,7 @@ generate_basic_json_tests(_) ->
 			probix_probe:delete(1)
 		),
 		?_assertEqual(
-			probix_utils:list_to_json([], probix_probe),
+			probix_utils:record_to_json([], probix_probe),
 			probix_probe:probes_by_object_id_as_json(1)
 		)
 	].
