@@ -21,41 +21,41 @@ record_name() ->
 record_fields() ->
 	record_info(fields, object).
 
-create(R) when is_record(R, object) ->
-	Id = probix_db:new_id(object),
-	Object = R#object{ id = Id },
-	{atomic, ok} = probix_db:create(Object),
-	Object.
-
-create_from_json(Json) ->
+create_from(json, Json) ->
 	R = probix_utils:json_to_record(Json, ?MODULE),
 	Object = create(R),
 	probix_utils:record_to_json(Object, ?MODULE).
 
-read_all() ->
-	probix_db:read_all(object).
+read_all_as(json) ->
+	probix_utils:record_to_json(read_all(), ?MODULE).
 
-read_all_as_json() ->
-	probix_utils:list_to_json(read_all(), ?MODULE).
-
-read(Id) when is_integer(Id) ->
-	probix_db:read({object, Id}).
-
-read_as_json(Id) when is_integer(Id) ->
+read_as(json, Id) when is_integer(Id) ->
 	Object = read(Id),
 	probix_utils:record_to_json(Object, ?MODULE).
 
-update_from_json(Id, Json) when is_integer(Id) ->
+update_from(json, Id, Json) when is_integer(Id) ->
 	Object = probix_utils:json_to_record(Json, ?MODULE),
 	Updated = update(Id, Object),
 	probix_utils:record_to_json(Updated, ?MODULE).
 
+create(R) when is_record(R, object) ->
+	Id = probix_db:new_id(object),
+	Object = R#object{ id = Id },
+	probix_db:create(Object),
+	Object.
+
+read_all() ->
+	probix_db:read_all(object).
+
+read(Id) when is_integer(Id) ->
+	probix_db:read({object, Id}).
+
 update(Id, R) when is_record(R, object), is_integer(Id) ->
 	Object = R#object{id = Id},
-	{atomic, ok} = probix_db:update(Object),
+	probix_db:update(Object),
 	Object.
 
 delete(Id) when is_integer(Id) ->
-	{atomic, ok} = probix_db:delete({object, Id}),
+	probix_db:delete({object, Id}),
 	Id.
 

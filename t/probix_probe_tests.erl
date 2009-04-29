@@ -93,23 +93,23 @@ generate_basic_json_tests(_) ->
 	[
 		?_assertEqual(
 			?J1,
-			probix_probe:create_from_json(?J1)
+			probix_probe:create_from(json, ?J1)
 		),
 		?_assertEqual(
 			?J1,
-			probix_probe:read_as_json(1)
+			probix_probe:read_as(json, 1)
 		),
 		?_assertEqual(
-			probix_utils:list_to_json([?P1], probix_probe),
-			probix_probe:probes_by_object_id_as_json(1)
+			probix_utils:record_to_json([?P1], probix_probe),
+			probix_probe:probes_by_object_id_as(json, 1)
 		),
 		?_assertEqual(
 			1,
 			probix_probe:delete(1)
 		),
 		?_assertEqual(
-			probix_utils:list_to_json([], probix_probe),
-			probix_probe:probes_by_object_id_as_json(1)
+			probix_utils:record_to_json([], probix_probe),
+			probix_probe:probes_by_object_id_as(json, 1)
 		)
 	].
 

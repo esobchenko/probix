@@ -51,8 +51,10 @@ transaction(F) ->
 	case mnesia:transaction(F) of
 		{atomic, Result} ->
 			Result;
-		{aborted, _Reason} ->
-			[]
+		{aborted, {throw, Exception}} ->
+			throw(Exception);
+		{aborted, Reason} ->
+			throw({db_error, Reason})
 	end.
 
 read_all(Table) ->
@@ -74,7 +76,7 @@ create(Rec) ->
 	F = fun () ->
 			mnesia:write(Rec)
 	end,
-	mnesia:transaction(F).
+	transaction(F).
 
 update(Rec) ->
 	F =	fun () ->
@@ -82,12 +84,12 @@ update(Rec) ->
 			read({Record, Id}),
 			mnesia:write(Rec)
 	end,
-	mnesia:transaction(F).
+	transaction(F).
 
 delete(Oid) ->
 	F = fun() ->      
 		read(Oid),
 		mnesia:delete(Oid)
 	end,
-	mnesia:transaction(F).
+	transaction(F).
 
