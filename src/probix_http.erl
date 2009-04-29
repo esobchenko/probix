@@ -10,22 +10,23 @@ stop() ->
 	mochiweb_http:stop(?MODULE).
 
 dispatch_requests(Req) ->
-	Path = Req:get(path),
+	[_Slash | Path ] = re:split(Req:get(path),"/",[notempty, trim]),
 	Method = Req:get(method),
 	Post = Req:recv_body(),
-%%	io:format("~p request for ~p with post: ~p~n", [Method, Path, Post]),
-	Response = handle(Method, Path, Post),
+	Query = Req:parse_qs(),
+%	io:format("~p request for ~p with post: ~p, query: ~p~n", [Method, Path, Post, Query]),
+	Response = handle(Method, Path, Query, Post),
 	Req:respond(Response).
 
-handle('GET', "/objects", _) ->
+handle('GET', [<<"objects">>], _,  _) ->
 	try probix_object:read_all_as(json) of
 		Objects -> {200, [{"Content-Type", "text/json"}], Objects}
 	catch
 		_Exception -> probix_error:response_error_as(json, 500, {"/objects", "something bad happened"})
 	end;
 
-handle('GET', "/object/" ++ Id_string, _) ->
-	Id = list_to_integer(Id_string),
+handle('GET', [<<"object">>, Id_string], _, _) ->
+	Id = list_to_integer(binary_to_list(Id_string)),
 	try probix_object:read_as(json, Id) of
 		Json -> {200, [{"Content-Type", "text/json"}], Json}
 	catch
@@ -37,8 +38,8 @@ handle('GET', "/object/" ++ Id_string, _) ->
 		)
 	end;
 
-handle('PUT', "/object/" ++ Id_string, Post) ->
-	Id = list_to_integer(Id_string),
+handle('PUT', [<<"object">>, Id_string], _, Post) ->
+	Id = list_to_integer(binary_to_list(Id_string)),
 	try 
 		{200, [{"Content-Type", "text/json"}], probix_object:update_from(json, Id, Post)}
 	catch 
@@ -53,8 +54,8 @@ handle('PUT', "/object/" ++ Id_string, Post) ->
 		)
 	end;
 
-handle('DELETE', "/object/" ++ Id_string, _) ->
-	Id = list_to_integer(Id_string),
+handle('DELETE', [<<"object">>, Id_string], _, _) ->
+	Id = list_to_integer(binary_to_list(Id_string)),
 	try 
 		Res = probix_object:delete(Id),
 		{200, [{"Content-Type", "text/json"}], integer_to_list(Res)}
@@ -64,7 +65,7 @@ handle('DELETE', "/object/" ++ Id_string, _) ->
 		)
 	end;
 
-handle('POST', "/object", Post) ->
+handle('POST', [<<"object">>], _, Post) ->
 	try probix_object:create_from(json, Post) of
 		Json -> {200, [{"Content-Type", "text/json"}], Json}
 	catch
@@ -76,7 +77,7 @@ handle('POST', "/object", Post) ->
 		)
 	end;
 
-handle(_, Path, _) -> probix_error:response_error_as( json, 400, {Path, "unknown request"} ).
+handle(_, Path, _,  _) -> probix_error:response_error_as( json, 400, {Path, "unknown request"} ).
 
 
 
