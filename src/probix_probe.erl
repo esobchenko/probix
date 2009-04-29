@@ -73,7 +73,7 @@ create_from_json(Json) ->
 create(R) when is_record(R, probe) ->
 	Id = probix_db:new_id(probe),
 	Probe = R#probe{ id = Id },
-	{atomic, ok} = probix_db:write(Probe),
+	{atomic, ok} = probix_db:create(Probe),
 	Probe.
 
 read_as_json(Id) when is_integer(Id) ->
@@ -81,12 +81,7 @@ read_as_json(Id) when is_integer(Id) ->
 	probix_utils:record_to_json(Probe, ?MODULE).
 
 read(Id) when is_integer(Id) ->
-	case probix_db:read({probe, Id}) of
-		[ Probe ] ->
-			Probe;
-		[] ->
-			throw({not_found, Id})
-	end.
+	probix_db:read({probe, Id}).
 
 delete(Id) when is_integer(Id) ->
 	{atomic, ok} = probix_db:delete({probe, Id}),

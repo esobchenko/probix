@@ -24,7 +24,7 @@ record_fields() ->
 create(R) when is_record(R, object) ->
 	Id = probix_db:new_id(object),
 	Object = R#object{ id = Id },
-	{atomic, ok} = probix_db:write(Object),
+	{atomic, ok} = probix_db:create(Object),
 	Object.
 
 create_from_json(Json) ->
@@ -39,12 +39,7 @@ read_all_as_json() ->
 	probix_utils:list_to_json(read_all(), ?MODULE).
 
 read(Id) when is_integer(Id) ->
-	case probix_db:read({object, Id}) of
-		[ Object ] ->
-			Object;
-		[] ->
-			throw({not_found, Id})
-	end.
+	probix_db:read({object, Id}).
 
 read_as_json(Id) when is_integer(Id) ->
 	Object = read(Id),
@@ -57,7 +52,7 @@ update_from_json(Id, Json) when is_integer(Id) ->
 
 update(Id, R) when is_record(R, object), is_integer(Id) ->
 	Object = R#object{id = Id},
-	{atomic, ok} = probix_db:write(Object),
+	{atomic, ok} = probix_db:update(Object),
 	Object.
 
 delete(Id) when is_integer(Id) ->
