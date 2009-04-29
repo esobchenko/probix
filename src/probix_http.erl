@@ -29,7 +29,7 @@ handle('GET', "/object/" ++ Id_string, _) ->
 	try probix_object:read_as_json(Id) of
 		Json -> {200, [{"Content-Type", "text/json"}], Json}
 	catch
-		{not_found, Id} -> probix_error:http_error(
+		{not_found, {_, Id}} -> probix_error:http_error(
 			404, "/object/" ++ Id_string, "no object with that id found"
 		);
 		_Exception -> probix_error:http_error( 500, "/object/" ++ Id_string, "something bad happened" )
@@ -38,10 +38,10 @@ handle('GET', "/object/" ++ Id_string, _) ->
 handle('PUT', "/object/" ++ Id_string, Post) ->
 	Id = list_to_integer(Id_string),
 	try 
-		probix_object:read(Id),
-		{200, [{"Content-Type", "text/json"}], probix_object:update_from_json(Id, Post)}
+		{200, [{"Content-Type", "text/json"}], 
+            probix_object:update_from_json(Id, Post)}
 	catch 
-		{not_found, Id} -> probix_error:http_error(
+		{not_found, {_, Id}} -> probix_error:http_error(
 		    404, "/object/" ++ Id_string, "no object with that id found" 
         );
 		error:_Any -> probix_error:http_error( 
@@ -54,13 +54,13 @@ handle('PUT', "/object/" ++ Id_string, Post) ->
 
 handle('DELETE', "/object/" ++ Id_string, _) ->
 	Id = list_to_integer(Id_string),
-	try probix_object:read(Id) of
-		_Object ->
-			{200, [{"Content-Type", "text/json"}], integer_to_list(probix_object:delete(Id))}
+	try 
+		Res = probix_object:delete(Id),
+		{200, [{"Content-Type", "text/json"}], integer_to_list(Res)}
 	catch
-		{not_found, Id} -> probix_error:http_error(
-			404, "/object/" ++ Id_string, "no object with that id found"
-		)
+		{not_found, {_, Id}} -> probix_error:http_error(
+            404, "/object/" ++ Id_string, "no object with that id found"
+		) 
 	end;
 
 handle('POST', "/object", Post) ->
@@ -77,5 +77,6 @@ handle('POST', "/object", Post) ->
 	end;
 
 handle(_, Path, _) -> probix_error:http_error( 400, Path, "unknown request" ).
+
 
 
