@@ -27,7 +27,7 @@ generate_basic_crud_tests(_) ->
 			probix_object:read(1)
 		),
 		?_assertThrow(
-			{not_found, 2},
+			{not_found, {object, 2}},
 			probix_object:read(2)
 		),
 		?_assertMatch(

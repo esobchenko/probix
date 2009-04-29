@@ -32,7 +32,7 @@ json_object_to_record_test_() ->
 		?_assertMatch(
 			{foo,1,2},
 			probix_utils:json_object_to_record({struct,[{<<"foo">>,1},{<<"bar">>,2}]}, ?MODULE)
-		),
+		  ),
 		?_assertThrow(
 			{missing_params, [foo]},
 			probix_utils:json_object_to_record({struct,[{<<"bar">>,3}]}, ?MODULE)

@@ -33,7 +33,7 @@ generate_basic_crud_tests(_) ->
 			probix_probe:read(1)
 		),
 		?_assertThrow(
-			{not_found, 2},
+			{not_found, {probe, 2}},
 			probix_probe:read(2)
 		),
 		?_assertMatch(
