@@ -63,16 +63,30 @@ read(Oid) ->
 	F = fun() ->
 		mnesia:read(Oid)
 	end,
-	transaction(F).
+	case transaction(F) of
+		[ Object ] ->
+			Object;
+		[] ->
+			throw({not_found, Oid})
+	end.
 
-write(Rec) ->
-	F = fun() ->
-		mnesia:write(Rec)
+create(Rec) ->
+	F = fun () ->
+			mnesia:write(Rec)
+	end,
+	mnesia:transaction(F).
+
+update(Rec) ->
+	F =	fun () ->
+			[ Record, Id | _Tail ] = tuple_to_list(Rec),
+			read({Record, Id}),
+			mnesia:write(Rec)
 	end,
 	mnesia:transaction(F).
 
 delete(Oid) ->
-	F = fun() ->
+	F = fun() ->      
+		read(Oid),
 		mnesia:delete(Oid)
 	end,
 	mnesia:transaction(F).
