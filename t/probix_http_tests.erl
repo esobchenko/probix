@@ -134,30 +134,39 @@ generate_basic_object_crud_tests(_) ->
 		   {200, ?J3},
 		   rest_req('POST',"/object", ?J3)
 		),
+        
+        %% we don't have any probes for object 2 yet
 	    ?_assertMatch(
            {200, <<"[]">>},
 		   rest_req('GET',"/object/2/probes")
         ),
+        %% we can't add probes with object 3 in structure
+        %% to object 2 in URL
 	    ?_assertMatch(
            {400, _},
 		   rest_req('POST',"/object/2/probes","[" ++ binary_to_list(?JP4) ++ ", " ++ binary_to_list(?JP5) ++ "]")
         ),
+        %% finally we are adding 2 probes to object 2
 	    ?_assertEqual(
            {200, list_to_binary("[" ++ binary_to_list(?JP1) ++ "," ++ binary_to_list(?JP2) ++ "]")},
 		   rest_req('POST',"/object/2/probes","[" ++ binary_to_list(?JP1) ++ ", " ++ binary_to_list(?JP2) ++ "]")
         ),
+        %% getting all probes
 	    ?_assertEqual(
            {200, list_to_binary("[" ++ binary_to_list(?JP1) ++ "," ++ binary_to_list(?JP2) ++ "]")},
 		   rest_req('GET',"/object/2/probes")
 		),
+        %% testing "to" limiter
 	    ?_assertEqual(
            {200, list_to_binary("[" ++ binary_to_list(?JP1) ++ "]")},
 		   rest_req('GET',"/object/2/probes?to=1237923724")
 		),
+        %% testing "from" limiter
 	    ?_assertEqual(
            {200, list_to_binary("[" ++ binary_to_list(?JP2) ++ "]")},
 		   rest_req('GET',"/object/2/probes?from=1237923725")
 		),
+        %% testing both timestamp limiters
 	    ?_assertEqual(
            {200, list_to_binary("[" ++  binary_to_list(?JP1) ++","++ binary_to_list(?JP2) ++ "]")},
 		   rest_req('GET',"/object/2/probes?from=1237923724&to=1237923725")
