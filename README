@@ -55,6 +55,10 @@ Args:
     from=Timestamp1&to=Timestamp2
 
 
+Important: we use unix epoch as probe timestamp for now; the agents may work in
+different timezones so we should reconsider this later.
+
+
 The API attempts to return appropriate HTTP status codes for every request.
 Here's what's going on with our various status codes:
 
