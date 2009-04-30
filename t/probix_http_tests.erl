@@ -9,8 +9,23 @@
 
 -define(O1, #object{id = 1, name = <<"foo">>, info = <<"bar">>}).
 -define(O2, #object{id = 1, name = <<"bar">>, info = <<"baz">>}).
+-define(O3, #object{id = 2, name = <<"bar">>, info = <<"baz">>}).
+
 -define(J1, probix_utils:record_to_json(?O1, probix_object)).
 -define(J2, probix_utils:record_to_json(?O2, probix_object)).
+-define(J3, probix_utils:record_to_json(?O3, probix_object)).
+
+-define(P1, #probe{id = 1, id_object = 2, timestamp = 1237923724, value = <<"10">>}).
+-define(P2, #probe{id = 2, id_object = 2, timestamp = 1237923725, value = <<"20">>}).
+-define(P3, #probe{id = 3, id_object = 2, timestamp = 1237923726, value = <<"30">>}).
+-define(P4, #probe{id = 4, id_object = 3, timestamp = 1237923727, value = <<"40">>}).
+-define(P5, #probe{id = 5, id_object = 3, timestamp = 1237923728, value = <<"50">>}).
+-define(JP1, probix_utils:record_to_json(?P1, probix_probe)).
+-define(JP2, probix_utils:record_to_json(?P2, probix_probe)).
+-define(JP3, probix_utils:record_to_json(?P3, probix_probe)).
+-define(JP4, probix_utils:record_to_json(?P4, probix_probe)).
+-define(JP5, probix_utils:record_to_json(?P5, probix_probe)).
+
 
 
 %% converting all body answers to binary, cause http:requests returns string
@@ -110,6 +125,38 @@ generate_basic_object_crud_tests(_) ->
 		?_assertMatch(
 			{404, _},
 			rest_req('GET', "/object/1")
+		),
+	    ?_assertEqual(
+		   {200, ?J3},
+		   rest_req('POST',"/object", ?J3)
+		),
+	    ?_assertMatch(
+           {200, <<"[]">>},
+		   rest_req('GET',"/object/2/probes")
+        ),
+	    ?_assertMatch(
+           {400, _},
+		   rest_req('POST',"/object/2/probes","[" ++ binary_to_list(?JP4) ++ ", " ++ binary_to_list(?JP5) ++ "]")
+        ),
+	    ?_assertEqual(
+           {200, list_to_binary("[" ++ binary_to_list(?JP1) ++ "," ++ binary_to_list(?JP2) ++ "]")},
+		   rest_req('POST',"/object/2/probes","[" ++ binary_to_list(?JP1) ++ ", " ++ binary_to_list(?JP2) ++ "]")
+        ),
+	    ?_assertEqual(
+           {200, list_to_binary("[" ++ binary_to_list(?JP1) ++ "," ++ binary_to_list(?JP2) ++ "]")},
+		   rest_req('GET',"/object/2/probes")
+		),
+	    ?_assertEqual(
+           {200, list_to_binary("[" ++ binary_to_list(?JP1) ++ "]")},
+		   rest_req('GET',"/object/2/probes?to=1237923724")
+		),
+	    ?_assertEqual(
+           {200, list_to_binary("[" ++ binary_to_list(?JP2) ++ "]")},
+		   rest_req('GET',"/object/2/probes?from=1237923725")
+		),
+	    ?_assertEqual(
+           {200, list_to_binary("[" ++  binary_to_list(?JP1) ++","++ binary_to_list(?JP2) ++ "]")},
+		   rest_req('GET',"/object/2/probes?from=1237923724&to=1237923725")
 		)
 	].
 
