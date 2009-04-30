@@ -6,6 +6,19 @@ Erlang >= R12B-5 is required;
 Mochiweb >= r99 required from http://code.google.com/p/mochiweb/ (with utf8 support in mochijson2).
 
 ------------------------------
+Running Probix core server
+------------------------------
+
+    $ git clone git@github.com:esobchenko/probix.git
+    $ cd probix
+    $ erl -make
+    $ ./bin/acceptance.sh # all tests should pass.
+    $ ./bin/start.sh
+
+Probix core server binds to 0.0.0.0:8000 by default, but you can change this
+by setting PROBIX_SERVER_IP and PROBIX_SERVER_PORT environment variables.
+
+------------------------------
 REST interface to Probix core
 ------------------------------
 
@@ -56,7 +69,7 @@ Args:
 
 
 Important: we use unix epoch as probe timestamp for now; the agents may work in
-different timezones so we should reconsider this later.
+different timezones so we will reconsider this later.
 
 
 The API attempts to return appropriate HTTP status codes for every request.
