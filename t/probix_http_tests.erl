@@ -66,6 +66,10 @@ basic_object_crud_test_() ->
 
 generate_basic_object_crud_tests(_) ->
 	[
+		?_assertMatch( %% issue #9
+			{400, _},
+			rest_req('GET', "/")
+		),
 		?_assertMatch(
 			{200, <<"[]">>},
 			rest_req('GET', "/objects")
