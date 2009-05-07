@@ -25,8 +25,8 @@ basic_crud_test_() ->
 generate_basic_crud_tests(_) ->
 	[
 		?_assertMatch(
-			?P1,
-			probix_probe:create(?P1)
+			[?P1],
+			probix_probe:create(1, ?P1)
 		),
 		?_assertMatch(
 			?P1,
@@ -48,37 +48,37 @@ generate_basic_crud_tests(_) ->
 			[],
 			probix_probe:probes_by_object_id(1)
 		),
-	    ?_assertMatch(
-		    ?P2,
-			probix_probe:create(?P2)
-	    ),
-	    ?_assertMatch(
-		    ?P3,
-			probix_probe:create(?P3)
-	    ),
-	    ?_assertMatch(
-		    ?P4,
-			probix_probe:create(?P4)
-	    ),
-	    ?_assertMatch(
-		    ?P5,
-			probix_probe:create(?P5)
-	    ),
-	    ?_assertEqual(
-		   [?P2, ?P3, ?P4, ?P5],
-		   probix_probe:probes_by_object_id(1)
+		?_assertMatch(
+			[?P2],
+			probix_probe:create(1, ?P2)
 		),
-	    ?_assertEqual(
-		   [?P4, ?P5],
-		   probix_probe:probes_by_object_id(1, {from, 1237923727})
+		?_assertMatch(
+			[?P3],
+			probix_probe:create(1, ?P3)
 		),
-	    ?_assertEqual(
-		   [?P2, ?P3],
-		   probix_probe:probes_by_object_id(1, {to, 1237923726})
+		?_assertMatch(
+			[?P4],
+			probix_probe:create(1, ?P4)
 		),
-	    ?_assertEqual(
-		   [?P3],
-		   probix_probe:probes_by_object_id(1, 1237923726, 1237923726)
+		?_assertMatch(
+			[?P5],
+			probix_probe:create(1, ?P5)
+		),
+		?_assertEqual(
+			[?P2, ?P3, ?P4, ?P5],
+			probix_probe:probes_by_object_id(1)
+		),
+		?_assertEqual(
+			[?P4, ?P5],
+			probix_probe:probes_by_object_id(1, {from, 1237923727})
+		),
+		?_assertEqual(
+			[?P2, ?P3],
+			probix_probe:probes_by_object_id(1, {to, 1237923726})
+		),
+		?_assertEqual(
+			[?P3],
+			probix_probe:probes_by_object_id(1, 1237923726, 1237923726)
 		)
 	].
 
@@ -92,8 +92,8 @@ basic_json_test_() ->
 generate_basic_json_tests(_) ->
 	[
 		?_assertEqual(
-			?J1,
-			probix_probe:create_from(json, ?J1)
+			probix_utils:record_to_json([?P1], probix_probe),
+			probix_probe:create_from(json, 1, ?J1)
 		),
 		?_assertEqual(
 			?J1,

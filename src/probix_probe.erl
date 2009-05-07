@@ -22,37 +22,33 @@ record_name() ->
 record_fields() ->
 	record_info(fields, probe).
 
-create_for_object_from(json, Id, Json) ->
+create_from(json, Id, Json) ->
 	R = probix_utils:json_to_record(Json, ?MODULE),
-	Probe = create_for_object(Id, R),
+	Probe = create(Id, R),
 	probix_utils:record_to_json(Probe, ?MODULE).
 
 %% main create method for probe
-%% create/1 probably can be removed
-create_for_object(Id_object, List) when is_list(List), is_integer(Id_object) ->
-	Bad = lists:filter(fun(R) ->
-							   Id_object =/= R#probe.id_object
-					   end,
-					   List),
-	[] =:= Bad orelse throw({bad_input, "Probes have wrong object_id"}),
-	
-	lists:map(fun(R) ->
-					  Id = probix_db:new_id(probe),
-					  Probe = R#probe{ id = Id, id_object = Id_object },
-					  probix_db:create(Probe),
-					  Probe
-			  end,
-			  List);
+create(Id_object, List) when is_list(List), is_integer(Id_object) ->
+	Bad = lists:filter(
+		fun(R) ->
+			Id_object =/= R#probe.id_object
+		end,
+		List
+	),
+	[] =:= Bad orelse throw({bad_input, "some probes have wrong object_id"}),
+
+	lists:map(
+		fun(R) ->
+			Id = probix_db:new_id(probe),
+			Probe = R#probe{ id = Id, id_object = Id_object },
+			probix_db:create(Probe),
+			Probe
+		end,
+		List
+	);
 
 %% will be rarely used i think
-create_for_object(Id, R) when is_record(R, probe), is_integer(Id) ->
-	create_for_object(Id, [ R ] ).
-	
-
-create_from(json, Json) ->
-	R = probix_utils:json_to_record(Json, ?MODULE),
-	Probe = create(R),
-	probix_utils:record_to_json(Probe, ?MODULE).
+create(Id, R) when is_record(R, probe), is_integer(Id) -> create(Id, [ R ] ).
 
 read_as(json, Id) when is_integer(Id) ->
 	Probe = read(Id),
@@ -69,18 +65,6 @@ probes_by_object_id_as(json, Id, {from, From}) when is_integer(Id) ->
 
 probes_by_object_id_as(json, Id, From, To) when is_integer(Id) ->
 	probix_utils:record_to_json(probes_by_object_id(Id, From, To), ?MODULE).
-
-create(R) when is_record(R, probe) ->
-	Id = probix_db:new_id(probe),
-	Probe = R#probe{ id = Id },
-	probix_db:create(Probe),
-	Probe;
-
-create(List) when is_list(List) ->
-	lists:map(fun(R) ->
-					  create(R)
-			  end,
-			  List).
 
 probes_by_object_id(Id) when is_integer(Id) ->
 	Q = qlc:q(
