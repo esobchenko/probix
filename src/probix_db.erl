@@ -72,11 +72,13 @@ read(Oid) ->
 			throw({not_found, Oid})
 	end.
 
-create(Rec) ->
+create(Rec) when is_tuple(Rec) ->
 	F = fun () ->
 			mnesia:write(Rec)
 	end,
-	transaction(F).
+	transaction(F);
+
+create(List) when is_list(List) -> lists:map( fun(R) -> create(R) end, List ).
 
 update(Rec) ->
 	F =	fun () ->
@@ -87,7 +89,7 @@ update(Rec) ->
 	transaction(F).
 
 delete(Oid) ->
-	F = fun() ->      
+	F = fun() ->
 		read(Oid),
 		mnesia:delete(Oid)
 	end,

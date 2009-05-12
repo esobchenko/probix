@@ -4,6 +4,8 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
+-define(O1, #object{id = 1, name = <<"foo">>, info = <<"bar">>}).
+
 -define(P1, #probe{id = 1, id_object = 1, timestamp = 1237923724, value = <<"10">>}).
 -define(P2, #probe{id = 2, id_object = 1, timestamp = 1237923725, value = <<"20">>}).
 -define(P3, #probe{id = 3, id_object = 1, timestamp = 1237923726, value = <<"30">>}).
@@ -15,6 +17,9 @@
 -define(J4, probix_utils:record_to_json(?P4, probix_probe)).
 -define(J5, probix_utils:record_to_json(?P5, probix_probe)).
 
+
+
+
 basic_crud_test_() ->
 	{
 		setup,
@@ -24,6 +29,10 @@ basic_crud_test_() ->
 
 generate_basic_crud_tests(_) ->
 	[
+		?_assertMatch(
+			?O1,
+			probix_object:create(?O1)
+		),
 		?_assertMatch(
 			[?P1],
 			probix_probe:create(1, ?P1)
@@ -91,6 +100,10 @@ basic_json_test_() ->
 
 generate_basic_json_tests(_) ->
 	[
+		?_assertMatch(
+			?O1,
+			probix_object:create(?O1)
+		),
 		?_assertEqual(
 			probix_utils:record_to_json([?P1], probix_probe),
 			probix_probe:create_from(json, 1, ?J1)

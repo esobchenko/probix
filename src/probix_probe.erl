@@ -37,15 +37,21 @@ create(Id_object, List) when is_list(List), is_integer(Id_object) ->
 	),
 	[] =:= Bad orelse throw({bad_input, "some probes have wrong object_id"}),
 
-	lists:map(
+	Probes = lists:map(
 		fun(R) ->
 			Id = probix_db:new_id(probe),
 			Probe = R#probe{ id = Id, id_object = Id_object },
-			probix_db:create(Probe),
 			Probe
 		end,
 		List
-	);
+	),
+
+	T = fun() ->
+		probix_db:read({object, Id_object}), %% foreign key constraint check
+		probix_db:create(Probes)
+	end,
+	probix_db:transaction(T),
+	Probes;
 
 %% will be rarely used i think
 create(Id, R) when is_record(R, probe), is_integer(Id) -> create(Id, [ R ] ).
