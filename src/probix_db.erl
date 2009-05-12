@@ -74,7 +74,8 @@ read(Oid) ->
 
 create(Rec) when is_tuple(Rec) ->
 	F = fun () ->
-			mnesia:write(Rec)
+			mnesia:write(Rec),
+			Rec
 	end,
 	transaction(F);
 

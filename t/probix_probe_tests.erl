@@ -29,6 +29,10 @@ basic_crud_test_() ->
 
 generate_basic_crud_tests(_) ->
 	[
+		?_assertThrow(
+			{not_found, _}, %% foreign key constraint check raise exception
+			probix_probe:create(1, ?P1)
+		),
 		?_assertMatch(
 			?O1,
 			probix_object:create(?O1)

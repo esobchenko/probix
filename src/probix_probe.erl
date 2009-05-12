@@ -29,29 +29,29 @@ create_from(json, Id, Json) ->
 
 %% main create method for probe
 create(Id_object, List) when is_list(List), is_integer(Id_object) ->
-	Bad = lists:filter(
-		fun(R) ->
-			Id_object =/= R#probe.id_object
-		end,
-		List
-	),
-	[] =:= Bad orelse throw({bad_input, "some probes have wrong object_id"}),
-
-	Probes = lists:map(
-		fun(R) ->
-			Id = probix_db:new_id(probe),
-			Probe = R#probe{ id = Id, id_object = Id_object },
-			Probe
-		end,
-		List
-	),
-
 	T = fun() ->
 		probix_db:read({object, Id_object}), %% foreign key constraint check
+
+		Bad = lists:filter(
+			fun(R) ->
+				Id_object =/= R#probe.id_object
+			end,
+			List
+		),
+		[] =:= Bad orelse throw({bad_input, "some probes have wrong object_id"}),
+
+		Probes = lists:map(
+			fun(R) ->
+				Id = probix_db:new_id(probe),
+				Probe = R#probe{ id = Id, id_object = Id_object },
+				Probe
+			end,
+			List
+		),
+
 		probix_db:create(Probes)
 	end,
-	probix_db:transaction(T),
-	Probes;
+	probix_db:transaction(T); %% returns list of newly created probes on success
 
 %% will be rarely used i think
 create(Id, R) when is_record(R, probe), is_integer(Id) -> create(Id, [ R ] ).
