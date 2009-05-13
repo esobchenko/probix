@@ -84,15 +84,17 @@ create(List) when is_list(List) -> lists:map( fun(R) -> create(R) end, List ).
 update(Rec) ->
 	F =	fun () ->
 			[ Record, Id | _Tail ] = tuple_to_list(Rec),
-			read({Record, Id}),
-			mnesia:write(Rec)
+			read({Record, Id}), %% foreign key check
+			mnesia:write(Rec),
+			Rec
 	end,
 	transaction(F).
 
 delete(Oid) ->
 	F = fun() ->
 		read(Oid),
-		mnesia:delete(Oid)
+		mnesia:delete(Oid),
+		Oid
 	end,
 	transaction(F).
 
