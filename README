@@ -71,6 +71,27 @@ Args:
 Important: we use unix epoch as probe timestamp for now; the agents may work in
 different timezones so we will reconsider this later.
 
+------------------
+ Accepted formats
+------------------
+
+Currently Probix Servers accepts JSON as a representation format, but will be extended to support many others.
+
+To set the desired representation formats URI should be used as follows:
+http://PROBIX_SERVER_IP:PORT/Resource/Path/.format
+
+For example to fetch object with id 15 as XML you should use:
+http://PROBIX_SERVER_IP:PORT/object/15.xml
+
+To create probes for object with id 5 from JSON you should use
+http://PROBIX_SERVER_IP:PORT/object/5/probes.json
+
+To fetch probes in xml within specific time range:
+http://PROBIX_SERVER_IP:PORT/object/5/probes.json?from=time1&to=time2
+
+--------------------------------
+ Server Return Codes and Errors
+--------------------------------
 
 The API attempts to return appropriate HTTP status codes for every request.
 Here's what's going on with our various status codes:
@@ -80,12 +101,25 @@ Here's what's going on with our various status codes:
 401 Not Authorized: either you need to provide authentication credentials, or the credentials provided aren't valid.
 403 Forbidden: we understand your request, but are refusing to fulfill it. An accompanying error message should explain why.
 404 Not Found: either you're requesting an invalid URI or the resource in question doesn't exist (ex: no such object).
+406 Not Acceptable: you tried to set representation format that isn't known or supported
 500 Internal Server Error: we did something wrong.
 
 Current error message format (it will be reconsidered):
 
-error: {
-    request: String,
-    error: String
+{
+	method: String,
+    url: String,
+    error_code: String
+	error_message: String
 }
+
+where
+  method - one of GET, POST, PUT, DELETE
+  url - requested URL
+  error_code - special error code (e.g. OBJECT_NOT_FOUND, USER_NOT_FOUND, INVALID_JSON, OBJECT_EXISTS)
+  error_message - Human readable error message
+  
+  
+
+
 
