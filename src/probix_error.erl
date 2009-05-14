@@ -21,11 +21,28 @@ record_name() ->
 record_fields() ->
 	record_info(fields, error).
 
-create_as(json, {Request, Error}) when is_list(Request); is_list(Error) ->
-	R = #error{request = list_to_binary(Request), error = list_to_binary(Error)},
-	probix_utils:record_to_json(R, ?MODULE).
+output_handler_for(json) ->
+	fun(Data) ->
+			probix_utils:record_to_json(Data, ?MODULE)
+	end.
 
-%% response_error_as/3 returns an argument for mochiweb's Req:respond/1 fun
-response_error_as(json, Status, Error) when is_tuple(Error) ->
-	{Status, [{"Content-Type", "text/json"}], create_as(json, Error)}.
+get_message_for_code(Code) ->
+	case Code of 
+		'OBJECT_NOT_FOUND' ->
+			"Object with specified doesn't exist";
+		'OTHER_CODE' ->
+			"Something happened";
+		'BAD_REQUEST' ->
+			"Please write message for me";
+		'BAD_INPUT' ->
+			"Hey! Watcha sending to me?";
+		'UNKNOWN_FORMAT' ->
+			"Are you okay?"
+	end.
 
+create(Method, Url, Error) ->
+	#error{method = Method, 
+		   url = Url,
+		   error_code = Error,
+		   error_message = get_message_for_code(Error)
+		  }.

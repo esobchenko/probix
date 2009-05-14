@@ -22,10 +22,15 @@ record_name() ->
 record_fields() ->
 	record_info(fields, probe).
 
-create_from(json, Id, Json) ->
-	R = probix_utils:json_to_record(Json, ?MODULE),
-	Probe = create(Id, R),
-	probix_utils:record_to_json(Probe, ?MODULE).
+output_handler_for(json) ->
+	fun(Data) ->
+			probix_utils:record_to_json(Data, ?MODULE)
+	end.
+
+input_handler_for(json) ->
+	fun(Data) ->
+			probix_utils:json_to_record(Data, ?MODULE)
+	end.
 
 %% main create method for probe
 create(Id_object, List) when is_list(List), is_integer(Id_object) ->
@@ -55,22 +60,6 @@ create(Id_object, List) when is_list(List), is_integer(Id_object) ->
 
 %% will be rarely used i think
 create(Id, R) when is_record(R, probe), is_integer(Id) -> create(Id, [ R ] ).
-
-read_as(json, Id) when is_integer(Id) ->
-	Probe = read(Id),
-	probix_utils:record_to_json(Probe, ?MODULE).
-
-probes_by_object_id_as(json, Id) when is_integer(Id) ->
-	probix_utils:record_to_json(probes_by_object_id(Id), ?MODULE).
-
-probes_by_object_id_as(json, Id, {to, To}) when is_integer(Id) ->
-	probix_utils:record_to_json(probes_by_object_id(Id, {to, To}), ?MODULE);
-
-probes_by_object_id_as(json, Id, {from, From}) when is_integer(Id) ->
-	probix_utils:record_to_json(probes_by_object_id(Id, {from, From}), ?MODULE).
-
-probes_by_object_id_as(json, Id, From, To) when is_integer(Id) ->
-	probix_utils:record_to_json(probes_by_object_id(Id, From, To), ?MODULE).
 
 probes_by_object_id(Id) when is_integer(Id) ->
 	Q = qlc:q(
@@ -110,3 +99,25 @@ delete(Id) when is_integer(Id) ->
 	probix_db:delete({probe, Id}),
 	Id.
 
+
+%create_from(json, Id, Json) ->
+%	R = probix_utils:json_to_record(Json, ?MODULE),
+%	Probe = create(Id, R),
+%	probix_utils:record_to_json(Probe, ?MODULE).
+
+
+%read_as(json, Id) when is_integer(Id) ->
+%	Probe = read(Id),
+%	probix_utils:record_to_json(Probe, ?MODULE).
+
+%probes_by_object_id_as(json, Id) when is_integer(Id) ->
+%	probix_utils:record_to_json(probes_by_object_id(Id), ?MODULE).
+
+%probes_by_object_id_as(json, Id, {to, To}) when is_integer(Id) ->
+%	probix_utils:record_to_json(probes_by_object_id(Id, {to, To}), ?MODULE);
+
+%probes_by_object_id_as(json, Id, {from, From}) when is_integer(Id) ->
+%	probix_utils:record_to_json(probes_by_object_id(Id, {from, From}), ?MODULE).
+
+%probes_by_object_id_as(json, Id, From, To) when is_integer(Id) ->
+%	probix_utils:record_to_json(probes_by_object_id(Id, From, To), ?MODULE).

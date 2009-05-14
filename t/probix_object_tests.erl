@@ -52,38 +52,38 @@ generate_basic_crud_tests(_) ->
 		)
 	].
 
-basic_json_test_() ->
-	{
-		setup,
-		fun() -> probix_db:reset() end,
-		fun generate_basic_json_tests/1
-	}.
+% basic_json_test_() ->
+%	{
+%		setup,
+%		fun() -> probix_db:reset() end,
+%		fun generate_basic_json_tests/1
+%	}.
 
-generate_basic_json_tests(_) ->
-	[
-		?_assertEqual(
-			?J1,
-			probix_object:create_from(json, ?J1)
-		),
-		?_assertEqual(
-			?J1,
-			probix_object:read_as(json, 1)
-		),
-		?_assertEqual(
-			?J2,
-			probix_object:update_from(json, 1, ?J2)
-		),
-		?_assertEqual(
-			probix_utils:record_to_json([?O2], probix_object),
-			probix_object:read_all_as(json)
-		),
-		?_assertEqual(
-			1,
-			probix_object:delete(1)
-		),
-		?_assertEqual(
-			probix_utils:record_to_json([], probix_object),
-			probix_object:read_all_as(json)
-		)
-	].
+%generate_basic_json_tests(_) ->
+%	[
+%		?_assertEqual(
+%			?J1,
+% 			probix_object:create_from(json, ?J1)
+%		),
+%		?_assertEqual(
+%			?J1,
+%			probix_object:read_as(json, 1)
+%		),
+%		?_assertEqual(
+%			?J2,
+%			probix_object:update_from(json, 1, ?J2)
+%		),
+%		?_assertEqual(
+%			probix_utils:record_to_json([?O2], probix_object),
+%			probix_object:read_all_as(json)
+%		),
+%		?_assertEqual(
+%			1,
+%			probix_object:delete(1)
+%		),
+%		?_assertEqual(
+%			probix_utils:record_to_json([], probix_object),
+%			probix_object:read_all_as(json)
+%		)
+%	].
 
