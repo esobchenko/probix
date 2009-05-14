@@ -38,25 +38,25 @@ dispatch_requests(Req) ->
 		{not_found, {_Object, _Id}} ->
 			Error = probix_error:create(Method, Path, 'OBJECT_NOT_FOUND'),
 			Req:respond(
-			  probix_response:response_error_as(Format, 404, Error )
+			  response_error_as(Format, 404, Error )
 			 );
 		  {bad_input, _Message} ->
 			Error = probix_error:create(Method, Path, 'BAD_INPUT'),
 			Req:respond(
-			  probix_response:response_error_as(Format, 400, Error)
+			  response_error_as(Format, 400, Error)
 			 );
 		  {bad_request, _Message} ->
 			Error = probix_error:create(Method, Path, 'BAD_REQUEST'),
 			Req:respond(
-			  probix_response:response_error_as( Format, 400, Error ) );
+			  response_error_as( Format, 400, Error ) );
 		  {bad_format, _Message} ->
 			Error = probix_error:create(Method, Path, 'UNKNOWN_FORMAT'),
 			Req:respond(
-			  probix_response:response_error_as( Format, 406, Error ) );
+			  response_error_as( Format, 406, Error ) );
 		  _Exception ->
 			Error = probix_error:create(Method, Path, 'INTERNAL_ERROR'),
 			Req:respond(
-			  probix_response:response_error_as( Format, 500, Error)
+			  response_error_as( Format, 500, Error)
 			 )
 	end.
 
@@ -64,13 +64,13 @@ dispatch_requests(Req) ->
 handle(Format, 'GET', ["objects"], _,  _) ->
 	Objects = probix_object:read_all(),
 	Output = probix_object:output_handler_for(Format),
-	probix_response:response_content_as(Format, Output, Objects);
+	response_content_as(Format, Output, Objects);
 
 handle(Format, 'GET', ["object", Id_string], _, _) ->
 	Id = list_to_integer(Id_string),
 	Object = probix_object:read(Id), 
 	Output = probix_object:output_handler_for(Format),
-	probix_response:response_content_as(Format, Output, Object);
+	response_content_as(Format, Output, Object);
 
 handle(Format, 'PUT', ["object", Id_string], _, Post) ->
 	Id = list_to_integer(Id_string),
@@ -78,20 +78,20 @@ handle(Format, 'PUT', ["object", Id_string], _, Post) ->
 	Output = probix_object:output_handler_for(Format),
 	Record = Input(Post),
 	Result = probix_object:update(Id, Record),	
-	probix_response:response_content_as(Format, Output, Result);
+	response_content_as(Format, Output, Result);
 
 handle(Format, 'DELETE', ["object", Id_string], _, _) ->
 	Id = list_to_integer(Id_string),
 	Res = probix_object:delete(Id),
 	Output = probix_utils:data_output_handler_for(Format),
-	probix_response:response_content_as(Format, Output, Res);
+	response_content_as(Format, Output, Res);
 
 handle(Format, 'POST', ["object"], _, Post) ->
 	Input = probix_object:input_handler_for(Format),
 	Record = Input(Post),
 	Output = probix_object:output_handler_for(Format),
 	Result = probix_object:create(Record),
-	probix_response:response_content_as(Format, Output, Result);
+	response_content_as(Format, Output, Result);
 
 %% Getting all probes for object limited by timestamp
 handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
@@ -108,7 +108,7 @@ handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 		[From, To] ->
 			probix_probe:probes_by_object_id(Id, list_to_integer(From), list_to_integer(To))
 	end,
-	probix_response:response_content_as(Format, Output, Probes);
+	response_content_as(Format, Output, Probes);
 
 %% Creating list of probes for object
 handle(Format, 'POST', [ "object", Id_string, "probes"], _, Post) ->
@@ -117,11 +117,25 @@ handle(Format, 'POST', [ "object", Id_string, "probes"], _, Post) ->
 	Output = probix_probe:output_handler_for(Format),
 	Records = Input(Post),
 	Result = probix_probe:create(Id, Records),
-	probix_response:response_content_as(Format, Output, Result);
+	response_content_as(Format, Output, Result);
 
 handle(_, _, _, _,  _) -> 
 	throw({bad_request, "unknown request"}).
 
 
+response_content_as(json, Fun, Content) ->
+	Response = Fun(Content),
+	{200, [{"Content-Type", "text/json"}], Response};
+
+response_content_as(xml, _Fun, _Content) ->
+	not_implemented.
+
+response_error_as(json, Code, Content) ->
+	Fun = probix_error:output_handler_for(json),
+	Response = Fun(Content),
+	{Code, [{"Content-Type", "text/json"}], Response};
+
+response_error_as(xml, _Code, _Content) ->
+	not_implemented.
 
 
