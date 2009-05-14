@@ -73,13 +73,4 @@ record_to_json(L, Module) when is_list(L), is_atom(Module) ->
 		Any ->
 			Any
 	end.
-
-data_to_json(Data) ->
-	Encode = mochijson2:encoder([{utf8, true}]),
-	Encode(Data).
-	
-data_output_handler_for(json) ->
-	fun(Data) ->
-			data_to_json(Data)
-	end.
 			
