@@ -11,6 +11,7 @@ stop() ->
 
 dispatch_requests(Req) ->
 	Path = Req:get(path),
+	Method = Req:get(method),
 	
 	%% defining format
 	Format = case string:tokens(Path, ".") of
@@ -20,12 +21,13 @@ dispatch_requests(Req) ->
 				 [ _Path, "json" ] ->
 					 json;
 				 _Other ->
-					 throw({bad_format, "Bad format"})
-			 end,
-
+					 Req:respond(
+					   error( json, 406, probix_error:create(Method, Path, 'UNKNOWN_FORMAT') ) )
+				 end,
+	
 	%% preparing all required data
 	Splitted = string:tokens(Path, "/"),
-	Method = Req:get(method),
+
 	Post = Req:recv_body(),
 	Query = Req:parse_qs(),
 
@@ -49,10 +51,6 @@ dispatch_requests(Req) ->
 			Error = probix_error:create(Method, Path, 'BAD_REQUEST'),
 			Req:respond(
 			  error( Format, 400, Error ) );
-		  {bad_format, _Message} ->
-			Error = probix_error:create(Method, Path, 'UNKNOWN_FORMAT'),
-			Req:respond(
-			  error( Format, 406, Error ) );
 		  _Exception ->
 			Error = probix_error:create(Method, Path, 'INTERNAL_ERROR'),
 			Req:respond(
@@ -127,7 +125,7 @@ ok(json, Fun, Content) ->
 	{200, [{"Content-Type", "text/json"}], Response};
 
 ok(xml, _Fun, _Content) ->
-	not_implemented.
+	{501, [{"Content-Type", "text/xml"}], "Not implemented"};.
 
 ok() ->
 	{200, [{"Content-Type", "text/plain"}], ""}.
@@ -138,6 +136,6 @@ error(json, Code, Content) ->
 	{Code, [{"Content-Type", "text/json"}], Response};
 
 error(xml, _Code, _Content) ->
-	not_implemented.
+	{501, [{"Content-Type", "text/xml"}], "Not implemented"};.
 
 
