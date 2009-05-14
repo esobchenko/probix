@@ -6,7 +6,7 @@ Erlang >= R12B-5 is required;
 Mochiweb >= r99 required from http://code.google.com/p/mochiweb/ (with utf8 support in mochijson2).
 
 ------------------------------
-Running Probix core server
+Running Probix server
 ------------------------------
 
     $ git clone git@github.com:esobchenko/probix.git
@@ -15,11 +15,11 @@ Running Probix core server
     $ ./bin/acceptance.sh # all tests should pass.
     $ ./bin/start.sh
 
-Probix core server binds to 0.0.0.0:8000 by default, but you can change this
+Probix server binds to 0.0.0.0:8000 by default, however you can change this
 by setting PROBIX_SERVER_IP and PROBIX_SERVER_PORT environment variables.
 
 ------------------------------
-REST interface to Probix core
+Probix server REST API
 ------------------------------
 
 Currently there are two main entities implemented: object, probe.
@@ -27,7 +27,7 @@ Currently there are two main entities implemented: object, probe.
 Object - is a representation of monitoring object, parameter that is monitored.
 Probe - is a single measurement value for a specific Object.
 
-All data should be represented in JSON format for interaction.
+All data should be represented in JSON format.
 
 Following REST interface should be used to access data:
 
@@ -82,9 +82,10 @@ Here's what's going on with our various status codes:
 404 Not Found: either you're requesting an invalid URI or the resource in question doesn't exist (ex: no such object).
 500 Internal Server Error: we did something wrong.
 
-Error message format:
+Current error message format (it will be reconsidered):
 
 error: {
-	request: String,
-	error: String
+    request: String,
+    error: String
 }
+
