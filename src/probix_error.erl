@@ -27,22 +27,23 @@ output_handler_for(json) ->
 	end.
 
 get_message_for_code(Code) ->
-	case Code of 
-		'OBJECT_NOT_FOUND' ->
-			"Object with specified doesn't exist";
-		'OTHER_CODE' ->
-			"Something happened";
-		'BAD_REQUEST' ->
-			"Please write message for me";
-		'BAD_INPUT' ->
-			"Hey! Watcha sending to me?";
-		'UNKNOWN_FORMAT' ->
-			"Are you okay?"
-	end.
+	Message = case Code of 
+				  'OBJECT_NOT_FOUND' ->
+					  "Object with specified doesn't exist";
+				  'OTHER_CODE' ->
+					  "Something happened";
+				  'BAD_REQUEST' ->
+					  "Please write message for me";
+				  'BAD_INPUT' ->
+					  "Hey! Watcha sending to me?";
+				  'UNKNOWN_FORMAT' ->
+					  "Are you okay?"
+			  end,
+	list_to_binary(Message).
 
 create(Method, Url, Error) ->
 	#error{method = Method, 
-		   url = Url,
+		   url = list_to_binary(Url),
 		   error_code = Error,
 		   error_message = get_message_for_code(Error)
 		  }.
