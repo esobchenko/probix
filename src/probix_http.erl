@@ -125,7 +125,7 @@ ok(json, Fun, Content) ->
 	{200, [{"Content-Type", "text/json"}], Response};
 
 ok(xml, _Fun, _Content) ->
-	{501, [{"Content-Type", "text/xml"}], "Not implemented"};.
+	{501, [{"Content-Type", "text/xml"}], "Not implemented"}.
 
 ok() ->
 	{200, [{"Content-Type", "text/plain"}], ""}.
@@ -136,6 +136,6 @@ error(json, Code, Content) ->
 	{Code, [{"Content-Type", "text/json"}], Response};
 
 error(xml, _Code, _Content) ->
-	{501, [{"Content-Type", "text/xml"}], "Not implemented"};.
+	{501, [{"Content-Type", "text/xml"}], "Not implemented"}.
 
 
