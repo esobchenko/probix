@@ -30,7 +30,7 @@ output_handler_for(json) ->
 
 get_message_for_code(Code) ->
 	Message = case Code of
-		'OBJECT_NOT_FOUND' ->
+		'NOT_FOUND' ->
 			"object with specified doesn't exist";
 		'OTHER_CODE' ->
 			"something happened";

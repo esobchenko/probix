@@ -41,7 +41,7 @@ dispatch_requests(Req) ->
 		Req:respond(Response)
 	catch
 		{not_found, {_Object, _Id}} ->
-			Error = probix_error:create(Method, Path, 'OBJECT_NOT_FOUND'),
+			Error = probix_error:create(Method, Path, 'NOT_FOUND'),
 			Req:respond(
 				error(Format, 404, Error )
 			);
@@ -97,8 +97,7 @@ handle(Format, 'POST', ["object"], _, Post) ->
 handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 	Id = list_to_integer(Id_string),
 	Output = probix_probe:output_handler_for(Format),
-	Probes = case [proplists:get_value("from", Args), 
-		  proplists:get_value("to", Args)] of
+	Probes = case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
 		[undefined, undefined] ->
 			probix_probe:probes_by_object_id(Id);
 		[undefined, To] ->
