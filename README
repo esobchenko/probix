@@ -27,8 +27,6 @@ Currently there are two main entities implemented: object, probe.
 Object - is a representation of monitoring object, parameter that is monitored.
 Probe - is a single measurement value for a specific Object.
 
-All data should be represented in JSON format.
-
 Following REST interface should be used to access data:
 
 | Method  | URL                    |  Request data | Response data |
@@ -71,23 +69,23 @@ Args:
 Important: we use unix epoch as probe timestamp for now; the agents may work in
 different timezones so we will reconsider this later.
 
-------------------
+------------------------------
  Accepted formats
-------------------
+------------------------------
 
-Currently Probix Servers accepts JSON as a representation format, but will be extended to support many others.
+Currently Probix server accepts JSON as a representation format, but will be extended to support many others.
 
 To set the desired representation formats URI should be used as follows:
-http://PROBIX_SERVER_IP:PORT/Resource/Path/.format
+http://host:port/resource/path/.format
 
 For example to fetch object with id 15 as XML you should use:
-http://PROBIX_SERVER_IP:PORT/object/15.xml
+http://host:port/object/15.xml
 
 To create probes for object with id 5 from JSON you should use
-http://PROBIX_SERVER_IP:PORT/object/5/probes.json
+http://host:port/object/5/probes.json
 
 To fetch probes in xml within specific time range:
-http://PROBIX_SERVER_IP:PORT/object/5/probes.json?from=time1&to=time2
+http://host:port/object/5/probes.json?from=time1&to=time2
 
 --------------------------------
  Server Return Codes and Errors
@@ -104,22 +102,21 @@ Here's what's going on with our various status codes:
 406 Not Acceptable: you tried to set representation format that isn't known or supported
 500 Internal Server Error: we did something wrong.
 
-Current error message format (it will be reconsidered):
+--------------------------------
+Probix server error messages
+--------------------------------
 
 {
-	method: String,
+    method: String,
     url: String,
     error_code: String
-	error_message: String
+    error_message: String
 }
 
-where
-  method - one of GET, POST, PUT, DELETE
-  url - requested URL
-  error_code - special error code (e.g. OBJECT_NOT_FOUND, USER_NOT_FOUND, INVALID_JSON, OBJECT_EXISTS)
-  error_message - Human readable error message
-  
-  
-
+Where:
+ - method: one of GET, POST, PUT, DELETE
+ - url: requested URL
+ - error_code: special error code (e.g. OBJECT_NOT_FOUND, USER_NOT_FOUND, INVALID_JSON, OBJECT_EXISTS)
+ - error_message: human readable error message
 
 

@@ -22,6 +22,8 @@ record_name() ->
 record_fields() ->
 	record_info(fields, probe).
 
+%% input and output handlers are used by http module
+%% to convert between representation formats
 output_handler_for(json) ->
 	fun(Data) ->
 			probix_utils:record_to_json(Data, ?MODULE)
@@ -69,27 +71,27 @@ probes_by_object_id(Id) when is_integer(Id) ->
 
 probes_by_object_id(Id, {to, To}) ->
 	Q = qlc:q(
-		  [ P || P <- mnesia:table(probe), 
-				 P#probe.id_object =:= Id,
-				 P#probe.timestamp =< To ]
-		 ),
+		[ P || P <- mnesia:table(probe),
+		P#probe.id_object =:= Id,
+		P#probe.timestamp =< To ]
+	),
 	probix_db:find(Q);
 
 probes_by_object_id(Id, {from, From}) ->
 	Q = qlc:q(
-		  [ P || P <- mnesia:table(probe), 
-				 P#probe.id_object =:= Id,
-				 P#probe.timestamp >= From ]
-		 ),
+		[ P || P <- mnesia:table(probe),
+		P#probe.id_object =:= Id,
+		P#probe.timestamp >= From ]
+	),
 	probix_db:find(Q).
 
 probes_by_object_id(Id, From, To) ->
 	Q = qlc:q(
-		  [ P || P <- mnesia:table(probe), 
-				 P#probe.id_object =:= Id, 
-				 P#probe.timestamp >= From,
-				 P#probe.timestamp =< To ]
-		 ),
+		[ P || P <- mnesia:table(probe),
+		P#probe.id_object =:= Id,
+		P#probe.timestamp >= From,
+		P#probe.timestamp =< To ]
+	),
 	probix_db:find(Q).
 
 read(Id) when is_integer(Id) ->
@@ -99,25 +101,3 @@ delete(Id) when is_integer(Id) ->
 	probix_db:delete({probe, Id}),
 	Id.
 
-
-%create_from(json, Id, Json) ->
-%	R = probix_utils:json_to_record(Json, ?MODULE),
-%	Probe = create(Id, R),
-%	probix_utils:record_to_json(Probe, ?MODULE).
-
-
-%read_as(json, Id) when is_integer(Id) ->
-%	Probe = read(Id),
-%	probix_utils:record_to_json(Probe, ?MODULE).
-
-%probes_by_object_id_as(json, Id) when is_integer(Id) ->
-%	probix_utils:record_to_json(probes_by_object_id(Id), ?MODULE).
-
-%probes_by_object_id_as(json, Id, {to, To}) when is_integer(Id) ->
-%	probix_utils:record_to_json(probes_by_object_id(Id, {to, To}), ?MODULE);
-
-%probes_by_object_id_as(json, Id, {from, From}) when is_integer(Id) ->
-%	probix_utils:record_to_json(probes_by_object_id(Id, {from, From}), ?MODULE).
-
-%probes_by_object_id_as(json, Id, From, To) when is_integer(Id) ->
-%	probix_utils:record_to_json(probes_by_object_id(Id, From, To), ?MODULE).

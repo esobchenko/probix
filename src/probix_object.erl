@@ -21,6 +21,8 @@ record_name() ->
 record_fields() ->
 	record_info(fields, object).
 
+%% input and output handlers are used by http module
+%% to convert between representation formats
 output_handler_for(json) ->
 	fun(Data) ->
 			probix_utils:record_to_json(Data, ?MODULE)
@@ -52,19 +54,3 @@ delete(Id) when is_integer(Id) ->
 	probix_db:delete({object, Id}),
 	Id.
 
-%% create_from(json, Json) ->
-%%	R = probix_utils:json_to_record(Json, ?MODULE),
-%%	Object = create(R),
-%%	probix_utils:record_to_json(Object, ?MODULE).
-
-%% read_all_as(json) ->
-%%	 probix_utils:record_to_json(read_all(), ?MODULE).
-
-%% read_as(json, Id) when is_integer(Id) ->
-%%	 Object = read(Id),
-%%	 probix_utils:record_to_json(Object, ?MODULE).
-
-%%update_from(json, Id, Json) when is_integer(Id) ->
-%%	Object = probix_utils:json_to_record(Json, ?MODULE),
-%%	Updated = update(Id, Object),
-%%	probix_utils:record_to_json(Updated, ?MODULE).

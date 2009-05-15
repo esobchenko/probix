@@ -17,17 +17,14 @@
 -define(J4, probix_utils:record_to_json(?P4, probix_probe)).
 -define(J5, probix_utils:record_to_json(?P5, probix_probe)).
 
-
-
-
-basic_crud_test_() ->
+basic_test_() ->
 	{
 		setup,
 		fun() -> probix_db:reset() end,
-		fun generate_basic_crud_tests/1
+		fun generate_basic_tests/1
 	}.
 
-generate_basic_crud_tests(_) ->
+generate_basic_tests(_) ->
 	[
 		?_assertThrow(
 			{not_found, _}, %% foreign key constraint check raise exception
@@ -94,39 +91,4 @@ generate_basic_crud_tests(_) ->
 			probix_probe:probes_by_object_id(1, 1237923726, 1237923726)
 		)
 	].
-
-%basic_json_test_() ->
-%	{
-%		setup,
-%		fun() -> probix_db:reset() end,
-%		fun generate_basic_json_tests/1
-%	}.
-
-%generate_basic_json_tests(_) ->
-%	[
-%		?_assertMatch(
-%			?O1,
-%			probix_object:create(?O1)
-%		),
-%		?_assertEqual(
-%			probix_utils:record_to_json([?P1], probix_probe),
-%			probix_probe:create_from(json, 1, ?J1)
-%		),
-%		?_assertEqual(
-%			?J1,
-%			probix_probe:read_as(json, 1)
-%		),
-%		?_assertEqual(
-%			probix_utils:record_to_json([?P1], probix_probe),
-%			probix_probe:probes_by_object_id_as(json, 1)
-%		),
-%		?_assertEqual(
-%			1,
-%			probix_probe:delete(1)
-%		),
-%		?_assertEqual(
-%			probix_utils:record_to_json([], probix_probe),
-%			probix_probe:probes_by_object_id_as(json, 1)
-%		)
-%	].
 

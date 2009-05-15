@@ -10,54 +10,57 @@ stop() ->
 	mochiweb_http:stop(?MODULE).
 
 dispatch_requests(Req) ->
+	%% uri path
 	Path = Req:get(path),
+	%% http method
 	Method = Req:get(method),
-	
+
 	%% defining format
 	Format = case string:tokens(Path, ".") of
-				 [ _Path ] ->
-					 json;
-				 %% feel free to add more formats here
-				 [ _Path, "json" ] ->
-					 json;
-				 _Other ->
-					 Req:respond(
-					   error( json, 406, probix_error:create(Method, Path, 'UNKNOWN_FORMAT') ) )
-				 end,
-	
-	%% preparing all required data
-	Splitted = string:tokens(Path, "/"),
+		[ _Path ] ->
+			json;
+		%% add more data representation formats here
+		[ _Path, "json" ] ->
+			json;
+		_Other ->
+			Req:respond(
+				error( json, 406, probix_error:create(Method, Path, 'UNKNOWN_FORMAT') )
+			)
+	end,
 
+	%% splitted path string
+	Splitted = string:tokens(Path, "/"),
+	%% post body
 	Post = Req:recv_body(),
+	%% uri query string as proplist
 	Query = Req:parse_qs(),
 
-	%%	io:format("~p request for ~p with post: ~p, query: ~p~n", [Method, Splitted, Post, Query]),
-
 	try
+		%% each handle function returns mochiweb's http response tuple
 		Response = handle(Format, Method, Splitted, Query, Post),
 		Req:respond(Response)
 	catch
 		{not_found, {_Object, _Id}} ->
 			Error = probix_error:create(Method, Path, 'OBJECT_NOT_FOUND'),
 			Req:respond(
-			  error(Format, 404, Error )
-			 );
-		  {bad_input, _Message} ->
+				error(Format, 404, Error )
+			);
+		{bad_input, _Message} ->
 			Error = probix_error:create(Method, Path, 'BAD_INPUT'),
 			Req:respond(
-			  error(Format, 400, Error)
-			 );
-		  {bad_request, _Message} ->
+				error(Format, 400, Error)
+			);
+		{bad_request, _Message} ->
 			Error = probix_error:create(Method, Path, 'BAD_REQUEST'),
 			Req:respond(
-			  error( Format, 400, Error ) );
-		  _Exception ->
+				error( Format, 400, Error )
+			);
+		_Exception ->
 			Error = probix_error:create(Method, Path, 'INTERNAL_ERROR'),
 			Req:respond(
-			  error( Format, 500, Error)
-			 )
+				error( Format, 500, Error)
+			)
 	end.
-
 
 handle(Format, 'GET', ["objects"], _,  _) ->
 	Objects = probix_object:read_all(),
@@ -116,17 +119,22 @@ handle(Format, 'POST', [ "object", Id_string, "probes"], _, Post) ->
 	Result = probix_probe:create(Id, Records),
 	ok(Format, Output, Result);
 
-handle(_, _, _, _,  _) -> 
+handle(_, _, _, _, _) ->
 	throw({bad_request, "unknown request"}).
 
+%%
+%% ok and error functions help to construct mochiweb's http response tuples;
+%% they used in handle/5 functions.
+%%
 
 ok(json, Fun, Content) ->
 	Response = Fun(Content),
 	{200, [{"Content-Type", "text/json"}], Response};
 
 ok(xml, _Fun, _Content) ->
-	{501, [{"Content-Type", "text/xml"}], "Not implemented"}.
+	{501, [{"Content-Type", "text/xml"}], "not implemented yet"}.
 
+%% XXX text/plain? what the fuck?!
 ok() ->
 	{200, [{"Content-Type", "text/plain"}], ""}.
 
@@ -136,6 +144,6 @@ error(json, Code, Content) ->
 	{Code, [{"Content-Type", "text/json"}], Response};
 
 error(xml, _Code, _Content) ->
-	{501, [{"Content-Type", "text/xml"}], "Not implemented"}.
+	{501, [{"Content-Type", "text/xml"}], "not implemented yet"}.
 
 
