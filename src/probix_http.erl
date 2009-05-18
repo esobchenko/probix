@@ -1,40 +1,40 @@
 -module(probix_http).
--export([start/1, stop/0, dispatch_requests/1, handle/5]).
+-export([start/1, stop/0, main_loop/1, dispatch_requests/6, handle/5]).
 
 -include_lib("eunit/include/eunit.hrl").
 
 start(Options) ->
-	mochiweb_http:start([{name, ?MODULE}, {loop, fun dispatch_requests/1} | Options]).
+	mochiweb_http:start([{name, ?MODULE}, {loop, fun main_loop/1} | Options]).
 
 stop() ->
 	mochiweb_http:stop(?MODULE).
 
-dispatch_requests(Req) ->
-	%% uri path
-	Path = Req:get(path),
+main_loop(Req) ->
 	%% http method
 	Method = Req:get(method),
+	%% uri path
+	Path = Req:get(path),
+	%% uri query string as proplist
+	Query = Req:parse_qs(),
+	%% post body
+	Post = Req:recv_body(),
 
 	%% defining format
-	Format = case string:tokens(Path, ".") of
+	case string:tokens(Path, ".") of
 		[ _Path ] ->
-			json;
+			dispatch_requests(Req, json, Method, Path, Query, Post);
 		%% add more data representation formats here
 		[ _Path, "json" ] ->
-			json;
+			dispatch_requests(Req, json, Method, Path, Query, Post);
 		_Other ->
 			Req:respond(
 				error( json, 406, probix_error:create(Method, Path, 'UNKNOWN_FORMAT') )
 			)
-	end,
+	end.
 
-	%% splitted path string
+dispatch_requests(Req, Format, Method, Path, Query, Post) ->
+	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
-	%% post body
-	Post = Req:recv_body(),
-	%% uri query string as proplist
-	Query = Req:parse_qs(),
-
 	try
 		%% each handle function returns mochiweb's http response tuple
 		Response = handle(Format, Method, Splitted, Query, Post),
