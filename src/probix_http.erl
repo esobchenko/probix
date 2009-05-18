@@ -1,15 +1,27 @@
 -module(probix_http).
--export([start/1, stop/0, main_loop/1, dispatch_requests/6, handle/5]).
+-export([start/1, stop/0, dispatch_requests/1, handle/5]).
 
 -include_lib("eunit/include/eunit.hrl").
 
 start(Options) ->
-	mochiweb_http:start([{name, ?MODULE}, {loop, fun main_loop/1} | Options]).
+	mochiweb_http:start([{name, ?MODULE}, {loop, fun dispatch_requests/1} | Options]).
 
 stop() ->
 	mochiweb_http:stop(?MODULE).
 
-main_loop(Req) ->
+parse_format(Path) ->
+	case string:tokens(Path, ".") of
+		[ _Path ] ->
+			json;
+		%% add more data representation formats here
+		[ _Path, "json" ] ->
+			json;
+		_Other ->
+			unknown_format
+	end.
+
+	
+dispatch_requests(Req) ->
 	%% http method
 	Method = Req:get(method),
 	%% uri path
@@ -18,24 +30,14 @@ main_loop(Req) ->
 	Query = Req:parse_qs(),
 	%% post body
 	Post = Req:recv_body(),
-
-	%% defining format
-	case string:tokens(Path, ".") of
-		[ _Path ] ->
-			dispatch_requests(Req, json, Method, Path, Query, Post);
-		%% add more data representation formats here
-		[ _Path, "json" ] ->
-			dispatch_requests(Req, json, Method, Path, Query, Post);
-		_Other ->
-			Req:respond(
-				error( json, 406, probix_error:create(Method, Path, 'UNKNOWN_FORMAT') )
-			)
-	end.
-
-dispatch_requests(Req, Format, Method, Path, Query, Post) ->
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
+
+	Format = parse_format(Path),
+
 	try
+		unknown_format =:= Format andalso throw({unknown_format, "Unknown format"}),
+				
 		%% each handle function returns mochiweb's http response tuple
 		Response = handle(Format, Method, Splitted, Query, Post),
 		Req:respond(Response)
@@ -43,7 +45,7 @@ dispatch_requests(Req, Format, Method, Path, Query, Post) ->
 		{not_found, {_Object, _Id}} ->
 			Error = probix_error:create(Method, Path, 'NOT_FOUND'),
 			Req:respond(
-				error(Format, 404, Error )
+				error(Format, 404, Error)
 			);
 		{bad_input, _Message} ->
 			Error = probix_error:create(Method, Path, 'BAD_INPUT'),
@@ -53,12 +55,17 @@ dispatch_requests(Req, Format, Method, Path, Query, Post) ->
 		{bad_request, _Message} ->
 			Error = probix_error:create(Method, Path, 'BAD_REQUEST'),
 			Req:respond(
-				error( Format, 400, Error )
+				error(Format, 400, Error)
+			);
+		{unknown_format, _Message} ->
+			Error = probix_error:create(Method, Path, 'UNKNOWN_FORMAT'),
+			Req:respond(
+				error(json, 406, Error)
 			);
 		_Exception ->
 			Error = probix_error:create(Method, Path, 'INTERNAL_ERROR'),
 			Req:respond(
-				error( Format, 500, Error)
+				error(Format, 500, Error)
 			)
 	end.
 
