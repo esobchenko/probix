@@ -11,8 +11,8 @@ ensure_started(App) ->
 
 start() ->
 	ensure_started(crypto),
+	probix_db:init(), %% schema should be created before mnesia is started
 	ensure_started(mnesia),
-	probix_db:init(),
 	application:start(probix).
 
 stop() ->

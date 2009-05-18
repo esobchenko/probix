@@ -32,12 +32,11 @@ dispatch_requests(Req) ->
 	Post = Req:recv_body(),
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
-
+	%% parse format from path
 	Format = parse_format(Path),
 
 	try
-		unknown_format =:= Format andalso throw({unknown_format, "Unknown format"}),
-				
+		unknown_format =:= Format andalso throw({unknown_format, "unknown format"}),
 		%% each handle function returns mochiweb's http response tuple
 		Response = handle(Format, Method, Splitted, Query, Post),
 		Req:respond(Response)
