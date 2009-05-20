@@ -28,25 +28,27 @@ output_handler_for(json) ->
 			probix_utils:record_to_json(Data, ?MODULE)
 	end.
 
-get_message_for_code(Code) ->
-	Message = case Code of
-		'NOT_FOUND' ->
-			"object with specified doesn't exist";
-		'OTHER_CODE' ->
-			"something happened";
-		'BAD_REQUEST' ->
-			"please write message for me";
-		'BAD_INPUT' ->
-			"hey! Watcha sending to me?";
-		'UNKNOWN_FORMAT' ->
-			"are you okay?"
-	end,
-	list_to_binary(Message).
 
-create(Method, Url, Error) ->
+%% returns http numeric response code 
+%% for error record
+get_http_code(Error) when is_record(Error, error) ->
+	case Error#error.code of
+		not_found ->
+			404;
+		unknown_format ->
+			406;
+		internal_error ->
+			500;
+		_Other ->
+			400
+	end.
+
+add_http_values(Error, Method, Url) ->
+	Tmp = Error#error{url = list_to_binary(Url)},
+	Tmp#error{method = Method}.
+
+create(Error_Code, Message) ->
 	#error{
-		method = Method,
-		url = list_to_binary(Url),
-		error_code = Error,
-		error_message = get_message_for_code(Error)
+		code = Error_Code,
+		message = list_to_binary(Message)
 	}.

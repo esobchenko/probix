@@ -52,9 +52,9 @@ transaction(F) ->
 		{atomic, Result} ->
 			Result;
 		{aborted, {throw, Exception}} ->
-			throw(Exception);
+			erlang:throw(Exception);
 		{aborted, Reason} ->
-			throw({db_error, Reason})
+			erlang:error({db_error, Reason})
 	end.
 
 read_all(Table) ->
@@ -69,7 +69,7 @@ read(Oid) ->
 		[ Object ] ->
 			Object;
 		[] ->
-			throw({not_found, Oid})
+			throw(probix_error:create(not_found, "not found"))
 	end.
 
 create(Rec) when is_tuple(Rec) ->

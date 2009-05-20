@@ -1,6 +1,7 @@
 -module(probix_utils_tests).
 -compile(export_all).
 
+-include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -record(foo, {foo, bar}).
@@ -34,11 +35,11 @@ json_term_to_record_test_() ->
 			probix_utils:json_term_to_record({struct,[{<<"foo">>,1},{<<"bar">>,2}]}, ?MODULE)
 		),
 		?_assertThrow(
-			{bad_input, _}, %% missing parameters
+			#error{code = bad_input}, %% missing parameters
 			probix_utils:json_term_to_record({struct,[{<<"bar">>,3}]}, ?MODULE)
 		),
 		?_assertThrow(
-			{bad_input, _}, %% bad values
+			#error{ code = bad_input }, %% bad values
 			probix_utils:json_term_to_record({struct,[{<<"foo">>,{struct,[<<"baz">>,1]}}]}, ?MODULE)
 		)
 	].
@@ -70,11 +71,11 @@ record_to_json_test_() ->
 json_to_record_test_() ->
 	[
 		?_assertThrow(
-			{bad_input, _}, %% improper json term
+			#error{code = bad_input}, %% improper json term
 			probix_utils:json_to_record(<<"[1]">>, ?MODULE)
 		),
 		?_assertThrow(
-			{bad_input, _}, %% bad json
+			#error{code = bad_input}, %% bad json
 			probix_utils:json_to_record(<<"bad json">>, ?MODULE)
 		),
 		?_assertMatch(

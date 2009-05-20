@@ -27,7 +27,7 @@ basic_test_() ->
 generate_basic_tests(_) ->
 	[
 		?_assertThrow(
-			{not_found, _}, %% foreign key constraint check raise exception
+			#error{code = not_found}, %% foreign key constraint check raise exception
 			probix_probe:create(1, ?P1)
 		),
 		?_assertMatch(
@@ -43,7 +43,7 @@ generate_basic_tests(_) ->
 			probix_probe:read(1)
 		),
 		?_assertThrow(
-			{not_found, {probe, 2}},
+			#error{code = not_found},
 			probix_probe:read(2)
 		),
 		?_assertMatch(

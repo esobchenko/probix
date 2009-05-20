@@ -45,7 +45,7 @@ create(Id_object, List) when is_list(List), is_integer(Id_object) ->
 			end,
 			List
 		),
-		[] =:= Bad orelse throw({bad_input, "some probes have wrong object_id"}),
+		[] =:= Bad orelse throw(probix_error:create(bad_input, "some probes have wrong object_id")),
 
 		Probes = lists:map(
 			fun(R) ->
@@ -95,7 +95,12 @@ probes_by_object_id(Id, From, To) ->
 	probix_db:find(Q).
 
 read(Id) when is_integer(Id) ->
-	probix_db:read({probe, Id}).
+	try
+		probix_db:read({probe, Id})
+	catch
+		throw:#error{code = not_found} ->
+			throw(probix_error:create(not_found, "Probe with id " ++ integer_to_list(Id) ++ "doesn't exist"))
+	end.
 
 delete(Id) when is_integer(Id) ->
 	probix_db:delete({probe, Id}),

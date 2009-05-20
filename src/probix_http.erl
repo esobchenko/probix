@@ -1,6 +1,7 @@
 -module(probix_http).
 -export([start/1, stop/0, dispatch_requests/1, handle/5]).
 
+-include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 start(Options) ->
@@ -36,37 +37,20 @@ dispatch_requests(Req) ->
 	Format = parse_format(Path),
 
 	try
-		unknown_format =:= Format andalso throw({unknown_format, "Unknown format"}),
+		unknown_format =:= Format andalso throw(probix_error:create(unknown_format, "you requested format that isn't supported yet or never will be")),
 				
 		%% each handle function returns mochiweb's http response tuple
 		Response = handle(Format, Method, Splitted, Query, Post),
 		Req:respond(Response)
 	catch
-		{not_found, {_Object, _Id}} ->
-			Error = probix_error:create(Method, Path, 'NOT_FOUND'),
-			Req:respond(
-				error(Format, 404, Error)
-			);
-		{bad_input, _Message} ->
-			Error = probix_error:create(Method, Path, 'BAD_INPUT'),
-			Req:respond(
-				error(Format, 400, Error)
-			);
-		{bad_request, _Message} ->
-			Error = probix_error:create(Method, Path, 'BAD_REQUEST'),
-			Req:respond(
-				error(Format, 400, Error)
-			);
-		{unknown_format, _Message} ->
-			Error = probix_error:create(Method, Path, 'UNKNOWN_FORMAT'),
-			Req:respond(
-				error(json, 406, Error)
-			);
+		throw:Error when is_record(Error, error) ->
+			%% we can uncomment this if we want to add path and method to 
+			%% returned error
+			HttpError = probix_error:add_http_values(Error, Method, Path),
+			Req:respond(error(Format, HttpError));
 		_Exception ->
-			Error = probix_error:create(Method, Path, 'INTERNAL_ERROR'),
-			Req:respond(
-				error(Format, 500, Error)
-			)
+			Error = probix_error:create(internal_error, "something bad happened"),
+			Req:respond(error(Format, probix_error:add_http_values(Error, Method, Path)))
 	end.
 
 handle(Format, 'GET', ["objects"], _,  _) ->
@@ -126,7 +110,7 @@ handle(Format, 'POST', [ "object", Id_string, "probes"], _, Post) ->
 	ok(Format, Output, Result);
 
 handle(_, _, _, _, _) ->
-	throw({bad_request, "unknown request"}).
+	throw(probix_error:create(bad_request, "unknown request")).
 
 %%
 %% ok and error functions help to construct mochiweb's http response tuples;
@@ -144,12 +128,13 @@ ok(xml, _Fun, _Content) ->
 ok() ->
 	{200, [{"Content-Type", "text/plain"}], ""}.
 
-error(json, Code, Content) ->
+error(json, Error) ->
 	Fun = probix_error:output_handler_for(json),
-	Response = Fun(Content),
+	Code = probix_error:get_http_code(Error),
+	Response = Fun(Error),
 	{Code, [{"Content-Type", "text/json"}], Response};
 
-error(xml, _Code, _Content) ->
+error(xml, _Content) ->
 	{501, [{"Content-Type", "text/xml"}], "not implemented yet"}.
 
 

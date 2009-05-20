@@ -27,7 +27,7 @@ generate_basic_tests(_) ->
 			probix_object:read(1)
 		),
 		?_assertThrow(
-			{not_found, {object, 2}},
+			#error{code = not_found},
 			probix_object:read(2)
 		),
 		?_assertMatch(
