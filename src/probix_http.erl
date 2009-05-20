@@ -33,7 +33,7 @@ dispatch_requests(Req) ->
 	Post = Req:recv_body(),
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
-
+	%% parse format from path
 	Format = parse_format(Path),
 
 	try
@@ -101,13 +101,16 @@ handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 	ok(Format, Output, Probes);
 
 %% Creating list of probes for object
-handle(Format, 'POST', [ "object", Id_string, "probes"], _, Post) ->
+handle(Format, 'POST', [ "object", Id_string, "probes"], Args, Post) ->
 	Id = list_to_integer(Id_string),
 	Input = probix_probe:input_handler_for(Format),
 	Output = probix_probe:output_handler_for(Format),
 	Records = Input(Post),
 	Result = probix_probe:create(Id, Records),
-	ok(Format, Output, Result);
+	case proplists:get_value("return", Args) of
+		"1" -> ok(Format, Output, Result);
+		_Other -> ok()
+	end;
 
 handle(_, _, _, _, _) ->
 	throw(probix_error:create(bad_request, "unknown request")).
