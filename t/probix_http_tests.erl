@@ -175,6 +175,11 @@ generate_basic_object_crud_tests(_) ->
 		?_assertEqual(
 			{200, list_to_binary("[" ++ binary_to_list(?JP3) ++ "]")},
 			rest_req('POST',"/object/2/probes?return=1","[" ++ binary_to_list(?JP3) ++ "]")
+		),
+		%% unknown_format error
+		?_assertMatch(
+			{406, _},
+			rest_req('GET', "/objects.foobar")
 		)
 	].
 
