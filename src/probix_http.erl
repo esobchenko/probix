@@ -46,7 +46,11 @@ dispatch_requests(Req) ->
 		%% each handle function returns mochiweb's http response tuple
 		handle(Format, Method, Splitted, Query, Post)
 	catch
+		%% unknown_format exception (it should be displayed in json)
+		throw:Unknown = #error{code=unknown_format} -> error(json, Unknown);
+		%% regular throw exceptions
 		throw:Error when is_record(Error, error) -> error(Format, Error);
+		%% erlang errors and other exceptions
 		_Exception ->
 			Error = probix_error:create(internal_error, "something bad happened"),
 			error(Format, Error)
@@ -101,7 +105,7 @@ handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 	ok(Format, Output, Probes);
 
 %% Creating list of probes for object
-handle(Format, 'POST', [ "object", Id_string, "probes"], Args, Post) ->
+handle(Format, 'POST', [ "object", Id_string, "probes" ], Args, Post) ->
 	Id = list_to_integer(Id_string),
 	Input = probix_probe:input_handler_for(Format),
 	Output = probix_probe:output_handler_for(Format),
@@ -113,7 +117,9 @@ handle(Format, 'POST', [ "object", Id_string, "probes"], Args, Post) ->
 	end;
 
 handle(_, _, _, _, _) ->
-	throw(probix_error:create(bad_request, "unknown request")).
+	throw(
+		probix_error:create(bad_request, "unknown request")
+	).
 
 %%
 %% ok and error functions help to construct mochiweb's http response tuples;
