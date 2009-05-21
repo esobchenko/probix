@@ -47,7 +47,12 @@ read(Id) when is_integer(Id) ->
 		probix_db:read({object, Id})
 	catch
 		_Error = #error{code = not_found} ->
-			throw(probix_error:create(not_found, "object with id " ++ integer_to_list(Id) ++ " doesn't exist"))
+			throw(
+				probix_error:create(
+					not_found,
+					"object with id " ++ integer_to_list(Id) ++ " doesn't exist"
+				)
+			)
 	end.
 
 
@@ -57,7 +62,12 @@ update(Id, R) when is_record(R, object), is_integer(Id) ->
 		probix_db:update(Object)
 	catch
 		#error{code = not_found} ->
-			throw(probix_error:create(not_found, "object with id " ++ integer_to_list(Id) ++ " doesn't exist"))
+			throw(
+				probix_error:create(
+					not_found,
+					"object with id " ++ integer_to_list(Id) ++ " doesn't exist"
+				)
+			)
 	end,
 	Object.
 
@@ -66,7 +76,12 @@ delete(Id) when is_integer(Id) ->
 		probix_db:delete({object, Id})
 	catch
 		#error{code = not_found} ->
-			throw(probix_error:create(not_found, "object with id " ++ integer_to_list(Id) ++ " doesn't exist"))
+			throw(
+				probix_error:create(
+					not_found,
+					"object with id " ++ integer_to_list(Id) ++ " doesn't exist"
+				)
+			)
 	end,
 	Id.
 

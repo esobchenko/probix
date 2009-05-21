@@ -16,7 +16,9 @@ json_term_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
 		end,
 		Required
 	),
-	[] =:= Missing orelse erlang:throw(probix_error:create(bad_input, "missing required parameters")),
+	[] =:= Missing orelse throw(
+		probix_error:create(bad_input, "missing required parameters")
+	),
 	%% get list of keys that have unacceptable values
 	Bad = lists:filter(
 		fun(Key) ->
@@ -24,7 +26,9 @@ json_term_to_record({struct, Proplist}, Module) when is_list(Proplist) ->
 		end,
 		Fields
 	),
-	[] =:= Bad orelse throw(probix_error:create(bad_input, "unacceptable values detected")),
+	[] =:= Bad orelse throw(
+		probix_error:create(bad_input, "unacceptable values detected")
+	),
 	Values = [ proplists:get_value( atom_to_binary(Key), Proplist ) || Key <- Fields ],
 	list_to_tuple( [Module:record_name()|Values] );
 
@@ -33,12 +37,17 @@ json_term_to_record(List, Module) when is_list(List) -> lists:map(
 			({struct, X}) ->
 				json_term_to_record({struct, X}, Module);
 			(_Term) ->
-				erlang:throw(probix_error:create(bad_input, "improper json term in list"))
+				throw(
+					probix_error:create(bad_input, "improper json term in list")
+				)
 		end,
 		List
 	);
 
-json_term_to_record(_Term, _Module) -> erlang:throw(probix_error:create(bad_input, "can't parse data to valid data structure")).
+json_term_to_record(_Term, _Module) ->
+	throw(
+		probix_error:create(bad_input, "can't parse data to valid data structure")
+	).
 
 is_valid_record(R, Module) when is_tuple(R), is_atom(Module) ->
 	Tag = Module:record_name(),
@@ -57,7 +66,9 @@ json_to_record(Json, Module) when is_atom(Module) ->
 	try mochijson2:decode(Json) of
 		Term -> json_term_to_record(Term, Module)
 	catch
-		error:_Any -> erlang:throw(probix_error:create(bad_input, "invalid json"))
+		error:_Any -> throw(
+			probix_error:create(bad_input, "invalid json")
+		)
 	end.
 
 record_to_json(R, Module) when is_tuple(R), is_atom(Module) ->
@@ -73,4 +84,4 @@ record_to_json(L, Module) when is_list(L), is_atom(Module) ->
 		Any ->
 			Any
 	end.
-			
+

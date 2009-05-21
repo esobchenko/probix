@@ -36,22 +36,22 @@ dispatch_requests(Req) ->
 	%% parse format from path
 	Format = parse_format(Path),
 
-	try
-		unknown_format =:= Format andalso throw(probix_error:create(unknown_format, "you requested format that isn't supported yet or never will be")),
-				
+	R = try
+		unknown_format =:= Format andalso throw(
+			probix_error:create(
+				unknown_format,
+				"you requested format that isn't supported yet or never will be"
+			)
+		),
 		%% each handle function returns mochiweb's http response tuple
-		Response = handle(Format, Method, Splitted, Query, Post),
-		Req:respond(Response)
+		handle(Format, Method, Splitted, Query, Post)
 	catch
-		throw:Error when is_record(Error, error) ->
-			%% we can uncomment this if we want to add path and method to 
-			%% returned error
-			HttpError = probix_error:add_http_values(Error, Method, Path),
-			Req:respond(error(Format, HttpError));
+		throw:Error when is_record(Error, error) -> error(Format, Error);
 		_Exception ->
 			Error = probix_error:create(internal_error, "something bad happened"),
-			Req:respond(error(Format, probix_error:add_http_values(Error, Method, Path)))
-	end.
+			error(Format, Error)
+	end,
+	Req:respond(R).
 
 handle(Format, 'GET', ["objects"], _,  _) ->
 	Objects = probix_object:read_all(),
@@ -133,11 +133,22 @@ ok() ->
 
 error(json, Error) ->
 	Fun = probix_error:output_handler_for(json),
-	Code = probix_error:get_http_code(Error),
-	Response = Fun(Error),
-	{Code, [{"Content-Type", "text/json"}], Response};
+	{http_code(Error), [{"Content-Type", "text/json"}], Fun(Error)};
 
 error(xml, _Content) ->
 	{501, [{"Content-Type", "text/xml"}], "not implemented yet"}.
 
+%% returns http numeric response code for
+%% given error according to specification
+http_code(Error) when is_record(Error, error) ->
+	case Error#error.code of
+		not_found ->
+			404;
+		unknown_format ->
+			406;
+		internal_error ->
+			500;
+		_Other ->
+			400
+	end.
 
