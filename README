@@ -70,25 +70,26 @@ Important: we use unix epoch as probe timestamp for now; the agents may work in
 different timezones so we will reconsider this later.
 
 ------------------------------
- Accepted formats
+Probix server formats
 ------------------------------
 
-Currently Probix server accepts JSON as a representation format, but will be extended to support many others.
+Currently Probix server accepts JSON as a representation format. Support for
+XML and other formats will be added in nearest future.
 
-To set the desired representation formats URI should be used as follows:
+Use following URI pattern to specify the desired representation format:
 http://host:port/resource/path/.format
 
 For example to fetch object with id 15 as XML you should use:
 http://host:port/object/15.xml
 
 To create probes for object with id 5 from JSON you should use
-http://host:port/object/5/probes.json
+http://host:port/object/5/probe.json
 
-To fetch probes in xml within specific time range:
+To fetch probes in XML within specific time range:
 http://host:port/object/5/probes.json?from=time1&to=time2
 
 --------------------------------
- Server Return Codes and Errors
+Probix server return codes
 --------------------------------
 
 The API attempts to return appropriate HTTP status codes for every request.
@@ -103,20 +104,16 @@ Here's what's going on with our various status codes:
 500 Internal Server Error: we did something wrong.
 
 --------------------------------
-Probix server error messages
+Probix server error struct
 --------------------------------
 
 {
-    method: String,
-    url: String,
-    error_code: String
-    error_message: String
+    code: String
+    message: String
 }
 
 Where:
- - method: one of GET, POST, PUT, DELETE
- - url: requested URL
- - error_code: special error code (e.g. OBJECT_NOT_FOUND, USER_NOT_FOUND, INVALID_JSON, OBJECT_EXISTS)
- - error_message: human readable error message
+ - code: special error code (e.g. bad_request or not_found)
+ - message: human readable error message
 
 

@@ -144,12 +144,12 @@ generate_basic_object_crud_tests(_) ->
 		%% to object 2 in URL
 		?_assertMatch(
 			{400, _},
-			rest_req('POST',"/object/2/probes","[" ++ binary_to_list(?JP4) ++ ", " ++ binary_to_list(?JP5) ++ "]")
+			rest_req('POST',"/object/2/probe","[" ++ binary_to_list(?JP4) ++ ", " ++ binary_to_list(?JP5) ++ "]")
 		),
 		%% finally we are adding 2 probes to object 2
 		?_assertMatch(
 			{200, _},
-			rest_req('POST',"/object/2/probes","[" ++ binary_to_list(?JP1) ++ ", " ++ binary_to_list(?JP2) ++ "]")
+			rest_req('POST',"/object/2/probe","[" ++ binary_to_list(?JP1) ++ ", " ++ binary_to_list(?JP2) ++ "]")
 		),
 		%% getting all probes
 		?_assertEqual(
@@ -174,7 +174,7 @@ generate_basic_object_crud_tests(_) ->
 		%% add probe + return it
 		?_assertEqual(
 			{200, list_to_binary("[" ++ binary_to_list(?JP3) ++ "]")},
-			rest_req('POST',"/object/2/probes?return=1","[" ++ binary_to_list(?JP3) ++ "]")
+			rest_req('POST',"/object/2/probe?return=1","[" ++ binary_to_list(?JP3) ++ "]")
 		),
 		%% unknown_format error
 		?_assertMatch(

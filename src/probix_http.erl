@@ -105,12 +105,13 @@ handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 	ok(Format, Output, Probes);
 
 %% Creating list of probes for object
-handle(Format, 'POST', [ "object", Id_string, "probes" ], Args, Post) ->
+handle(Format, 'POST', [ "object", Id_string, "probe" ], Args, Post) ->
 	Id = list_to_integer(Id_string),
 	Input = probix_probe:input_handler_for(Format),
 	Output = probix_probe:output_handler_for(Format),
 	Records = Input(Post),
 	Result = probix_probe:create(Id, Records),
+	%% return newly added probes using the "?return=1" in URI
 	case proplists:get_value("return", Args) of
 		"1" -> ok(Format, Output, Result);
 		_Other -> ok()
@@ -128,21 +129,15 @@ handle(_, _, _, _, _) ->
 
 ok(json, Fun, Content) ->
 	Response = Fun(Content),
-	{200, [{"Content-Type", "text/json"}], Response};
+	{200, [{"Content-Type", "application/json"}], Response}.
 
-ok(xml, _Fun, _Content) ->
-	{501, [{"Content-Type", "text/xml"}], "not implemented yet"}.
-
-%% XXX text/plain? what the fuck?!
+%% empty response
 ok() ->
-	{200, [{"Content-Type", "text/plain"}], ""}.
+	{200, [{"Content-Type", "application/json"}], ""}.
 
 error(json, Error) ->
 	Fun = probix_error:output_handler_for(json),
-	{http_code(Error), [{"Content-Type", "text/json"}], Fun(Error)};
-
-error(xml, _Content) ->
-	{501, [{"Content-Type", "text/xml"}], "not implemented yet"}.
+	{http_code(Error), [{"Content-Type", "application/json"}], Fun(Error)}.
 
 %% returns http numeric response code for
 %% given error according to specification
