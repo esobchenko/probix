@@ -20,11 +20,13 @@
 -define(P3, #probe{id = 3, id_object = 2, timestamp = 1237923726, value = <<"30">>}).
 -define(P4, #probe{id = 4, id_object = 3, timestamp = 1237923727, value = <<"40">>}).
 -define(P5, #probe{id = 5, id_object = 3, timestamp = 1237923728, value = <<"50">>}).
+-define(P6, #probe{id = 4, id_object = 2, timestamp = 1237923729, value = <<"60">>}).
 -define(JP1, probix_utils:record_to_json(?P1, probix_probe)).
 -define(JP2, probix_utils:record_to_json(?P2, probix_probe)).
 -define(JP3, probix_utils:record_to_json(?P3, probix_probe)).
 -define(JP4, probix_utils:record_to_json(?P4, probix_probe)).
 -define(JP5, probix_utils:record_to_json(?P5, probix_probe)).
+-define(JP6, probix_utils:record_to_json(?P6, probix_probe)).
 
 
 
@@ -171,10 +173,15 @@ generate_basic_object_crud_tests(_) ->
 			{200, list_to_binary("[" ++  binary_to_list(?JP1) ++","++ binary_to_list(?JP2) ++ "]")},
 			rest_req('GET',"/object/2/probes?from=1237923724&to=1237923725")
 		),
-		%% add probe + return it
+		%% add probes list and return it
 		?_assertEqual(
 			{200, list_to_binary("[" ++ binary_to_list(?JP3) ++ "]")},
 			rest_req('POST',"/object/2/probes?return=1","[" ++ binary_to_list(?JP3) ++ "]")
+		),
+		%% add single probe and return it
+		?_assertEqual(
+			{200, list_to_binary(binary_to_list(?JP6))},
+			rest_req('POST',"/object/2/probes?return=1",binary_to_list(?JP6))
 		),
 		%% unknown_format error
 		?_assertMatch(

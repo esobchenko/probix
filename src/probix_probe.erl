@@ -63,7 +63,9 @@ create(Id_object, List) when is_list(List), is_integer(Id_object) ->
 	probix_db:transaction(T); %% returns list of newly created probes on success
 
 %% will be rarely used i think
-create(Id, R) when is_record(R, probe), is_integer(Id) -> create(Id, [ R ] ).
+create(Id, R) when is_record(R, probe), is_integer(Id) -> 
+	[ P ] = create(Id, [ R ]),
+	P.
 
 probes_by_object_id(Id) when is_integer(Id) ->
 	Q = qlc:q(

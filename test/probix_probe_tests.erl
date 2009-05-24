@@ -35,7 +35,7 @@ generate_basic_tests(_) ->
 			probix_object:create(?O1)
 		),
 		?_assertMatch(
-			[?P1],
+			?P1,
 			probix_probe:create(1, ?P1)
 		),
 		?_assertMatch(
@@ -59,19 +59,19 @@ generate_basic_tests(_) ->
 			probix_probe:probes_by_object_id(1)
 		),
 		?_assertMatch(
-			[?P2],
+			?P2,
 			probix_probe:create(1, ?P2)
 		),
 		?_assertMatch(
-			[?P3],
+			?P3,
 			probix_probe:create(1, ?P3)
 		),
 		?_assertMatch(
-			[?P4],
+			?P4,
 			probix_probe:create(1, ?P4)
 		),
 		?_assertMatch(
-			[?P5],
+			?P5,
 			probix_probe:create(1, ?P5)
 		),
 		?_assertEqual(
