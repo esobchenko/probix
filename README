@@ -38,9 +38,8 @@ Following REST interface should be used to access data:
 | DELETE  | /object/Id             | none          | none          |
 | GET     | /object/Id/probes      | none          | [ probe ]     |
 | GET     | /object/Id/probes?Args | none          | [ probe ]     |
-| GET     | /object/Id/probe/Id    | none          | probe         |
-| POST    | /object/Id/probe       | probe         | probe         |
-| POST    | /object/Id/probe       | [ probe ]     | [ probe ]     |
+| POST    | /object/Id/probes?Args | probe         | none          |
+| POST    | /object/Id/probes?Args | [ probe ]     | none          |
 --------------------------------------------------------------------
 
 object: {
@@ -62,9 +61,12 @@ probe: {
 [ probe ]:
     array of probes
 
-Args:
-    from=Timestamp1&to=Timestamp2
+Args for GET:
+    * from=Timestamp
+    * to=Timestamp
 
+Args for POST:
+    * show=1
 
 Important: we use unix epoch as probe timestamp for now; the agents may work in
 different timezones so we will reconsider this later.
@@ -74,7 +76,7 @@ Probix server formats
 ------------------------------
 
 Currently Probix server accepts JSON as a representation format. Support for
-XML and other formats will be added in nearest future.
+XML and other formats is going to be implemented in future.
 
 Use following URI pattern to specify the desired representation format:
 http://host:port/resource/path/.format
@@ -113,7 +115,7 @@ Probix server error struct
 }
 
 Where:
- - code: special error code (e.g. bad_request or not_found)
- - message: human readable error message
+ * "code" is a special error code (e.g. bad_request or not_found)
+ * "message" is a human readable error message
 
 

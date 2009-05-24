@@ -88,7 +88,7 @@ handle(Format, 'POST', ["object"], _, Post) ->
 	Result = probix_object:create(Record),
 	ok(Format, Output, Result);
 
-%% Getting all probes for object limited by timestamp
+%% getting all probes for object limited by timestamp
 handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 	Id = list_to_integer(Id_string),
 	Output = probix_probe:output_handler_for(Format),
@@ -104,8 +104,8 @@ handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 	end,
 	ok(Format, Output, Probes);
 
-%% Creating list of probes for object
-handle(Format, 'POST', [ "object", Id_string, "probe" ], Args, Post) ->
+%% creating probes for object
+handle(Format, 'POST', [ "object", Id_string, "probes" ], Args, Post) ->
 	Id = list_to_integer(Id_string),
 	Input = probix_probe:input_handler_for(Format),
 	Output = probix_probe:output_handler_for(Format),
