@@ -53,7 +53,6 @@ object: {
 
 probe: {
     id: Integer,
-    id_object: Integer,
     timestamp: Timestamp,
     value: Value
 }
