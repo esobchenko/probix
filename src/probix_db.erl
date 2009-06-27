@@ -30,6 +30,13 @@ init() ->
 					{disc_copies, [node()]},
 					{attributes, record_info(fields, probe)}
 				]
+			),
+			mnesia:create_table(object_probe,
+				[
+					{type, bag},
+					{disc_copies, [node()]},
+					{attributes, record_info(fields, object_probe)}
+				]
 			)
 	end.
 

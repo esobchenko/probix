@@ -1,4 +1,5 @@
 -record(counter, {key, value}).
 -record(object, {id, name, info}).
--record(probe, {id, id_object, timestamp, value}).
+-record(probe, {id, timestamp, value}).
+-record(object_probe, {id_object, id_probe}).
 -record(error, {code, message}).
