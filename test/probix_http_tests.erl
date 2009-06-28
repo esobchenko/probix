@@ -15,12 +15,12 @@
 -define(J2, probix_utils:record_to_json(?O2, probix_object)).
 -define(J3, probix_utils:record_to_json(?O3, probix_object)).
 
--define(P1, #probe{id = 1, timestamp = 1237923724, value = <<"10">>}).
--define(P2, #probe{id = 2, timestamp = 1237923725, value = <<"20">>}).
--define(P3, #probe{id = 3, timestamp = 1237923726, value = <<"30">>}).
--define(P4, #probe{id = 4, timestamp = 1237923727, value = <<"40">>}).
--define(P5, #probe{id = 5, timestamp = 1237923728, value = <<"50">>}).
--define(P6, #probe{id = 4, timestamp = 1237923729, value = <<"60">>}).
+-define(P1, #probe{id = 1, timestamp = 1237923724, value = 10}).
+-define(P2, #probe{id = 2, timestamp = 1237923725, value = 20}).
+-define(P3, #probe{id = 3, timestamp = 1237923726, value = 30}).
+-define(P4, #probe{id = 4, timestamp = 1237923727, value = 40}).
+-define(P5, #probe{id = 5, timestamp = 1237923728, value = 50}).
+-define(P6, #probe{id = 4, timestamp = 1237923729, value = 60}).
 -define(JP1, probix_utils:record_to_json(?P1, probix_probe)).
 -define(JP2, probix_utils:record_to_json(?P2, probix_probe)).
 -define(JP3, probix_utils:record_to_json(?P3, probix_probe)).
