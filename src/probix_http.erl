@@ -63,13 +63,13 @@ handle(Format, 'GET', ["objects"], _,  _) ->
 	ok(Format, Output, Objects);
 
 handle(Format, 'GET', ["object", Id_string], _, _) ->
-	Id = list_to_integer(Id_string),
+	Id = to_integer(Id_string),
 	Object = probix_object:read(Id), 
 	Output = probix_object:output_handler_for(Format),
 	ok(Format, Output, Object);
 
 handle(Format, 'PUT', ["object", Id_string], _, Post) ->
-	Id = list_to_integer(Id_string),
+	Id = to_integer(Id_string),
 	Input = probix_object:input_handler_for(Format),
 	Output = probix_object:output_handler_for(Format),
 	Record = Input(Post),
@@ -77,7 +77,7 @@ handle(Format, 'PUT', ["object", Id_string], _, Post) ->
 	ok(Format, Output, Result);
 
 handle(_Format, 'DELETE', ["object", Id_string], _, _) ->
-	Id = list_to_integer(Id_string),
+	Id = to_integer(Id_string),
 	probix_object:delete(Id),
 	ok();
 
@@ -90,23 +90,33 @@ handle(Format, 'POST', ["object"], _, Post) ->
 
 %% getting all probes for object limited by timestamp
 handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
-	Id = list_to_integer(Id_string),
+	Id = to_integer(Id_string),
 	Output = probix_probe:output_handler_for(Format),
 	Probes = case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
 		[undefined, undefined] ->
 			probix_probe:probes_by_object_id(Id);
-		[undefined, To] ->
-			probix_probe:probes_by_object_id(Id, {to, list_to_integer(To)});
-		[From, undefined] ->
-			probix_probe:probes_by_object_id(Id, {from, list_to_integer(From)});
-		[From, To] ->
-			probix_probe:probes_by_object_id(Id, list_to_integer(From), list_to_integer(To))
+		[undefined, To] when is_list(To) ->
+			probix_probe:probes_by_object_id(
+				Id,
+				{to, to_integer(To)}
+			);
+		[From, undefined] when is_list(From) ->
+			probix_probe:probes_by_object_id(
+				Id,
+				{from, to_integer(From)}
+			);
+		[From, To] when is_list(From); is_list(To) ->
+			probix_probe:probes_by_object_id(
+				Id,
+				to_integer(From),
+				to_integer(To)
+			)
 	end,
 	ok(Format, Output, Probes);
 
 %% creating probes for object
 handle(Format, 'POST', [ "object", Id_string, "probes" ], Args, Post) ->
-	Id = list_to_integer(Id_string),
+	Id = to_integer(Id_string),
 	Input = probix_probe:input_handler_for(Format),
 	Output = probix_probe:output_handler_for(Format),
 	Records = Input(Post),
@@ -151,5 +161,14 @@ http_code(Error) when is_record(Error, error) ->
 			500;
 		_Other ->
 			400
+	end.
+
+%% this function is used to convert uri strings to integers when expected
+to_integer(L) when is_list(L) ->
+	try erlang:list_to_integer(L)
+	catch
+		error:badarg -> throw(
+			probix_error:create(bad_request, "got string where integer is expected")
+		)
 	end.
 
