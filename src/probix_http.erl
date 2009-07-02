@@ -88,7 +88,7 @@ handle(Format, 'POST', ["object"], _, Post) ->
 	Result = probix_object:create(Record),
 	ok(Format, Output, Result);
 
-%% getting all probes for object limited by timestamp
+%% to get probes for object by timestamp
 handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 	Id = to_integer(Id_string),
 	Output = probix_probe:output_handler_for(Format),
@@ -163,7 +163,8 @@ http_code(Error) when is_record(Error, error) ->
 			400
 	end.
 
-%% this function is used to convert uri strings to integers when expected
+%% this function is used to convert some strings to integers (e.g. object id) because
+%% bad_request exception must be raised to inform user about the problem.
 to_integer(L) when is_list(L) ->
 	try erlang:list_to_integer(L)
 	catch

@@ -134,7 +134,6 @@ generate_basic_object_crud_tests(_) ->
 			{200, ?J3},
 			rest_req('POST',"/object", ?J3)
 		),
-
 		%% we don't have any probes for object 2 yet
 		?_assertMatch(
 			{200, <<"[]">>},
@@ -175,10 +174,15 @@ generate_basic_object_crud_tests(_) ->
 			{200, list_to_binary(binary_to_list(?JP6))},
 			rest_req('POST',"/object/2/probes?return=1",binary_to_list(?JP6))
 		),
-		%% unknown_format error
+		%% unknown_format error should raise because the given format is not supported
 		?_assertMatch(
 			{406, _},
 			rest_req('GET', "/objects.foobar")
+		),
+		%% request should fail because object id should be integer
+		?_assertMatch(
+			{400, _},
+			rest_req('GET', "/object/foo")
 		)
 	].
 
