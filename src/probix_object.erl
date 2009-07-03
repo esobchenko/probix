@@ -21,18 +21,6 @@ record_name() ->
 record_fields() ->
 	record_info(fields, object).
 
-%% input and output handlers are used by http module
-%% to convert between representation formats
-output_handler_for(json) ->
-	fun(Data) ->
-			probix_utils:record_to_json(Data, ?MODULE)
-	end.
-
-input_handler_for(json) ->
-	fun(Data) ->
-			probix_utils:json_to_record(Data, ?MODULE)
-	end.
-
 create(R) when is_record(R, object) ->
 	Id = probix_db:new_id(object),
 	Object = R#object{ id = Id },

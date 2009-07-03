@@ -21,13 +21,6 @@ record_name() ->
 record_fields() ->
 	record_info(fields, error).
 
-%% output handler is used by http module to convert
-%% from erlang record to given representation format.
-output_handler_for(json) ->
-	fun(Data) ->
-			probix_utils:record_to_json(Data, ?MODULE)
-	end.
-
 create(Code, Message) when is_binary(Message) ->
 	#error{
 		code = Code,

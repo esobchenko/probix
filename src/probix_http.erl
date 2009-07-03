@@ -1,5 +1,5 @@
 -module(probix_http).
--export([start/1, stop/0, dispatch_requests/1, handle/5]).
+-export([start/1, stop/0, dispatch_requests/1, handle/4]).
 
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -10,18 +10,6 @@ start(Options) ->
 stop() ->
 	mochiweb_http:stop(?MODULE).
 
-parse_format(Path) ->
-	case string:tokens(Path, ".") of
-		[ _Path ] ->
-			json;
-		%% add more data representation formats here
-		[ _Path, "json" ] ->
-			json;
-		_Other ->
-			unknown_format
-	end.
-
-	
 dispatch_requests(Req) ->
 	%% http method
 	Method = Req:get(method),
@@ -33,65 +21,51 @@ dispatch_requests(Req) ->
 	Post = Req:recv_body(),
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
-	%% parse format from path
-	Format = parse_format(Path),
 
 	R = try
-		unknown_format =:= Format andalso throw(
-			probix_error:create(
-				unknown_format,
-				"you requested format that isn't supported yet or never will be"
-			)
-		),
-		%% each handle function returns mochiweb's http response tuple
-		handle(Format, Method, Splitted, Query, Post)
-	catch
-		%% unknown_format exception (it should be displayed in json)
-		throw:Unknown = #error{code=unknown_format} -> error(json, Unknown);
+        handle(Method, Splitted, Query, Post)
+	catch	
 		%% regular throw exceptions
-		throw:Error when is_record(Error, error) -> error(Format, Error);
+		throw:Error when is_record(Error, error) -> error(Error);
 		%% erlang errors and other exceptions
 		_Exception ->
 			Error = probix_error:create(internal_error, "something bad happened"),
-			error(Format, Error)
+			error(Error)
 	end,
 	Req:respond(R).
 
-handle(Format, 'GET', ["objects"], _,  _) ->
+handle('GET', ["objects"], _,  _) ->
 	Objects = probix_object:read_all(),
-	Output = probix_object:output_handler_for(Format),
-	ok(Format, Output, Objects);
+	Output = probix_utils:record_to_json(Objects, probix_object),
+	ok(Output);
 
-handle(Format, 'GET', ["object", Id_string], _, _) ->
+handle('GET', ["object", Id_string], _, _) ->
 	Id = to_integer(Id_string),
 	Object = probix_object:read(Id), 
-	Output = probix_object:output_handler_for(Format),
-	ok(Format, Output, Object);
+	Output = probix_utils:record_to_json(Object, probix_object),
+	ok(Output);
 
-handle(Format, 'PUT', ["object", Id_string], _, Post) ->
+handle('PUT', ["object", Id_string], _, Post) ->
 	Id = to_integer(Id_string),
-	Input = probix_object:input_handler_for(Format),
-	Output = probix_object:output_handler_for(Format),
-	Record = Input(Post),
+	Record = probix_utils:json_to_record(Post, probix_object),
 	Result = probix_object:update(Id, Record),	
-	ok(Format, Output, Result);
+	Output = probix_utils:record_to_json(Result, probix_object),
+	ok(Output);
 
-handle(_Format, 'DELETE', ["object", Id_string], _, _) ->
+handle('DELETE', ["object", Id_string], _, _) ->
 	Id = to_integer(Id_string),
 	probix_object:delete(Id),
 	ok();
 
-handle(Format, 'POST', ["object"], _, Post) ->
-	Input = probix_object:input_handler_for(Format),
-	Record = Input(Post),
-	Output = probix_object:output_handler_for(Format),
+handle('POST', ["object"], _, Post) ->
+	Record = probix_utils:json_to_record(Post, probix_object),
 	Result = probix_object:create(Record),
-	ok(Format, Output, Result);
+	Output = probix_utils:record_to_json(Result, probix_object),
+	ok(Output);
 
 %% to get probes for object by timestamp
-handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
+handle('GET', [ "object", Id_string, "probes" ], Args, _) ->
 	Id = to_integer(Id_string),
-	Output = probix_probe:output_handler_for(Format),
 	Probes = case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
 		[undefined, undefined] ->
 			probix_probe:probes_by_object_id(Id);
@@ -112,22 +86,23 @@ handle(Format, 'GET', [ "object", Id_string, "probes" ], Args, _) ->
 				to_integer(To)
 			)
 	end,
-	ok(Format, Output, Probes);
+	Output = probix_utils:record_to_json(Probes, probix_probe),
+	ok(Output);
 
 %% creating probes for object
-handle(Format, 'POST', [ "object", Id_string, "probes" ], Args, Post) ->
+handle('POST', [ "object", Id_string, "probes" ], Args, Post) ->
 	Id = to_integer(Id_string),
-	Input = probix_probe:input_handler_for(Format),
-	Output = probix_probe:output_handler_for(Format),
-	Records = Input(Post),
+	Records = probix_utils:json_to_record(Post, probix_probe),
 	Result = probix_probe:create(Id, Records),
+
 	%% return newly added probes using the "?return=1" in URI
 	case proplists:get_value("return", Args) of
-		"1" -> ok(Format, Output, Result);
+		"1" -> 	Output = probix_utils:record_to_json(Result, probix_probe),
+                ok(Output);
 		_Other -> ok()
 	end;
 
-handle(_, _, _, _, _) ->
+handle(_, _, _, _) ->
 	throw(
 		probix_error:create(bad_request, "unknown request")
 	).
@@ -137,17 +112,16 @@ handle(_, _, _, _, _) ->
 %% they used in handle/5 functions.
 %%
 
-ok(json, Fun, Content) ->
-	Response = Fun(Content),
-	{200, [{"Content-Type", "application/json"}], Response}.
+ok(Content) ->
+	{200, [{"Content-Type", "application/json"}], Content}.
 
 %% empty response
 ok() ->
 	{200, [{"Content-Type", "application/json"}], ""}.
 
-error(json, Error) ->
-	Fun = probix_error:output_handler_for(json),
-	{http_code(Error), [{"Content-Type", "application/json"}], Fun(Error)}.
+error(Error) ->
+	{http_code(Error), [{"Content-Type", "application/json"}], 
+     probix_utils:record_to_json(Error, probix_error)}.
 
 %% returns http numeric response code for
 %% given error according to specification
