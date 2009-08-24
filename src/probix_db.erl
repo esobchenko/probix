@@ -4,7 +4,7 @@
 -include("probix.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
-%% -define(TABLES, [counter, object, probe, object_probe]).
+-define(MNESIA_TABLES, [counter, object, probe, object_probe]).
 
 stop() -> mnesia:stop().
 
@@ -22,8 +22,9 @@ start(Nodes) ->
 			mnesia:create_schema(Nodes),
 			mnesia:start(),
 			create_tables(Nodes);
-		{exists, Tables} ->
-			ok = mnesia:wait_for_tables(Tables, 20000)
+		{exists, _Tables} ->
+			%% XXX should we check if its tables that we actually expect?
+			ok = mnesia:wait_for_tables(?MNESIA_TABLES, 20000)
 	end.
 
 is_fresh_startup() ->
@@ -63,8 +64,7 @@ create_tables(Nodes) ->
 			{disc_copies, Nodes},
 			{attributes, record_info(fields, object_probe)}
 		]
-	),
-	ok.
+	).
 
 reset() ->
 	mnesia:stop(),
