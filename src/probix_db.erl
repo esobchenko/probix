@@ -4,46 +4,72 @@
 -include("probix.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
-init() ->
-	mnesia:create_schema([node()]),
-	mnesia:start(),
-	try
-		mnesia:table_info(counter, type),
-		mnesia:table_info(object, type),
-		mnesia:table_info(probe, type)
-	catch
-		exit: _ ->
-			mnesia:create_table(counter,
-				[
-					{disc_copies, [node()]},
-					{attributes, record_info(fields, counter)}
-				]
-			),
-			mnesia:create_table(object,
-				[
-					{disc_copies, [node()]},
-					{attributes, record_info(fields, object)}
-				]
-			),
-			mnesia:create_table(probe,
-				[
-					{disc_copies, [node()]},
-					{attributes, record_info(fields, probe)}
-				]
-			),
-			mnesia:create_table(object_probe,
-				[
-					{type, bag},
-					{disc_copies, [node()]},
-					{attributes, record_info(fields, object_probe)}
-				]
-			)
+%% -define(TABLES, [counter, object, probe, object_probe]).
+
+stop() -> mnesia:stop().
+
+start() ->
+	start([node()]).
+
+start(Nodes) ->
+	ok = mnesia:start(),
+	case is_fresh_startup() of
+		true ->
+			case mnesia:system_info(is_running) of
+				yes -> mnesia:stop();
+				_ -> pass
+			end,
+			mnesia:create_schema(Nodes),
+			mnesia:start(),
+			create_tables(Nodes);
+		{exists, Tables} ->
+			ok = mnesia:wait_for_tables(Tables, 20000)
 	end.
+
+is_fresh_startup() ->
+	yes = mnesia:system_info(is_running),
+	Node = node(),
+	case mnesia:system_info(tables) of
+		[schema] -> true;
+		Tables ->
+			case mnesia:table_info(schema, cookie) of
+				{_, Node} -> {exists, Tables};
+				_ -> true
+			end
+	end.
+
+create_tables(Nodes) ->
+	mnesia:create_table(counter,
+		[
+			{disc_copies, Nodes},
+			{attributes, record_info(fields, counter)}
+		]
+	),
+	mnesia:create_table(object,
+		[
+			{disc_copies, Nodes},
+			{attributes, record_info(fields, object)}
+		]
+	),
+	mnesia:create_table(probe,
+		[
+			{disc_copies, Nodes},
+			{attributes, record_info(fields, probe)}
+		]
+	),
+	mnesia:create_table(object_probe,
+		[
+			{type, bag},
+			{disc_copies, Nodes},
+			{attributes, record_info(fields, object_probe)}
+		]
+	),
+	ok.
 
 reset() ->
 	mnesia:stop(),
 	mnesia:delete_schema([node()]),
-	init().
+	start().
 
 new_id(Key) ->
 	mnesia:dirty_update_counter({counter, Key}, 1).
