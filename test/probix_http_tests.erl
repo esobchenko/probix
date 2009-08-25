@@ -52,14 +52,13 @@ basic_object_crud_test_() ->
 	{
 		setup,
 		fun() ->
-			probix_db:reset(), %% clean database contents
+			probix_db:test_start(),
 			application:start(inets),
 			probix:start()
 		end,
 		fun(_) ->
 			probix:stop(),
-			application:stop(inets),
-			probix_db:reset()
+			application:stop(inets)
 		end,
 		fun generate_basic_object_crud_tests/1
 	}.

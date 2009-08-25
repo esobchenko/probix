@@ -7,21 +7,21 @@
 -define(MNESIA_TABLES, [counter, object, probe, object_probe]).
 
 stop() -> mnesia:stop().
+test_start() -> stop(), start({ram_copies, [node()]}).
 
-start() ->
-	start([node()]).
-
-start(Nodes) ->
+start({Storage_type, Nodes}) ->
 	ok = mnesia:start(),
 	case is_fresh_startup() of
 		true ->
-			case mnesia:system_info(is_running) of
-				yes -> mnesia:stop();
-				_ -> pass
-			end,
-			mnesia:create_schema(Nodes),
-			mnesia:start(),
-			create_tables(Nodes);
+			case Storage_type of
+				ram_copies ->
+					create_tables({ram_copies, Nodes});
+				T ->
+					mnesia:stop(),
+					mnesia:create_schema(Nodes),
+					mnesia:start(),
+					create_tables({T, Nodes})
+			end;
 		{exists, _Tables} ->
 			case mnesia:wait_for_tables(?MNESIA_TABLES, 20000) of
 				{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
@@ -41,37 +41,33 @@ is_fresh_startup() ->
 			end
 	end.
 
-create_tables(Nodes) ->
+create_tables({Storage_type, Nodes}) ->
+	yes = mnesia:system_info(is_running),
 	mnesia:create_table(counter,
 		[
-			{disc_copies, Nodes},
+			{Storage_type, Nodes},
 			{attributes, record_info(fields, counter)}
 		]
 	),
 	mnesia:create_table(object,
 		[
-			{disc_copies, Nodes},
+			{Storage_type, Nodes},
 			{attributes, record_info(fields, object)}
 		]
 	),
 	mnesia:create_table(probe,
 		[
-			{disc_copies, Nodes},
+			{Storage_type, Nodes},
 			{attributes, record_info(fields, probe)}
 		]
 	),
 	mnesia:create_table(object_probe,
 		[
+			{Storage_type, Nodes},
 			{type, bag},
-			{disc_copies, Nodes},
 			{attributes, record_info(fields, object_probe)}
 		]
 	).
-
-reset() ->
-	mnesia:stop(),
-	mnesia:delete_schema([node()]),
-	start().
 
 new_id(Key) ->
 	mnesia:dirty_update_counter({counter, Key}, 1).
