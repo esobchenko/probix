@@ -23,8 +23,10 @@ start(Nodes) ->
 			mnesia:start(),
 			create_tables(Nodes);
 		{exists, _Tables} ->
-			%% XXX should we check if its tables that we actually expect?
-			ok = mnesia:wait_for_tables(?MNESIA_TABLES, 20000)
+			case mnesia:wait_for_tables(?MNESIA_TABLES, 20000) of
+				{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
+				ok -> ok
+			end
 	end.
 
 is_fresh_startup() ->
