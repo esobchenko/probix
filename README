@@ -13,7 +13,7 @@ Running Probix server
     $ cd probix
     $ erl -make
     $ ./bin/acceptance.sh # all tests should pass.
-    $ ./bin/start.sh
+    $ ./bin/start_server.sh
 
 Probix server binds to 0.0.0.0:8000 by default, however you can change this
 by setting PROBIX_SERVER_IP and PROBIX_SERVER_PORT environment variables.
