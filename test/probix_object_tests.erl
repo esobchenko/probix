@@ -12,7 +12,10 @@
 basic_test_() ->
 	{
 		setup,
-		fun() -> probix_db:test_start() end,
+		fun() ->
+			probix_db:stop(),
+			probix_db:start_ram()
+		end,
 		fun generate_basic_tests/1
 	}.
 

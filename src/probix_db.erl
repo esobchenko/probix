@@ -7,7 +7,24 @@
 -define(MNESIA_TABLES, [counter, object, probe, object_probe]).
 
 stop() -> mnesia:stop().
-test_start() -> stop(), start({ram_copies, [node()]}).
+
+start_disc() -> start({disc_copies, [node()]}).
+start_ram() -> start({ram_copies, [node()]}).
+
+%%% TODO: exception handling
+start_replica(Master) when is_list(Master) ->
+	Master_node = list_to_atom(Master),
+	ok = mnesia:start(),
+	case mnesia:change_config(extra_db_nodes, [Master_node]) of
+		{ok, _} -> ok;
+		{error, E} -> erlang:error({change_config_failed, E})
+	end,
+
+	mnesia:change_table_copy_type(schema, node(), disc_copies),
+
+	[{Tb, mnesia:add_table_copy(Tb, node(), Type)}
+		|| {Tb, [{_Master, Type}]} <- [{T, mnesia:table_info(T, where_to_commit)}
+			|| T <- mnesia:system_info(tables)]].
 
 start({Storage_type, Nodes}) ->
 	ok = mnesia:start(),

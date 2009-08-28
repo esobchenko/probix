@@ -4,7 +4,7 @@
 start() ->
 	application:start(log4erl),
 	log4erl:conf("conf/log4erl.conf"),
-	probix_db:start({disc_copies, [node()]}),
+	probix_db:start_disc(),
 	application:start(crypto), %% required by mochiweb
 	application:start(probix).
 
