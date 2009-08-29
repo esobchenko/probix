@@ -1,5 +1,12 @@
 -module(probix).
--export([start/0, stop/0]).
+-export([start/0, stop/0, start_replica/1]).
+
+start_replica(Master) ->
+	application:start(log4erl),
+	log4erl:conf("conf/log4erl.conf"),
+	probix_db:start_replica(Master),
+	application:start(crypto), %% required by mochiweb
+	application:start(probix).
 
 start() ->
 	application:start(log4erl),
