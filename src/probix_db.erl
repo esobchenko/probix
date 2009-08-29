@@ -12,7 +12,7 @@ start_disc() -> start({disc_copies, [node()]}).
 start_ram() -> start({ram_copies, [node()]}).
 
 %%% TODO: exception handling
-start_replica(Master_node) ->
+start_replica(Master_node) when is_atom(Master_node) ->
 	ok = mnesia:start(),
 	case mnesia:change_config(extra_db_nodes, [Master_node]) of
 		{ok, _} -> ok;
