@@ -4,6 +4,7 @@ Prerequisites
 
 Erlang >= R12B-5 is required;
 Mochiweb >= r99 required from http://code.google.com/p/mochiweb/ (with utf8 support in mochijson2).
+log4erl from http://github.com/ahmednawras/log4erl/
 
 ------------------------------
 Running Probix server

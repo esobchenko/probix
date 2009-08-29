@@ -7,6 +7,7 @@ erl \
 	-mnesia dir '"data"' \
 	-mnesia dump_log_write_threshold 50000 \
 	-mnesia dc_dump_limit 40 \
-	-s probix \
-	-name probix
+	-name probix \
+	-s probix
+
 
