@@ -11,20 +11,24 @@ stop() -> mnesia:stop().
 start_disc() -> start({disc_copies, [node()]}).
 start_ram() -> start({ram_copies, [node()]}).
 
-%%% TODO: exception handling
 start_replica(Master_node) when is_atom(Master_node) ->
 	ok = mnesia:start(),
+
 	case mnesia:change_config(extra_db_nodes, [Master_node]) of
 		{ok, _} -> ok;
 		{error, E} -> erlang:error({change_config_failed, E})
 	end,
 
 	mnesia:change_table_copy_type(schema, node(), disc_copies),
-
 	Tables = mnesia:system_info(tables),
-	Table_types = [ {T, mnesia:table_info(T, where_to_commit)} || T <- Tables ],
+	replicate_tables(Tables).
 
-	[ {T, mnesia:add_table_copy(T, node(), Type) } || {T, [_, Type]} <- Table_types ].
+replicate_tables([H|T]) ->
+	lists:member(node(), mnesia:table_info(H, disc_copies)) orelse
+		mnesia:add_table_copy(H, node(), disc_copies),
+	replicate_tables(T);
+
+replicate_tables([]) -> ok.
 
 start({Storage_type, Nodes}) ->
 	ok = mnesia:start(),
