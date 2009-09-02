@@ -28,10 +28,11 @@ start_replica(Master_node) when is_atom(Master_node) ->
 		ok -> ok
 	end.
 
-
 replicate_tables([H|T]) ->
-	lists:member(node(), mnesia:table_info(H, disc_copies)) orelse
-		mnesia:add_table_copy(H, node(), disc_copies),
+	{atomic, ok} = case lists:member(node(), mnesia:table_info(H, disc_copies)) of
+		true -> {atomic, ok};
+		false -> mnesia:add_table_copy(H, node(), disc_copies)
+	end,
 	replicate_tables(T);
 
 replicate_tables([]) -> ok.
