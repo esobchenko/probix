@@ -5,7 +5,12 @@
 
 -include("probix.hrl").
 
--define(URL, "http://127.0.0.1:8000").
+-define(URL,
+	"http://" ++
+		case os:getenv("PROBIX_SERVER_IP") of false -> "127.0.0.1"; Env_ip -> Env_ip end
+	++ ":" ++
+		case os:getenv("PROBIX_SERVER_PORT") of false -> "8000"; Env_port -> Env_port end
+).
 
 -define(O1, #object{id = 1, name = <<"foo">>, info = <<"bar">>}).
 -define(O2, #object{id = 1, name = <<"bar">>, info = <<"baz">>}).

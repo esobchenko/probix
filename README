@@ -13,7 +13,7 @@ Running Probix server
     $ git clone git@github.com:esobchenko/probix.git
     $ cd probix
     $ erl -make
-    $ ./bin/acceptance.sh # all tests should pass.
+    $ ./bin/acceptance_test.sh # all tests should pass.
     $ ./bin/start_server.sh
 
 Probix server binds to 0.0.0.0:8000 by default, however you can change this

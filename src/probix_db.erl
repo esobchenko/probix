@@ -21,7 +21,13 @@ start_replica(Master_node) when is_atom(Master_node) ->
 
 	mnesia:change_table_copy_type(schema, node(), disc_copies),
 	Tables = mnesia:system_info(tables),
-	replicate_tables(Tables).
+	ok = replicate_tables(Tables),
+
+	case mnesia:wait_for_tables(Tables, 200000) of
+		{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
+		ok -> ok
+	end.
+
 
 replicate_tables([H|T]) ->
 	lists:member(node(), mnesia:table_info(H, disc_copies)) orelse
