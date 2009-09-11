@@ -8,10 +8,11 @@
 
 stop() -> mnesia:stop().
 
-start_disc() -> start({disc_copies, [node()]}).
-start_ram() -> start({ram_copies, [node()]}).
+start_disc_only() -> start(disc_only_copies, [node()]).
+start_disc() -> start(disc_copies, [node()]).
+start_ram() -> start(ram_copies, [node()]).
 
-start_replica(Master_node) when is_atom(Master_node) ->
+start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Master_node) ->
 	ok = mnesia:start(),
 
 	case mnesia:change_config(extra_db_nodes, [Master_node]) of
@@ -19,37 +20,31 @@ start_replica(Master_node) when is_atom(Master_node) ->
 		{error, E} -> erlang:error({change_config_failed, E})
 	end,
 
-	mnesia:change_table_copy_type(schema, node(), disc_copies),
+	mnesia:change_table_copy_type(schema, node(), Storage_type),
+
 	Tables = mnesia:system_info(tables),
-	ok = replicate_tables(Tables),
+	ok = replicate_tables(Storage_type, Tables),
 
 	case mnesia:wait_for_tables(Tables, 200000) of
 		{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
 		ok -> ok
 	end.
 
-replicate_tables([H|T]) ->
-	{atomic, ok} = case lists:member(node(), mnesia:table_info(H, disc_copies)) of
+replicate_tables(Storage_type, [H|T]) when is_atom(Storage_type) ->
+	{atomic, ok} = case lists:member(node(), mnesia:table_info(H, Storage_type)) of
 		true -> {atomic, ok};
-		false -> mnesia:add_table_copy(H, node(), disc_copies)
+		false -> mnesia:add_table_copy(H, node(), Storage_type)
 	end,
-	replicate_tables(T);
+	replicate_tables(Storage_type, T);
 
-replicate_tables([]) -> ok.
+replicate_tables(_, []) -> ok.
 
-start({Storage_type, Nodes}) ->
+start(Storage_type, Nodes) when is_atom(Storage_type) ->
 	ok = mnesia:start(),
 	case is_fresh_startup() of
 		true ->
-			case Storage_type of
-				ram_copies ->
-					create_tables({ram_copies, Nodes});
-				T ->
-					mnesia:stop(),
-					mnesia:create_schema(Nodes),
-					mnesia:start(),
-					create_tables({T, Nodes})
-			end;
+			mnesia:change_table_copy_type(schema, node(), Storage_type),
+			create_tables(Storage_type, Nodes);
 		{exists, _Tables} ->
 			case mnesia:wait_for_tables(?MNESIA_TABLES, 20000) of
 				{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
@@ -69,7 +64,7 @@ is_fresh_startup() ->
 			end
 	end.
 
-create_tables({Storage_type, Nodes}) ->
+create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	yes = mnesia:system_info(is_running),
 	mnesia:create_table(counter,
 		[
