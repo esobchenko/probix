@@ -17,7 +17,7 @@ start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Mas
 
 	case mnesia:change_config(extra_db_nodes, [Master_node]) of
 		{ok, []} ->
-			%% If mnesia on the current node already knew to link up with MasterNode,
+			%% If mnesia on the current node already knew to link up with Master_node,
 			%% change_config says 'ok' but with an empty list. This is however exactly
 			%% the same thing that happens if we fail to connect to the remote node
 			%% because of an distribution mechanism failure so we need to make sure
