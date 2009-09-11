@@ -16,7 +16,17 @@ start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Mas
 	ok = mnesia:start(),
 
 	case mnesia:change_config(extra_db_nodes, [Master_node]) of
-		{ok, _} -> ok;
+		{ok, []} ->
+			%% If mnesia on the current node already knew to link up with MasterNode,
+			%% change_config says 'ok' but with an empty list. This is however exactly
+			%% the same thing that happens if we fail to connect to the remote node
+			%% because of an distribution mechanism failure so we need to make sure
+			%% we are online...
+			case lists:member(Master_node, mnesia:system_info(running_db_nodes)) of
+				true -> ok;
+				false -> erlang:error({change_config_failed, "failed connecting to master node"})
+			end;
+		{ok, [Master_node]} -> ok;
 		{error, E} -> erlang:error({change_config_failed, E})
 	end,
 
