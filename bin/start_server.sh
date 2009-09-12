@@ -15,13 +15,15 @@ OPTIONS:
    -I      Mochiweb interface address. Default: 0.0.0.0
    -P      Mochiweb port. Default: 8000
    -D      Data directory. Directory for mnesia data
+   -T      Storage type of mnesia tables. Default: disc_copies
 
 All options can be passed as environment variables:
-    PROBIX_MODE, PROBIX_NODE_NAME, PROBIX_SERVER_IP, PROBIX_SERVER_PORT
+    PROBIX_MODE, PROBIX_NODE_NAME, PROBIX_SERVER_IP, PROBIX_SERVER_PORT,
+    PROBIX_STORAGE_TYPE
 EOF
 }
 
-while getopts “hm:N:I:P:M:D:” OPTION; do
+while getopts “hm:N:I:P:M:D:T:” OPTION; do
     case "$OPTION" in
         h)  usage; exit ;;
         m)    PROBIX_MODE="$OPTARG" ;;
@@ -30,6 +32,7 @@ while getopts “hm:N:I:P:M:D:” OPTION; do
         I)    PROBIX_SERVER_IP="$OPTARG" ;;
         P)    PROBIX_SERVER_PORT="$OPTARG" ;;
         D)    PROBIX_DATA_DIR="$OPTARG" ;;
+        T)    PROBIX_STORAGE_TYPE="$OPTARG" ;;
         \?) echo "Invalid option -$OPTARG" ;;
     esac
 done
@@ -49,6 +52,10 @@ fi
 
 if [ -z ""$PROBIX_DATA_DIR ]; then
     PROBIX_DATA_DIR=$PROBIX_HOME/data;
+fi
+
+if [ -z ""$PROBIX_STORAGE_TYPE ]; then
+    PROBIX_STORAGE_TYPE="disc_copies";
 fi
 
 
@@ -77,6 +84,10 @@ fi
 
 if [ -n "$PROBIX_SERVER_IP" ]; then
     export PROBIX_SERVER_IP
+fi
+
+if [ -n "$PROBIX_STORAGE_TYPE" ]; then
+    export PROBIX_STORAGE_TYPE
 fi
 
 cd $PROBIX_HOME
