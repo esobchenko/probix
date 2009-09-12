@@ -76,6 +76,7 @@ CMD="erl \
       -mnesia dump_log_write_threshold 50000 \
       -mnesia dc_dump_limit 40 \
       -sname $PROBIX_NODE_NAME \
+      -setcookie probix \
       -s probix"
 
 if [ -n "$PROBIX_SERVER_PORT" ]; then
