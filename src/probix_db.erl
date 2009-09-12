@@ -8,9 +8,14 @@
 
 stop() -> mnesia:stop().
 
-start_disc_only() -> start_master(disc_only_copies, [node()]).
-start_disc() -> start_master(disc_copies, [node()]).
 start_ram() -> start_master(ram_copies, [node()]).
+
+stop_replica(Node) when is_atom(Node) ->
+	rpc:call(Node, probix_db, stop, []).
+
+remove_replica(Node) when is_atom(Node) ->
+	stop_replica(Node),
+	mnesia:del_table_copy(schema, Node).
 
 start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Master_node) ->
 	ok = mnesia:start(),
