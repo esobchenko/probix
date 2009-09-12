@@ -58,9 +58,8 @@ basic_object_crud_test_() ->
 		setup,
 		fun() ->
 			probix_db:stop(),
-			probix_db:start_ram(),
 			application:start(inets),
-			probix:start()
+			probix:start_master([ram_copies])
 		end,
 		fun(_) ->
 			probix:stop(),

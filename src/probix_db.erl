@@ -8,9 +8,9 @@
 
 stop() -> mnesia:stop().
 
-start_disc_only() -> start(disc_only_copies, [node()]).
-start_disc() -> start(disc_copies, [node()]).
-start_ram() -> start(ram_copies, [node()]).
+start_disc_only() -> start_master(disc_only_copies, [node()]).
+start_disc() -> start_master(disc_copies, [node()]).
+start_ram() -> start_master(ram_copies, [node()]).
 
 start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Master_node) ->
 	ok = mnesia:start(),
@@ -30,7 +30,8 @@ start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Mas
 		{error, E} -> erlang:error({change_config_failed, E})
 	end,
 
-	mnesia:change_table_copy_type(schema, node(), Storage_type),
+	%% XXX should we create or use add_table_copy here?
+	create_schema(Storage_type),
 
 	Tables = mnesia:system_info(tables),
 	ok = replicate_tables(Storage_type, Tables),
@@ -43,23 +44,35 @@ start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Mas
 replicate_tables(Storage_type, [H|T]) when is_atom(Storage_type) ->
 	{atomic, ok} = case lists:member(node(), mnesia:table_info(H, Storage_type)) of
 		true -> {atomic, ok};
-		false -> mnesia:add_table_copy(H, node(), Storage_type)
+		false ->
+			case H of
+				%% We already created schema with probix_db:create_schema/1
+				schema -> {atomic, ok};
+				_ -> mnesia:add_table_copy(H, node(), Storage_type)
+			end
 	end,
 	replicate_tables(Storage_type, T);
 
 replicate_tables(_, []) -> ok.
 
-start(Storage_type, Nodes) when is_atom(Storage_type) ->
+start_master(Storage_type, Nodes) when is_atom(Storage_type) ->
 	ok = mnesia:start(),
 	case is_fresh_startup() of
 		true ->
-			mnesia:change_table_copy_type(schema, node(), Storage_type),
+			create_schema(Storage_type),
 			create_tables(Storage_type, Nodes);
 		{exists, _Tables} ->
 			case mnesia:wait_for_tables(?MNESIA_TABLES, 20000) of
 				{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
 				ok -> ok
 			end
+	end.
+
+create_schema(Storage_type) ->
+	case Storage_type of
+		%% The schema table can only have ram_copies or disc_copies as the storage type.
+		disc_only_copies -> mnesia:change_table_copy_type(schema, node(), disc_copies);
+		_ -> mnesia:change_table_copy_type(schema, node(), Storage_type)
 	end.
 
 is_fresh_startup() ->

@@ -93,9 +93,9 @@ fi
 cd $PROBIX_HOME
 
 if [ ""$PROBIX_MODE = "master" ]; then
-    $CMD
+    $CMD start_master $PROBIX_STORAGE_TYPE
 elif [ ""$PROBIX_MODE = "replica" ]; then
-    $CMD start_replica $PROBIX_MASTER_NODE
+    $CMD start_replica $PROBIX_STORAGE_TYPE $PROBIX_MASTER_NODE
 fi
 
 
