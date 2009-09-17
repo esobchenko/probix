@@ -76,6 +76,10 @@ generate_basic_tests(_) ->
 		?_assertEqual(
 			[?P3],
 			probix_probe:probes_by_object_id(1, 1237923726, 1237923726)
+		),
+		?_assertThrow(
+			#error{code = not_found}, %% foreign key constraint check raise exception
+			probix_probe:probes_by_object_id(666)
 		)
 	].
 

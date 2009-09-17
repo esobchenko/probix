@@ -25,7 +25,7 @@ record_fields() ->
 %% primary method to create probes
 create(Id_object, List) when is_list(List), is_integer(Id_object) ->
 	F = fun() ->
-		probix_db:read({object, Id_object}), %% foreign key constraint check
+		probix_object:read(Id_object), %% foreign key constraint check
 		Table = probix_object:oid2table(Id_object),
 		probix_db:create(Table, List)
 	end,
@@ -33,44 +33,60 @@ create(Id_object, List) when is_list(List), is_integer(Id_object) ->
 
 create(Id_object, R) when is_record(R, probe), is_integer(Id_object) ->
 	F = fun() ->
-		probix_db:read({object, Id_object}), %% foreign key constraint check
+		probix_object:read(Id_object), %% foreign key constraint check
 		Table = probix_object:oid2table(Id_object),
 		probix_db:create(Table, R)
 	end,
 	probix_db:transaction(F). %% returns list of newly created probes on success
 
 probes_by_object_id(Id) when is_integer(Id) ->
-	Table = probix_object:oid2table(Id),
-	probix_db:read_all(Table).
+	F = fun() ->
+		probix_object:read(Id), %% foreign key constraint check
+		Table = probix_object:oid2table(Id),
+		probix_db:read_all(Table)
+	end,
+	probix_db:transaction(F).
 
 probes_by_object_id(Id, {to, To}) ->
-	Table = probix_object:oid2table(Id),
-	Q = qlc:q(
-		[ P ||
-			P <- mnesia:table(Table),
-			P#probe.timestamp =< To
-		]
-	),
-	probix_db:find(Q);
+	F = fun() ->
+		probix_object:read(Id), %% foreign key constraint check
+		Table = probix_object:oid2table(Id),
+		Q = qlc:q(
+			[ P ||
+				P <- mnesia:table(Table),
+				P#probe.timestamp =< To
+			]
+		),
+		probix_db:find(Q)
+	end,
+	probix_db:transaction(F);
 
 probes_by_object_id(Id, {from, From}) ->
-	Table = probix_object:oid2table(Id),
-	Q = qlc:q(
-		[ P ||
-			P <- mnesia:table(Table),
-			P#probe.timestamp >= From
-		]
-	),
-	probix_db:find(Q).
+	F = fun() ->
+		probix_object:read(Id), %% foreign key constraint check
+		Table = probix_object:oid2table(Id),
+		Q = qlc:q(
+			[ P ||
+				P <- mnesia:table(Table),
+				P#probe.timestamp >= From
+			]
+		),
+		probix_db:find(Q)
+	end,
+	probix_db:transaction(F).
 
 probes_by_object_id(Id, From, To) ->
-	Table = probix_object:oid2table(Id),
-	Q = qlc:q(
-		[ P ||
-			P <- mnesia:table(Table),
-			P#probe.timestamp >= From,
-			P#probe.timestamp =< To
-		]
-	),
-	probix_db:find(Q).
+	F = fun() ->
+		probix_object:read(Id), %% foreign key constraint check
+		Table = probix_object:oid2table(Id),
+		Q = qlc:q(
+			[ P ||
+				P <- mnesia:table(Table),
+				P#probe.timestamp >= From,
+				P#probe.timestamp =< To
+			]
+		),
+		probix_db:find(Q)
+	end,
+	probix_db:transaction(F).
 
