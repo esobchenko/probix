@@ -53,7 +53,6 @@ object: {
     array of objects
 
 probe: {
-    id: Integer,
     timestamp: Timestamp,
     value: Value
 }

@@ -42,7 +42,7 @@ create(R) when is_record(R, object) ->
 				{Storage_type, Nodes},
 				{attributes, record_info(fields, probe)},
 				{record_name, probe},
-				{type, bag}
+				{type, ordered_set}
 			]
 		),
 		Object

@@ -8,8 +8,6 @@
 
 stop() -> mnesia:stop().
 
-start_ram() -> start_master(ram_copies, [node()]).
-
 stop_replica(Node) when is_atom(Node) ->
 	rpc:call(Node, probix_db, stop, []).
 
@@ -35,7 +33,7 @@ start_replica(Master_node) when is_atom(Master_node) ->
 		{error, E} -> erlang:error({change_config_failed, E})
 	end,
 
-	{atomic, ok} = create_schema(disc_copies),
+	ok = create_schema(disc_copies),
 
 	Tables = mnesia:system_info(tables),
 	ok = replicate_tables(Tables),
@@ -62,7 +60,7 @@ start_master(Storage_type, Nodes) when is_atom(Storage_type) ->
 	ok = mnesia:start(),
 	case is_fresh_startup() of
 		yes ->
-			{atomic, ok} = create_schema(Storage_type),
+			ok = create_schema(Storage_type),
 			ok = create_tables(Storage_type, Nodes);
 		no ->
 			case mnesia:wait_for_tables(?MNESIA_TABLES, 20000) of
@@ -71,7 +69,9 @@ start_master(Storage_type, Nodes) when is_atom(Storage_type) ->
 			end
 	end.
 
-create_schema(Storage_type) -> mnesia:change_table_copy_type(schema, node(), Storage_type).
+create_schema(Storage_type) ->
+	mnesia:change_table_copy_type(schema, node(), Storage_type),
+	ok.
 
 is_fresh_startup() ->
 	yes = mnesia:system_info(is_running),

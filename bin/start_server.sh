@@ -17,7 +17,7 @@ OPTIONS:
    -D      Data directory. Directory for mnesia data
 
 All options can be passed as environment variables:
-    PROBIX_MODE, PROBIX_NODE_NAME, PROBIX_SERVER_IP, PROBIX_SERVER_PORT,
+    PROBIX_MODE, PROBIX_NODE_NAME, PROBIX_SERVER_IP, PROBIX_SERVER_PORT
 EOF
 }
 
@@ -50,11 +50,6 @@ fi
 if [ -z ""$PROBIX_DATA_DIR ]; then
     PROBIX_DATA_DIR=$PROBIX_HOME/data;
 fi
-
-if [ -z ""$PROBIX_STORAGE_TYPE ]; then
-    PROBIX_STORAGE_TYPE="disc_copies";
-fi
-
 
 ## Checking arguments consistency
 if [ ""$PROBIX_MODE = "replica" -a -z ""$PROBIX_MASTER_NODE ]; then
@@ -90,16 +85,12 @@ if [ -n "$PROBIX_SERVER_IP" ]; then
     export PROBIX_SERVER_IP
 fi
 
-if [ -n "$PROBIX_STORAGE_TYPE" ]; then
-    export PROBIX_STORAGE_TYPE
-fi
-
 cd $PROBIX_HOME
 
 if [ ""$PROBIX_MODE = "master" ]; then
-    $CMD start_master $PROBIX_STORAGE_TYPE
+    $CMD start_master disc_copies
 elif [ ""$PROBIX_MODE = "replica" ]; then
-    $CMD start_replica $PROBIX_STORAGE_TYPE $PROBIX_MASTER_NODE
+    $CMD start_replica $PROBIX_MASTER_NODE
 fi
 
 
