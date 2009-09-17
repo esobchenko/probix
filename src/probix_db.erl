@@ -4,7 +4,7 @@
 -include("probix.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
--define(MNESIA_TABLES, [counter, object, probe, object_probe]).
+-define(MNESIA_TABLES, [counter, object]).
 
 stop() -> mnesia:stop().
 
@@ -17,7 +17,7 @@ remove_replica(Node) when is_atom(Node) ->
 	stop_replica(Node),
 	mnesia:del_table_copy(schema, Node).
 
-start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Master_node) ->
+start_replica(Master_node) when is_atom(Master_node) ->
 	ok = mnesia:start(),
 
 	case mnesia:change_config(extra_db_nodes, [Master_node]) of
@@ -35,93 +35,85 @@ start_replica(Storage_type, Master_node) when is_atom(Storage_type), is_atom(Mas
 		{error, E} -> erlang:error({change_config_failed, E})
 	end,
 
-	%% XXX should we create or use add_table_copy here?
-	create_schema(Storage_type),
+	{atomic, ok} = create_schema(disc_copies),
 
 	Tables = mnesia:system_info(tables),
-	ok = replicate_tables(Storage_type, Tables),
+	ok = replicate_tables(Tables),
 
 	case mnesia:wait_for_tables(Tables, 200000) of
 		{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
 		ok -> ok
 	end.
 
-replicate_tables(Storage_type, [H|T]) when is_atom(Storage_type) ->
-	{atomic, ok} = case lists:member(node(), mnesia:table_info(H, Storage_type)) of
+replicate_tables([H|T]) ->
+	{atomic, ok} = case lists:member(node(), mnesia:table_info(H, disc_copies)) of
 		true -> {atomic, ok};
 		false ->
 			case H of
-				%% We already created schema with probix_db:create_schema/1
-				schema -> {atomic, ok};
-				_ -> mnesia:add_table_copy(H, node(), Storage_type)
+				schema -> {atomic, ok}; %% schema is already created
+				_ -> mnesia:add_table_copy(H, node(), disc_copies)
 			end
 	end,
-	replicate_tables(Storage_type, T);
+	replicate_tables(T);
 
-replicate_tables(_, []) -> ok.
+replicate_tables([]) -> ok.
 
 start_master(Storage_type, Nodes) when is_atom(Storage_type) ->
 	ok = mnesia:start(),
 	case is_fresh_startup() of
-		true ->
-			create_schema(Storage_type),
-			create_tables(Storage_type, Nodes);
-		{exists, _Tables} ->
+		yes ->
+			{atomic, ok} = create_schema(Storage_type),
+			ok = create_tables(Storage_type, Nodes);
+		no ->
 			case mnesia:wait_for_tables(?MNESIA_TABLES, 20000) of
 				{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
 				ok -> ok
 			end
 	end.
 
-create_schema(Storage_type) ->
-	case Storage_type of
-		%% The schema table can only have ram_copies or disc_copies as the storage type.
-		disc_only_copies -> mnesia:change_table_copy_type(schema, node(), disc_copies);
-		_ -> mnesia:change_table_copy_type(schema, node(), Storage_type)
-	end.
+create_schema(Storage_type) -> mnesia:change_table_copy_type(schema, node(), Storage_type).
 
 is_fresh_startup() ->
 	yes = mnesia:system_info(is_running),
 	Node = node(),
 	case mnesia:system_info(tables) of
-		[schema] -> true;
-		Tables ->
+		[schema] -> yes;
+		_Tables ->
 			case mnesia:table_info(schema, cookie) of
-				{_, Node} -> {exists, Tables};
-				_ -> true
+				{_, Node} -> no;
+				_ -> yes
 			end
 	end.
 
 create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	yes = mnesia:system_info(is_running),
-	mnesia:create_table(counter,
-		[
-			{Storage_type, Nodes},
-			{attributes, record_info(fields, counter)}
-		]
-	),
-	mnesia:create_table(object,
-		[
-			{Storage_type, Nodes},
-			{attributes, record_info(fields, object)}
-		]
-	),
-	mnesia:create_table(probe,
-		[
-			{Storage_type, Nodes},
-			{attributes, record_info(fields, probe)}
-		]
-	),
-	mnesia:create_table(object_probe,
-		[
-			{Storage_type, Nodes},
-			{type, bag},
-			{attributes, record_info(fields, object_probe)}
-		]
-	).
+	F = fun() ->
+		ok = create_table(counter,
+			[
+				{Storage_type, Nodes},
+				{attributes, record_info(fields, counter)}
+			]
+		),
+		ok = create_table(object,
+			[
+				{Storage_type, Nodes},
+				{attributes, record_info(fields, object)}
+			]
+		)
+	end,
+	transaction(F).
 
 new_id(Key) ->
 	mnesia:dirty_update_counter({counter, Key}, 1).
+
+create_table(Name, Properties) ->
+	%% because mnesia:create_table/2 is not allowed in mnesia:transaction/1
+	Cs = mnesia_schema:list2cs([{name, Name}|Properties]),
+	mnesia_schema:do_create_table(Cs).
+
+delete_table(Name) ->
+	%% because mnesia:delete_table/1 is not allowed in mnesia:transaction/1
+	mnesia_schema:do_delete_table(Name).
 
 find(Q) ->
 	F = fun() ->
@@ -162,6 +154,15 @@ create(Rec) when is_tuple(Rec) ->
 	transaction(F);
 
 create(List) when is_list(List) -> lists:map( fun(R) -> create(R) end, List ).
+
+create(Tab, Rec) when is_atom(Tab), is_tuple(Rec) ->
+	F = fun () ->
+			mnesia:write(Tab, Rec, write),
+			Rec
+	end,
+	transaction(F);
+
+create(Tab, List) when is_atom(Tab), is_list(List) -> lists:map( fun(R) -> create(Tab, R) end, List ).
 
 update(Rec) ->
 	F =	fun () ->

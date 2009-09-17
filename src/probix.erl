@@ -1,10 +1,10 @@
 -module(probix).
 -export([start_master/1, start_replica/1, stop/0]).
 
-start_replica([Storage_type, Master]) ->
+start_replica([Master]) ->
 	application:start(log4erl),
 	log4erl:conf("conf/log4erl.conf"),
-	probix_db:start_replica(Storage_type, Master),
+	probix_db:start_replica(Master),
 	application:start(crypto), %% required by mochiweb
 	application:start(probix).
 
