@@ -15,11 +15,9 @@ OPTIONS:
    -I      Mochiweb interface address. Default: 0.0.0.0
    -P      Mochiweb port. Default: 8000
    -D      Data directory. Directory for mnesia data
-   -T      Storage type of mnesia tables. Default: disc_copies
 
 All options can be passed as environment variables:
     PROBIX_MODE, PROBIX_NODE_NAME, PROBIX_SERVER_IP, PROBIX_SERVER_PORT,
-    PROBIX_STORAGE_TYPE
 EOF
 }
 
@@ -32,7 +30,6 @@ while getopts “hm:N:I:P:M:D:T:” OPTION; do
         I)    PROBIX_SERVER_IP="$OPTARG" ;;
         P)    PROBIX_SERVER_PORT="$OPTARG" ;;
         D)    PROBIX_DATA_DIR="$OPTARG" ;;
-        T)    PROBIX_STORAGE_TYPE="$OPTARG" ;;
         \?) echo "Invalid option -$OPTARG" ;;
     esac
 done
@@ -68,6 +65,8 @@ if [ ""$PROBIX_MODE = "replica" -a -z ""$PROBIX_MASTER_NODE ]; then
     exit;
 fi
 
+
+
 CMD="erl \
      +K true \
       -pa ebin \
@@ -78,6 +77,10 @@ CMD="erl \
       -sname $PROBIX_NODE_NAME \
       -setcookie probix \
       -s probix"
+
+## Setting running defaults
+export PROBIX_TEST_MODE=0
+export ERL_MAX_ETS_TABLES=100000
 
 if [ -n "$PROBIX_SERVER_PORT" ]; then
     export PROBIX_SERVER_PORT
