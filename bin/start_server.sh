@@ -67,8 +67,8 @@ CMD="erl \
       -pa ebin \
       -boot start_sasl \
       -mnesia dir '$PROBIX_DATA_DIR' \
-      -mnesia dump_log_write_threshold 50000 \
-      -mnesia dc_dump_limit 40 \
+      -mnesia dump_log_write_threshold 100000 \
+      -mnesia dc_dump_limit 100 \
       -sname $PROBIX_NODE_NAME \
       -setcookie probix \
       -s probix"
