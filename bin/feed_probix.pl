@@ -10,8 +10,8 @@ use LWP::ConnCache;
 use JSON::Any;
 
 Readonly my $probix_uri => qq'http://127.0.0.1:8000/';
-Readonly my $objects_to_create => 10000;
-Readonly my $probes_to_create => 100000;
+Readonly my $objects_to_create => 1000;
+Readonly my $probes_to_create => 10000;
 
 sub mk_create_object_req {
 	my $json = shift;
