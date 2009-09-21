@@ -72,7 +72,7 @@ $|++;
 # feeding objects
 #
 my @objects = (); # newly created objects
-print "feeding objects... ";
+print "feeding $objects_to_create objects... ";
 $start_time = time();
 for (1..$objects_to_create) {
 	my $object = sprintf $object_t, "foo", "bar";
@@ -86,7 +86,7 @@ print "done ($avg objects/sec);\n";
 #
 # feeding probes
 #
-print "feeding probes... ";
+print "feeding $probes_to_create probes... ";
 $start_time = time();
 for (1..$probes_to_create) {
 	my $object = $objects[rand @objects];
