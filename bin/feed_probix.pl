@@ -3,21 +3,102 @@
 use strict;
 use warnings;
 use Data::Dumper;
-use Readonly;
+use Getopt::Long;
 
 use LWP::UserAgent;
 use LWP::ConnCache;
 use JSON::Any;
 
-Readonly my $probix_uri => qq'http://127.0.0.1:8000/';
-Readonly my $objects_to_create => 1000;
-Readonly my $probes_to_create => 10000;
+# program defaults
+my $objects = 1000;
+my $probes = 10000;
+my $help = 0;
+
+my $prog = $0;
+$prog =~ s@.*/@@;
+
+GetOptions("objects=i" => \$objects, "probes=i" => \$probes, "help" => \$help) or usage(1);
+usage(0) if ($help || !@ARGV);
+
+my $server_uri = shift @ARGV;
+
+# object template
+my $object_t = qq/
+	{
+		"name": "%s",
+		"info": "%s"
+	}
+/;
+
+# probe template
+my $probe_t = qq/
+	{
+		"timestamp": %s,
+		"value": %s
+	}
+/;
+
+# for stdout messages to appear immediately
+$|++;
+
+# for measuring average feeding speed
+my ($start_time, $end_time, $avg);
+
+#
+# feeding objects
+#
+my @objects = (); # for newly created objects
+print "feeding objects... ";
+$start_time = time();
+for (1..$objects) {
+	my $object = sprintf $object_t, "foo", "bar";
+	my $req = mk_create_object_req($object);
+	push @objects, perform_req($req);
+}
+$end_time = time();
+$avg = int ( $objects /
+	($end_time == $start_time ? 1 : $end_time - $start_time) # to avoid division by zero
+);
+print "done ($avg objects/sec);\n";
+
+#
+# feeding probes
+#
+print "feeding probes... ";
+$start_time = time();
+for (1..$probes) {
+	my $object = $objects[rand @objects];
+	my $probe = sprintf $probe_t, time(), $_;
+	my $req = mk_create_probe_req($object->{id}, $probe);
+	perform_req($req);
+}
+$end_time = time();
+$avg = int ( $probes /
+	($end_time == $start_time ? 1 : $end_time - $start_time) # to avoid division by zero
+);
+print "done ($avg probes/sec);\n";
+
+sub usage {
+	my $status = shift;
+	print <<EOF;
+usage: $prog [options] server_uri
+
+  This program feeds probix server with test data.
+
+  --objects    number of objects to feed
+  --probes     number of probes to feed
+  --help       print this help
+
+EOF
+
+	exit($status);
+}
 
 sub mk_create_object_req {
 	my $json = shift;
 	HTTP::Request->new(
 		'POST',
-		$probix_uri . "/object",
+		$server_uri . "/object",
 		[],
 		$json
 	);
@@ -27,7 +108,7 @@ sub mk_create_probe_req {
 	my ($id_object, $json) = @_;
 	HTTP::Request->new(
 		'POST',
-		$probix_uri . "/object/$id_object/probes",
+		$server_uri . "/object/$id_object/probes",
 		[],
 		$json
 	);
@@ -45,56 +126,4 @@ sub perform_req {
 	die( sprintf qq/Request failed: %s\n/, $res->status_line ) unless $res->is_success;
 	JSON::Any->jsonToObj( $res->content ) if $res->content;
 }
-
-# object template
-Readonly my $object_t => qq/
-	{
-		"name": "%s",
-		"info": "%s"
-	}
-/;
-
-# probe template
-Readonly my $probe_t => qq/
-	{
-		"timestamp": %s,
-		"value": %s
-	}
-/;
-
-# for measuring average feeding speed
-my ($start_time, $end_time, $avg);
-
-# flush stdout
-$|++;
-
-#
-# feeding objects
-#
-my @objects = (); # newly created objects
-print "feeding $objects_to_create objects... ";
-$start_time = time();
-for (1..$objects_to_create) {
-	my $object = sprintf $object_t, "foo", "bar";
-	my $create_object_req = mk_create_object_req($object);
-	push @objects, perform_req($create_object_req);
-}
-$end_time = time();
-$avg = int ( $objects_to_create / ($end_time - $start_time) );
-print "done ($avg objects/sec);\n";
-
-#
-# feeding probes
-#
-print "feeding $probes_to_create probes... ";
-$start_time = time();
-for (1..$probes_to_create) {
-	my $object = $objects[rand @objects];
-	my $probe = sprintf $probe_t, time(), $_;
-	my $request = mk_create_probe_req($object->{id}, $probe);
-	perform_req($request);
-}
-$end_time = time();
-$avg = int ( $probes_to_create / ($end_time - $start_time) );
-print "done ($avg probes/sec);\n";
 
