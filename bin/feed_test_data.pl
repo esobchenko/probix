@@ -48,7 +48,7 @@ my ($start_time, $end_time, $avg);
 # feeding objects
 #
 my @objects = (); # for newly created objects
-print "feeding objects... ";
+print "feeding $objects objects... ";
 $start_time = time();
 for (1..$objects) {
 	my $object = sprintf $object_t, "foo", "bar";
@@ -64,7 +64,7 @@ print "done ($avg objects/sec);\n";
 #
 # feeding probes
 #
-print "feeding probes... ";
+print "feeding $probes probes... ";
 $start_time = time();
 for (1..$probes) {
 	my $object = $objects[rand @objects];
@@ -85,8 +85,8 @@ usage: $prog [options] server_uri
 
   This program feeds probix server with test data.
 
-  --objects    number of objects to feed
-  --probes     number of probes to feed
+  --objects    number of objects to feed (default: $objects)
+  --probes     number of probes to feed (default: $probes)
   --help       print this help
 
 EOF
