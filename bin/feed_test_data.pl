@@ -96,7 +96,7 @@ EOF
 
 sub mk_create_object_req {
 	my $json = shift;
-	HTTP::Request->new(
+	return HTTP::Request->new(
 		'POST',
 		$server_uri . "/object",
 		[],
@@ -106,7 +106,7 @@ sub mk_create_object_req {
 
 sub mk_create_probe_req {
 	my ($id_object, $json) = @_;
-	HTTP::Request->new(
+	return HTTP::Request->new(
 		'POST',
 		$server_uri . "/object/$id_object/probes",
 		[],
@@ -124,6 +124,7 @@ sub perform_req {
 
 	my $res = $ua->request( $r );
 	die( sprintf qq/Request failed: %s\n/, $res->status_line ) unless $res->is_success;
-	JSON::Any->jsonToObj( $res->content ) if $res->content;
+	return JSON::Any->jsonToObj( $res->content ) if $res->content;
+	return;
 }
 
