@@ -3,15 +3,17 @@
 
 start_replica([Master]) ->
 	application:start(log4erl),
-	log4erl:conf("conf/log4erl.conf"),
-	probix_db:start_replica(Master),
+	log4erl:conf("conf/log4erl.conf"), %% XXX this should be moved to probix_app.erl
+	application:start(mnesia),
+	probix_db:start_replica(Master), %% XXX this should be moved to probix_app.erl
 	application:start(crypto), %% required by mochiweb
 	application:start(probix).
 
 start_master([Storage_type]) ->
 	application:start(log4erl),
-	log4erl:conf("conf/log4erl.conf"),
-	probix_db:start_master(Storage_type, [node()]),
+	application:start(mnesia),
+	log4erl:conf("conf/log4erl.conf"), %% XXX
+	probix_db:start_master(Storage_type, [node()]), %% XXX
 	application:start(crypto), %% required by mochiweb
 	application:start(probix).
 

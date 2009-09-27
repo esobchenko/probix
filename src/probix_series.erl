@@ -1,4 +1,6 @@
--module(probix_series, [Id]).
+-module(probix_series).
+-behaviour(gen_server).
+
 -compile(export_all).
 
 -include_lib("stdlib/include/qlc.hrl").
