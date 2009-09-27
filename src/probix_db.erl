@@ -4,7 +4,7 @@
 -include("probix.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
--define(MNESIA_TABLES, [counter, object]).
+-define(MNESIA_TABLES, [series, probe]).
 
 stop() -> mnesia:stop().
 
@@ -35,10 +35,11 @@ start_replica(Master_node) when is_atom(Master_node) ->
 
 	ok = create_schema(disc_copies),
 
-	Tables = mnesia:system_info(tables),
+	%% Tables = mnesia:system_info(tables),
+	Tables = ?MNESIA_TABLES,
 	ok = replicate_tables(Tables),
 
-	case mnesia:wait_for_tables(Tables, 200000) of
+	case mnesia:wait_for_tables(Tables, 20000) of
 		{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
 		ok -> ok
 	end.
@@ -87,33 +88,30 @@ is_fresh_startup() ->
 
 create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	yes = mnesia:system_info(is_running),
-	F = fun() ->
-		ok = create_table(counter,
-			[
-				{Storage_type, Nodes},
-				{attributes, record_info(fields, counter)}
-			]
-		),
-		ok = create_table(object,
-			[
-				{Storage_type, Nodes},
-				{attributes, record_info(fields, object)}
-			]
-		)
-	end,
-	transaction(F).
+	{atomic, ok} = mnesia:create_table(counter,
+		[
+			{Storage_type, Nodes},
+			{attributes, record_info(fields, counter)}
+		]
+	),
+	{atomic, ok} = mnesia:create_table(object,
+		[
+			{Storage_type, Nodes},
+			{attributes, record_info(fields, object)}
+		]
+	),
+	{atomic, ok} = mnesia:create_table(probe,
+		[
+			{Storage_type, Nodes},
+			{attributes, record_info(fields, probe)},
+			{index, [object_id]},
+			{type, ordered_set}
+		]
+	),
+	ok.
 
 new_id(Key) ->
 	mnesia:dirty_update_counter({counter, Key}, 1).
-
-create_table(Name, Properties) ->
-	%% because mnesia:create_table/2 is not allowed in mnesia:transaction/1
-	Cs = mnesia_schema:list2cs([{name, Name}|Properties]),
-	mnesia_schema:do_create_table(Cs).
-
-delete_table(Name) ->
-	%% because mnesia:delete_table/1 is not allowed in mnesia:transaction/1
-	mnesia_schema:do_delete_table(Name).
 
 find(Q) ->
 	F = fun() ->
@@ -140,16 +138,16 @@ read(Oid) ->
 		mnesia:read(Oid)
 	end,
 	case transaction(F) of
-		[ Object ] ->
-			Object;
+		[ Rec ] ->
+			Rec;
 		[] ->
 			throw(probix_error:create(not_found, "not found"))
 	end.
 
 create(Rec) when is_tuple(Rec) ->
 	F = fun () ->
-			mnesia:write(Rec),
-			Rec
+		mnesia:write(Rec),
+		Rec
 	end,
 	transaction(F);
 
@@ -157,26 +155,26 @@ create(List) when is_list(List) -> lists:map( fun(R) -> create(R) end, List ).
 
 create(Tab, Rec) when is_atom(Tab), is_tuple(Rec) ->
 	F = fun () ->
-			mnesia:write(Tab, Rec, write),
-			Rec
+		mnesia:write(Tab, Rec, write),
+		Rec
 	end,
 	transaction(F);
 
 create(Tab, List) when is_atom(Tab), is_list(List) -> lists:map( fun(R) -> create(Tab, R) end, List ).
 
 update(Rec) ->
-	F =	fun () ->
-			[ Record, Id | _Tail ] = tuple_to_list(Rec),
-			read({Record, Id}), %% foreign key check
-			mnesia:write(Rec),
-			Rec
+	F = fun () ->
+		[ Record, Id | _Tail ] = tuple_to_list(Rec),
+		read({Record, Id}), %% foreign key check
+		ok = mnesia:write(Rec),
+		Rec
 	end,
 	transaction(F).
 
 delete(Oid) ->
 	F = fun() ->
-		read(Oid),
-		mnesia:delete(Oid),
+		read(Oid), %% foreign key check
+		ok = mnesia:delete(Oid),
 		Oid
 	end,
 	transaction(F).
