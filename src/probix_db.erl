@@ -88,30 +88,21 @@ is_fresh_startup() ->
 
 create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	yes = mnesia:system_info(is_running),
-	{atomic, ok} = mnesia:create_table(counter,
+	{atomic, ok} = mnesia:create_table(series,
 		[
 			{Storage_type, Nodes},
-			{attributes, record_info(fields, counter)}
-		]
-	),
-	{atomic, ok} = mnesia:create_table(object,
-		[
-			{Storage_type, Nodes},
-			{attributes, record_info(fields, object)}
+			{attributes, record_info(fields, series)}
 		]
 	),
 	{atomic, ok} = mnesia:create_table(probe,
 		[
 			{Storage_type, Nodes},
 			{attributes, record_info(fields, probe)},
-			{index, [object_id]},
+			{index, [timestamp]},
 			{type, ordered_set}
 		]
 	),
 	ok.
-
-new_id(Key) ->
-	mnesia:dirty_update_counter({counter, Key}, 1).
 
 find(Q) ->
 	F = fun() ->
@@ -178,4 +169,26 @@ delete(Oid) ->
 		Oid
 	end,
 	transaction(F).
+
+%% series functions
+
+create_series() -> ok.
+get_series() -> ok.
+delete_series(Series_id) -> ok.
+
+%% probe functions
+
+add_probes(Series_id, List) when is_list(List) -> ok;
+
+add_probe(Series_id, Rec) when is_record(probe, Rec) -> ok.
+
+get_probes(Series_id, {from, Timestamp}) -> ok.
+get_probes(Series_id, {to, Timestamp}) -> ok.
+get_probes(Series_id, {From, To}) -> ok.
+
+delete_probes({from, Timestamp})-> ok;
+delete_probes({to, Timestamp}) -> ok;
+delete_probes({From, To}) -> ok.
+
+delete_probe(Timestamp) when is_integer(Timestamp) -> ok.
 

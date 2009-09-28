@@ -9,26 +9,22 @@
 
 %% series functions
 
-create() -> ok.
-delete() -> ok.
-
-read() -> ok.
-read_all() -> ok.
+create_series() -> ok.
+get_series() -> ok.
+delete_series(Series_id) -> ok.
 
 %% probe functions
 
-add_probes(List) when is_list(List) -> ok;
-add_probes(Rec) -> ok.
+add_probes(Series_id, List) when is_list(List) -> ok;
 
-del_probes(Timestamp) when is_integer(Timestamp) -> ok.
-del_probes({from, Timestamp})-> ok.
-del_probes({to, Timestamp}) -> ok.
-del_probes({From, To}) -> ok.
+add_probe(Series_id, Rec) when is_record(probe, Rec) -> ok.
 
-get_probes({from, Timestamp}) -> ok.
-get_probes({to, Timestamp}) -> ok.
-get_probes({From, To}) -> ok.
+get_probes(Series_id, {from, Timestamp}) -> ok.
+get_probes(Series_id, {to, Timestamp}) -> ok.
+get_probes(Series_id, {From, To}) -> ok.
 
-probe_record_from(json, Rec) when is_record(probe, Rec) -> ok.
-probe_record_to(json, Rec) when is_record(probe, Rec) -> ok.
+delete_probes({from, Timestamp})-> ok;
+delete_probes({to, Timestamp}) -> ok;
+delete_probes({From, To}) -> ok.
 
+delete_probe(Timestamp) when is_integer(Timestamp) -> ok.
