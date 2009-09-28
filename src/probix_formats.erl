@@ -14,15 +14,24 @@ series_record_to(csv, Red) when is_record(series, Rec) -> ok.
 probe_record_to(json, Rec) when is_record(probe, Rec) -> ok.
 probe_record_to(csv, Rec) when is_record(probe, Rec) -> ok.
 
-probe_record_from(json, Json, Series_id) -> ok.
-probe_record_from(csv, Csv, Series_id) -> ok.
+probe_record_from(json, Series_id, Json) -> ok.
+probe_record_from(csv, Series_id, Csv) -> ok.
 
-
-%% There are no Erlang functions to work with the unix epoch, but there
-%% are functions for gregorean epoch in calendar module. We will use this
+%% there are no Erlang functions for the unix epoch, but there are functions
+%% for gregorean epoch in Erlang's calendar module. We will use this
 %% offset to convert grigorean epoch to the unix epoch and vice versa.
 unix_epoch_offset() -> 62167219200.
 
-unix_epoch() ->
+unix_to_gregorian_epoch(Epoch) -> Epoch + unix_epoch_offset().
+gregorian_to_unix_epoch(Epoch) -> Epoch - unix_epoch_offset().
+
+now_to_unix_epoch() ->
 	calendar:datetime_to_gregorian_seconds( calendar:now_to_universal_time( now() ) ) - unix_epoch_offset().
 
+gregorian_epoch_to_iso_8601(Epoch) ->
+	{{Year, Month, Day}, {Hour, Min, Sec}} = gregorian_seconds_to_datetime(Epoch),
+	io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
+		[Year, Month, Day, Hour, Min, Sec]).
+
+%% Fuck. It will be difficult.
+iso_8601_to_gregorian_epoch(Iso_8601) -> ok.

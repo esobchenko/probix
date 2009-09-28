@@ -186,9 +186,8 @@ get_probes(Series_id, {from, Timestamp}) -> ok.
 get_probes(Series_id, {to, Timestamp}) -> ok.
 get_probes(Series_id, {From, To}) -> ok.
 
-delete_probes({from, Timestamp})-> ok;
-delete_probes({to, Timestamp}) -> ok;
-delete_probes({From, To}) -> ok.
+delete_probes(Series_id, {from, Timestamp})-> ok;
+delete_probes(Series_id, {to, Timestamp}) -> ok;
+delete_probes(Series_id, {From, To}) -> ok.
 
-delete_probe(Timestamp) when is_integer(Timestamp) -> ok.
-
+delete_probe(Series_id, Timestamp) -> ok.
