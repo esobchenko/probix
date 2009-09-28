@@ -1,100 +1,146 @@
 ------------------------------
-Prerequisites
+prerequisites
 ------------------------------
 
-Erlang >= R12B-5 is required;
-Mochiweb >= r99 required from http://code.google.com/p/mochiweb/ (with utf8 support in mochijson2).
-log4erl from http://github.com/ahmednawras/log4erl/
+1. Erlang R12 or newer
+2. Mochiweb from http://code.google.com/p/mochiweb/
+3. Log4erl from http://github.com/ahmednawras/log4erl/
 
 ------------------------------
-Running Probix server
+running probix server
 ------------------------------
 
-    $ git clone git@github.com:esobchenko/probix.git
-    $ cd probix
-    $ erl -make
-    $ ./bin/acceptance_test.sh # all tests should pass.
-    $ ./bin/start_server.sh
+1. download the source code from github:
 
-Probix server binds to 0.0.0.0:8000 by default, however you can change this
-by setting PROBIX_SERVER_IP and PROBIX_SERVER_PORT environment variables.
+	$ git clone git@github.com:esobchenko/probix.git
+
+2. compile the source code:
+
+	$ cd probix
+	$ erl -make
+
+3. run the tests:
+
+	$ ./bin/run_tests.sh
+
+4. if the tests were successful, start the server:
+
+	$ ./bin/start_server.sh
+
+5. point your browser to http://localhost:8000
+
+By default, the server binds to 0.0.0.0 and uses port 8000, but you can change
+these values by setting PROBIX_SERVER_IP and PROBIX_SERVER_PORT environment variables.
 
 ------------------------------
-Probix server REST API
+server API reference
 ------------------------------
 
-Currently there are two main entities implemented: object, probe.
+1. Creating data series
 
-Object - is a representation of monitoring object, parameter that is monitored.
-Probe - is a single measurement value for a specific Object.
+1.1. Create a new series with pre-existing probes
 
-Following REST interface should be used to access data:
+	$ curl -i -X POST http://localhost:8000/series \
+		-d '[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]'
+	HTTP/1.1 200 OK
+	Location: http://localhost:8000/series/B40A1F64
 
-| Method  | URL                    |  Request data | Response data |
---------------------------------------------------------------------
-| GET     | /objects               | none          | [ object ]    |
-| GET     | /object/Id             | none          | object        |
-| PUT     | /object/Id             | object        | object        |
-| POST    | /object                | object        | object        |
-| DELETE  | /object/Id             | none          | none          |
-| GET     | /object/Id/probes      | none          | [ probe ]     |
-| GET     | /object/Id/probes?Args | none          | [ probe ]     |
-| POST    | /object/Id/probes?Args | probe         | none          |
-| POST    | /object/Id/probes?Args | [ probe ]     | none          |
---------------------------------------------------------------------
+	$ curl -i -X POST http://localhost:8000/series \
+		-d '{"timestamp": 1254136036, "value:" 123}'
+	HTTP/1.1 200 OK
+	Location: http://localhost:8000/series/B40A1F64
 
-object: {
-    id: Integer,
-    name: String,
-    info: String
-}
+1.2. Create a new series for later updating
 
-[ object ]:
-    array of objects
+	$ curl -i -X POST http://localhost:8000/series
+	HTTP/1.1 200 OK
+	Location: http://localhost:8000/series/B40A1F64
 
-probe: {
-    timestamp: Timestamp,
-    value: Value
-}
+2. Adding new data to existing series
 
-[ probe ]:
-    array of probes
+2.1. Add a few probes at once
 
-Args for GET:
-    * from=Timestamp
-    * to=Timestamp
+	$ curl -i -X POST http://localhost:8000/series/B40A1F64 \
+		-d '[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]'
 
-Args for POST:
-    * show=1
+2.2. Add a single probe in a series
 
-Important: we use unix epoch as probe timestamp for now; the agents may work in
-different timezones so we will reconsider this later.
+	$ curl -i -X POST http://localhost:8000/series/B40A1F64 \
+		-d '{"timestamp": 1254136036, "value:" 123}'
+
+3. Retrieving data from the series
+
+3.1. Get all existing series
+
+	$ curl -i -X GET http://localhost:8000/series
+	HTTP/1.1 200 OK
+	[{"uri": "http://localhost:8000/series/B40A1F64", "created": 1254136036}]
+
+3.2. Get a list of probes in this series
+
+	$ curl -i -X GET http://localhost:8000/series/B40A1F64
+	HTTP/1.1 200 OK
+	[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]
+
+3.3. Get a slice of probes for this series
+
+	$ curl -i -X GET http://localhost:8000/series/B40A1F64?from=1254136036
+	HTTP/1.1 200 OK
+	[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]
+
+	$ curl -i -X GET http://localhost:8000/series/B40A1F64?to=1254136036
+	HTTP/1.1 200 OK
+	[{"timestamp": 1254136036, "value:" 123}]
+
+	$ curl -i -X GET http://localhost:8000/series/B40A1F64?from=1254136037&to=1254136040
+	HTTP/1.1 200 OK
+	[{"timestamp": 1254136037, "value:" 130}]
+
+4. Removing data from series
+
+4.1. Delete a data series and all its contents
+
+	$ curl -i -X DELETE http://localhost:8000/series/B40A1F64
+
+4.2. Partial removal of data
+
+	$ curl -i -X DELETE \
+		http://localhost:8000/series/B40A1F64?from=1254136036
+
+	$ curl -i -X DELETE \
+		http://localhost:8000/series/B40A1F64?to=1254136037
+
+	$ curl -i -X DELETE \
+		http://localhost:8000/series/B40A1F64?from=1254136036&to=1254136038
 
 --------------------------------
-Probix server return codes
+server API codes
 --------------------------------
 
 The API attempts to return appropriate HTTP status codes for every request.
 Here's what's going on with our various status codes:
 
-200 OK: everything went awesome.
-400 Bad Request: your request is invalid, and we'll return an error message that tells you why.
-401 Not Authorized: either you need to provide authentication credentials, or the credentials provided aren't valid.
-403 Forbidden: we understand your request, but are refusing to fulfill it. An accompanying error message should explain why.
-404 Not Found: either you're requesting an invalid URI or the resource in question doesn't exist (ex: no such object).
-500 Internal Server Error: we did something wrong.
+* 200 OK
 
---------------------------------
-Probix server error struct
---------------------------------
+	Everything went awesome.
 
-{
-    code: String
-    message: String
-}
+* 400 Bad Request
 
-Where:
- * "code" is a special error code (e.g. bad_request or not_found)
- * "message" is a human readable error message
+	Your request is invalid, and we'll return an error message that tells you why.
 
+* 401 Not Authorized
+
+	Either you need to provide authentication credentials, or the credentials provided aren't valid.
+
+* 403 Forbidden
+
+	We understand your request, but are refusing to fulfill it. An accompanying error message should explain why.
+
+* 404 Not Found
+
+	Either you're requesting an invalid URI or the resource in question doesn't exist (ex: no such series).
+
+* 500 Internal Server Error
+
+	We did something wrong.
 
