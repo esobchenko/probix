@@ -20,5 +20,5 @@ start_master([Storage_type]) ->
 stop() ->
 	application:stop(probix),
 	application:stop(crypto),
-	probix_db:stop(),
+	application:stop(mnesia),
 	application:stop(log4erl).
