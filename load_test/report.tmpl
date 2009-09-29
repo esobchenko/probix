@@ -1,0 +1,55 @@
+<html>
+<head>
+<title> [% title %] </title>
+</head>
+<body>
+
+<h1>Load report</h1>
+
+<h2>Configuration</h2>
+Host: [% host %]
+<br/>
+URL: [% url %]
+<br/>
+Data: [% data %]
+<br/>
+Final request rate: [% rate %]
+<br/>
+command line: [% cmd %]
+<br/>
+
+
+<h2>Results</h2>
+
+<h3>Table data</h3>
+
+<table border="1">
+  <tr><th> Request rate </th><th> Reply rate </th><th> Reply time </th><th> Timeout errors </th><th> Total errors </th></tr>
+
+[% FOREACH result = results %]
+  <tr>
+    <td> [% result.rate %] </td>
+    <td> [% result.reply_rate.avg %] </td>
+    <td> [% result.reply_time %] </td>
+    <td> [% result.error_timeout %] </td>
+    <td> [% result.error_total %] </td>
+  </tr>
+[% END %]
+</table>
+
+<h3>Charts</h3>
+
+<b>Reply rate<b/></br>
+<img src=[% name %]_reply_rate.png>
+</br></br>
+
+<b>Reply time<b/></br>
+<img src=[% name %]_reply_time.png>
+</br></br>
+
+<b>Errors<b/></br>
+<img src=[% name %]_error.png>
+</br></br>
+
+</body>
+</html>
