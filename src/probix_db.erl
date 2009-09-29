@@ -133,6 +133,7 @@ get_all_series() ->
 
 delete_series(Oid) ->
 	F = fun() ->
+		%% XXX it is necessary to remove probes before deleting series
 		mnesia:delete(Oid),
 	end,
 	transaction(F).
@@ -149,7 +150,15 @@ read_series(Oid) ->
 
 %% probe functions
 
-add_probe(Rec) when is_record(probe, Rec) -> ok.
+add_probe(Rec) when is_record(probe, Rec) ->
+	{Series_id, _} = Rec#series.id,
+	F = fun() ->
+		case read_series(#series{id = Series_id}) of
+			{error, instance} -> {error, instance};
+			_Series -> mnesia:write(Rec)
+		end
+	end,
+	transaction(F).
 
 add_probes(List) when is_list(List) -> ok.
 

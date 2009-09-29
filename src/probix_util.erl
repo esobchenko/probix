@@ -13,5 +13,6 @@ do_rand(R) when R > 46, R < 58; R > 64, R < 91; R > 96 ->
 do_rand(_R) ->
 	do_rand(48 + random:uniform(74)).
 
+%% truly unique id for series
 very_unique_id() -> mochihex:to_hex(crypto:sha(term_to_binary({make_ref(), now()}))).
 
