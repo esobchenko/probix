@@ -104,24 +104,63 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	),
 	ok.
 
-%% series functions
+transaction(F) ->
+	case mnesia:transaction(F) of
+		{atomic, Result} ->
+			Result;
+		{aborted, Reason} ->
+			erlang:error({transaction, Reason})
+	end.
 
-create_series() -> ok.
-get_series() -> ok.
-delete_series(Series_id) -> ok.
+create_series() ->
+	F = fun() ->
+		Now = probix_format:now_to_gregorian_epoch(),
+		% XXX our id may not be unique so mnesia:write/1 will simply update
+		% the existing record; it makes sense to add the existence check.
+		Id = probix_util:random_string(10),
+		Series = #series{id = Id, time_created = Now},
+		mnesia:write(Series),
+		Series
+	end,
+	transaction(F).
+
+get_all_series() ->
+	F = fun() ->
+		Q = qlc:q([X || X <- mnesia:table(Table)]),
+		qlc:e(Q)
+	end,
+	transaction(F).
+
+delete_series(Oid) ->
+	F = fun() ->
+		mnesia:delete(Oid),
+	end,
+	transaction(F).
+
+read_series(Oid) ->
+	F = fun() ->
+		mnesia:read(Oid)
+	end,
+	case transaction(F) of
+		[ Series ] ->
+			Series;
+		[] -> {error, instance}
+	end.
 
 %% probe functions
 
-add_probes(Series_id, List) when is_list(List) -> ok;
+add_probe(Rec) when is_record(probe, Rec) -> ok.
 
-add_probe(Series_id, Rec) when is_record(probe, Rec) -> ok.
+add_probes(List) when is_list(List) -> ok.
 
-get_probes(Series_id, {from, Timestamp}) -> ok.
-get_probes(Series_id, {to, Timestamp}) -> ok.
+get_probes(Series_id, {from, Timestamp}) -> ok;
+get_probes(Series_id, {to, Timestamp}) -> ok;
 get_probes(Series_id, {From, To}) -> ok.
+
+delete_probe(Oid) -> ok.
 
 delete_probes(Series_id, {from, Timestamp})-> ok;
 delete_probes(Series_id, {to, Timestamp}) -> ok;
 delete_probes(Series_id, {From, To}) -> ok.
 
-delete_probe(Series_id, Timestamp) -> ok.
+

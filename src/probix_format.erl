@@ -26,10 +26,13 @@ unix_to_gregorian_epoch(Epoch) -> Epoch + unix_epoch_offset().
 gregorian_to_unix_epoch(Epoch) -> Epoch - unix_epoch_offset().
 
 now_to_unix_epoch() ->
-	calendar:datetime_to_gregorian_seconds( calendar:now_to_universal_time( now() ) ) - unix_epoch_offset().
+	now_to_gregorian_epoch() - unix_epoch_offset().
+
+now_to_gregorian_epoch() ->
+	calendar:datetime_to_gregorian_seconds( calendar:now_to_universal_time( now() ) ).
 
 gregorian_epoch_to_iso_8601(Epoch) ->
-	{{Year, Month, Day}, {Hour, Min, Sec}} = gregorian_seconds_to_datetime(Epoch),
+	{{Year, Month, Day}, {Hour, Min, Sec}} = calendar:gregorian_seconds_to_datetime(Epoch),
 	io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
 		[Year, Month, Day, Hour, Min, Sec]).
 
