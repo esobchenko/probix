@@ -1,4 +1,4 @@
--module(probix_formats).
+-module(probix_format).
 -compile(export_all).
 
 -include("probix.hrl").
