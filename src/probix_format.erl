@@ -8,14 +8,14 @@
 %% erlang:atom_to_binary/2 is available in Erlang R13A and newer.
 atom_to_binary(A) when is_atom(A) -> list_to_binary( atom_to_list(A) ).
 
-series_record_to_json(Rec) when is_record(Rec, series) -> ok.
-series_record_csv(Rec) when is_record(Rec, series) -> ok.
+series_record_to_json(_Rec) -> ok.
+series_record_csv(_Rec) -> ok.
 
-probe_record_to_json(Rec) when is_record(Rec, probe) -> ok.
-probe_record_to_csv(Rec) when is_record(Rec, probe) -> ok.
+probe_record_to_json(_Rec) -> ok.
+probe_record_to_csv(_Rec) -> ok.
 
-probe_record_from_json(Series_id, Json) -> ok.
-probe_record_from_csv(Series_id, Csv) -> ok.
+probe_record_from_json(_Series_id, _Json) -> ok.
+probe_record_from_csv(_Series_id, _Csv) -> ok.
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
@@ -37,4 +37,4 @@ gregorian_epoch_to_iso_8601(Epoch) ->
 		[Year, Month, Day, Hour, Min, Sec]).
 
 %% Fuck. It will be difficult.
-iso_8601_to_gregorian_epoch(Iso_8601) -> ok.
+iso_8601_to_gregorian_epoch(_Iso_8601) -> ok.
