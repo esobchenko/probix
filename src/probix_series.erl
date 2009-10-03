@@ -12,6 +12,25 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
+new_series() -> ok.
+all_series() -> ok.
+delete_series(_Id) -> ok.
+series(_Id) -> ok.
+
+add_probe(_Rec) -> ok.
+add_probes(_List) -> ok.
+
+get_probes(_Series_id) -> ok.
+get_probes(_Series_id, {from, _From}) -> ok;
+get_probes(_Series_id, {to, _To}) -> ok;
+get_probes(_Series_id, {_From, _To}) -> ok.
+
+delete_probe(_Oid) -> ok.
+delete_probes(_Series_id) -> ok.
+delete_probes(_Series_id, {from, _From}) -> ok;
+delete_probes(_Series_id, {to, _To}) -> ok;
+delete_probes(_Series_id, {_From, _To}) -> ok.
+
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
