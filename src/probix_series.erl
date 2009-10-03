@@ -1,5 +1,5 @@
 -module(probix_series).
--behaviour(gen_server).
+% -behaviour(gen_server).
 
 -compile(export_all).
 

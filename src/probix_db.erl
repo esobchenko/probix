@@ -8,12 +8,12 @@
 
 stop() -> mnesia:stop().
 
-%%stop_replica(Node) when is_atom(Node) ->
-%%	rpc:call(Node, probix_db, stop, []).
+%stop_replica(Node) when is_atom(Node) ->
+%	rpc:call(Node, probix_db, stop, []).
 
-%%remove_replica(Node) when is_atom(Node) ->
-%%	stop_replica(Node),
-%%	mnesia:del_table_copy(schema, Node).
+%remove_replica(Node) when is_atom(Node) ->
+%	stop_replica(Node),
+%	mnesia:del_table_copy(schema, Node).
 
 start_replica(Master_node) when is_atom(Master_node) ->
 	ok = mnesia:start(),
@@ -35,7 +35,7 @@ start_replica(Master_node) when is_atom(Master_node) ->
 
 	ok = create_schema(disc_copies),
 
-	%% Tables = mnesia:system_info(tables),
+	%Tables = mnesia:system_info(tables),
 	Tables = ?MNESIA_TABLES,
 	ok = replicate_tables(Tables),
 
@@ -49,7 +49,7 @@ replicate_tables([H|T]) ->
 		true -> {atomic, ok};
 		false ->
 			case H of
-				schema -> {atomic, ok}; %% schema is already created
+				schema -> {atomic, ok}; %% schema is created in start_replica/1
 				_ -> mnesia:add_table_copy(H, node(), disc_copies)
 			end
 	end,
@@ -106,9 +106,8 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 
 new_series() ->
 	F = fun() ->
-		Now = probix_format:now_to_gregorian_epoch(),
-		Id = probix_util:random_string(10),
-		Series = #series{id = Id, time_created = Now},
+		Series = #series{id = probix_util:random_string(10),
+			time_created = probix_format:now_to_gregorian_epoch()},
 		%% generated identifier may not be unique: in this case a function will fail.
 		case series(Series) of
 			not_found ->
@@ -118,12 +117,14 @@ new_series() ->
 		end
 	end,
 	{atomic, Series} = mnesia:transaction(F),
-	{ok, Series}.
+	Series.
 
 all_series() ->
 	F = fun() ->
-		Q = qlc:q([X || X <- mnesia:table(Table)]),
-		qlc:e(Q) %% XXX what happens if qlc:e/1 return Error?
+		Q = qlc:q([X || X <- mnesia:table(series)]),
+		%% XXX I know that qlc:eval/1 may return error, but
+		%% hardly can imagine in what cases it can happen.
+		qlc:e(Q)
 	end,
 	{atomic, List} = mnesia:transaction(F),
 	{ok, List}.
@@ -132,7 +133,7 @@ delete_series(Oid) ->
 	F = fun() ->
 		{series, Id} = Oid,
 		ok = delete_probes(Id),
-		mnesia:delete(Oid),
+		mnesia:delete(Oid)
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
@@ -142,13 +143,14 @@ series(Oid) ->
 		mnesia:read(Oid)
 	end,
 	case mnesia:transaction(F) of
-		{atomic, []} -> {error, not_found};
-		{atomic, [Rec]} -> {ok, Rec}
+		{atomic, []} -> not_found;
+		{atomic, [Rec]} -> Rec
 	end.
 
-%% probe functions
+%% XXX I do not check the existence of the series in add_probes/1 and other probe functions
+%% because it's expensive and should be done outside e.g. probix_format:probe_record_from/3
 
-add_probe(Rec) when is_record(probe, Rec) ->
+add_probe(Rec) when is_record(Rec, probe) ->
 	F = fun() ->
 		mnesia:write(Rec)
 	end,
@@ -165,53 +167,39 @@ add_probes(List) when is_list(List) ->
 
 get_probes(Series_id) ->
 	F = fun() ->
-		case series({series, Series_id}) of
-			{error, not_found} -> {error, bad_series};
-			_Rec ->
-				Q = qlc:q([ P || P <- mnesia:table(Table) ]),
-				qlc:e(Q)
-		end
+		Q = qlc:q([ P || P <- mnesia:table(probe), element(1, P#probe.id) == Series_id ]),
+		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
 
-get_probes(Series_id, {from, Timestamp}) ->
+get_probes(Series_id, {from, From}) ->
 	F = fun() ->
-		case series({series, Series_id}) of
-			not_found -> bad_series;
-			_Rec ->
-				Q = qlc:q([ P ||
-					P <- mnesia:table(Table),
-					P#probe.timestamp =< To ]),
-				qlc:e(Q)
-		end
+		Q = qlc:q([ P || P <- mnesia:table(probe),
+			element(1, P#probe.id) == Series_id,
+			element(2, P#probe.id) >= From ]),
+		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
-get_probes(Series_id, {to, Timestamp}) ->
+get_probes(Series_id, {to, To}) ->
 	F = fun() ->
-		case series({series, Series_id}) of
-			not_found -> bad_series;
-			_Rec ->
-				Q = qlc:q([ P || P <- mnesia:table(Table),
-					P#probe.timestamp >= From ]),
-				qlc:e(Q)
-		end
+		Q = qlc:q([ P || P <- mnesia:table(probe),
+			element(1, P#probe.id) == Series_id,
+			element(2, P#probe.id) =< To ]),
+		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
 get_probes(Series_id, {From, To}) ->
 	F = fun() ->
-		case series({series, Series_id}) of
-			not_found -> bad_series;
-			_Rec ->
-				Q = qlc:q([ P || P <- mnesia:table(Table),
-					P#probe.timestamp >= From,
-					P#probe.timestamp =< To ]),
-				qlc:e(Q)
-		end
+		Q = qlc:q([ P || P <- mnesia:table(probe),
+			element(1, P#probe.id) == Series_id,
+			element(2, P#probe.id) >= From,
+			element(2, P#probe.id) =< To ]),
+		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
@@ -223,10 +211,48 @@ delete_probe(Oid) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-delete_probes(Series_id, {from, Timestamp}) ->
+delete_probes(Series_id) ->
 	F = fun() ->
-		
-delete_probes(Series_id, {to, Timestamp}) -> ok;
-delete_probes(Series_id, {From, To}) -> ok.
+		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
+			element(1, P#probe.id) == Series_id ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok.
+
+delete_probes(Series_id, {from, From}) ->
+	F = fun() ->
+		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
+			element(1, P#probe.id) == Series_id,
+			element(2, P#probe.id) >= From ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok;
+
+delete_probes(Series_id, {to, To}) ->
+	F = fun() ->
+		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
+			element(1, P#probe.id) == Series_id,
+			element(2, P#probe.id) =< To ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok;
+
+delete_probes(Series_id, {From, To}) ->
+	F = fun() ->
+		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
+			element(1, P#probe.id) == Series_id,
+			element(2, P#probe.id) >= From,
+			element(2, P#probe.id) =< To ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok.
 
 

@@ -48,7 +48,7 @@ handle('GET', ["object", Id_string], _, _) ->
 handle('PUT', ["object", Id_string], _, Post) ->
 	Id = to_integer(Id_string),
 	Record = probix_utils:json_to_record(Post, probix_object),
-	Result = probix_object:update(Id, Record),	
+	Result = probix_object:update(Id, Record),
 	Output = probix_utils:record_to_json(Result, probix_object),
 	ok(Output);
 
