@@ -111,7 +111,7 @@ new_series() ->
 		%% generated identifier may not be unique: in this case a function will fail.
 		case series(Series) of
 			not_found ->
-				mnesia:write(Series),
+				ok = mnesia:write(Series),
 				Series;
 			_Rec -> transaction:abort(duplicate_id)
 		end
@@ -129,18 +129,17 @@ all_series() ->
 	{atomic, List} = mnesia:transaction(F),
 	{ok, List}.
 
-delete_series(Oid) ->
+delete_series(Id) ->
 	F = fun() ->
-		{series, Id} = Oid,
 		ok = delete_probes(Id),
-		mnesia:delete(Oid)
+		mnesia:delete({series, Id})
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-series(Oid) ->
+series(Id) ->
 	F = fun() ->
-		mnesia:read(Oid)
+		mnesia:read({series, Id})
 	end,
 	case mnesia:transaction(F) of
 		{atomic, []} -> not_found;
@@ -204,9 +203,9 @@ get_probes(Series_id, {From, To}) ->
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
 
-delete_probe(Oid) ->
+delete_probe(Id) ->
 	F = fun() ->
-		mnesia:delete(Oid)
+		mnesia:delete({probe, Id})
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
