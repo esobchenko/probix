@@ -98,7 +98,6 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 		[
 			{Storage_type, Nodes},
 			{attributes, record_info(fields, probe)},
-			{index, [timestamp]},
 			{type, ordered_set}
 		]
 	),
