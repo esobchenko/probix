@@ -7,7 +7,7 @@
 	start_link/0, new_series/0, all_series/0,
 	delete_series/1, series/1, add_probe/1,
 	add_probes/1, get_probes/1, get_probes/2,
-	delete_probe/1, delete_probes/1, delete_probes/2
+	delete_probes/1, delete_probes/2
 ]).
 
 %% gen_server callbacks
@@ -35,8 +35,6 @@ get_probes(Series_id) ->
 get_probes(Series_id, Range) ->
 	gen_server:call(?MODULE, {get_probes, Series_id, Range}).
 
-delete_probe(Id) ->
-	gen_server:call(?MODULE, {delete_probe, Id}).
 delete_probes(Series_id) ->
 	gen_server:call(?MODULE, {delete_probes, Series_id}).
 delete_probes(Series_id, Range) ->

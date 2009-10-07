@@ -202,6 +202,7 @@ get_probes(Series_id, {From, To}) ->
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
 
+%% XXX not sure this function is needed
 delete_probe(Id) ->
 	F = fun() ->
 		mnesia:delete({probe, Id})
