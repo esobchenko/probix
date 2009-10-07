@@ -50,9 +50,18 @@ server API reference
 	HTTP/1.1 200 OK
 	Location: http://localhost:8000/series/B40A1F64
 
+	$ curl -i -X POST http://localhost:8000/series?label=optonal_label \
+		-d '{"timestamp": 1254136036, "value:" 123}'
+	HTTP/1.1 200 OK
+	Location: http://localhost:8000/series/B40A1F64
+
 1.2. Create a new series for later updating
 
 	$ curl -i -X POST http://localhost:8000/series
+	HTTP/1.1 200 OK
+	Location: http://localhost:8000/series/B40A1F64
+
+	$ curl -i -X POST http://localhost:8000/series?label=optional_label
 	HTTP/1.1 200 OK
 	Location: http://localhost:8000/series/B40A1F64
 

@@ -103,10 +103,11 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	),
 	ok.
 
-new_series() ->
+new_series(Label) ->
 	F = fun() ->
 		Series = #series{id = probix_util:random_string(10),
-			time_created = probix_format:now_to_gregorian_epoch()},
+			time_created = probix_format:now_to_gregorian_epoch(),
+			label = Label},
 		%% generated identifier may not be unique: in this case a function will fail.
 		case series(Series) of
 			not_found ->
@@ -148,12 +149,12 @@ series(Id) ->
 %% XXX I do not check the existence of the series in add_probes/1 and other probe functions
 %% because it's expensive and should be done outside e.g. probix_format:probe_record_from/3
 
-add_probe(Rec) when is_record(Rec, probe) ->
+add_probes(Rec) when is_record(Rec, probe) ->
 	F = fun() ->
 		mnesia:write(Rec)
 	end,
 	{atomic, ok} = mnesia:transaction(F),
-	ok.
+	ok;
 
 add_probes(List) when is_list(List) ->
 	F = fun() ->

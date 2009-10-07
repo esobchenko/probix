@@ -4,8 +4,8 @@
 -compile(export_all).
 
 -export([
-	start_link/0, new_series/0, all_series/0,
-	delete_series/1, series/1, add_probe/1,
+	start_link/0, new_series/0, new_series/1,
+	all_series/0, delete_series/1, series/1,
 	add_probes/1, get_probes/1, get_probes/2,
 	delete_probes/1, delete_probes/2
 ]).
@@ -17,7 +17,10 @@
 -include_lib("eunit/include/eunit.hrl").
 
 new_series() ->
-	gen_server:call(?MODULE, new_series).
+	gen_server:call(?MODULE, {new_series, undefined}).
+new_series(Label) ->
+	gen_server:call(?MODULE, {new_series, Label}).
+
 all_series() ->
 	gen_server:call(?MODULE, all_series).
 delete_series(Id) ->
@@ -25,10 +28,8 @@ delete_series(Id) ->
 series(Id) ->
 	gen_server:call(?MODULE, {series, Id}).
 
-add_probe(Rec) ->
-	gen_server:call(?MODULE, {add_probe, Rec}).
-add_probes(List) ->
-	gen_server:call(?MODULE, {add_probes, List}).
+add_probes(Probes) ->
+	gen_server:call(?MODULE, {add_probes, Probes}).
 
 get_probes(Series_id) ->
 	gen_server:call(?MODULE, {get_probes, Series_id}).
@@ -46,8 +47,8 @@ start_link() ->
 init([]) ->
 	{ok, null}.
 
-handle_call(new_series, _From, State) ->
-	Reply = probix_db:new_series(),
+handle_call({new_series, Label}, _From, State) ->
+	Reply = probix_db:new_series(Label),
 	{reply, Reply, State};
 
 handle_call(all_series, _From, State) ->
@@ -63,12 +64,8 @@ handle_call({series, Id}, _From, State) ->
 	{reply, Reply, State};
 
 
-handle_call({add_probe, Rec}, _From, State) ->
-	Reply = probix_db:add_probe(Rec),
-	{reply, Reply, State};
-
-handle_call({add_probes, List}, _From, State) ->
-	Reply = probix_db:add_probes(List),
+handle_call({add_probes, Probes}, _From, State) ->
+	Reply = probix_db:add_probes(Probes),
 	{reply, Reply, State};
 
 
