@@ -94,9 +94,14 @@ handle('GET', ["series", Id], [{to, To}], undefined) ->
     %% probix_series:get_probes(Id);
     ok();
 
-handle('GET', ["series", Id], [{from, From}, {to, To}], undefined) ->
-    log4erl:info("Selecting all data for series ~s, from: ~p, to: ~p", 
-                 [Id, From, To]),
+handle('GET', ["series", Id], Args, undefined) ->
+    case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
+        [From, To] when is_list(From); is_list(To) ->
+            log4erl:info("Selecting all data for series ~s, from: ~p, to: ~p", 
+                         [Id, From, To]);
+        _ -> 
+            error("Wrong args")
+    end,
     %% probix_series:get_probes(Id,{From, To});
     ok();
 
