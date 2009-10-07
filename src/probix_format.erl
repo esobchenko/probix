@@ -8,10 +8,21 @@
 %% erlang:atom_to_binary/2 is available in Erlang R13A and newer.
 atom_to_binary(A) when is_atom(A) -> list_to_binary( atom_to_list(A) ).
 
-series_record_to_json(_Rec) -> ok.
+series_record_to_json(Rec) ->
+	Keys = [ atom_to_binary(K) || K <- record_info(fields, series) ],
+	[_Name | Values] = tuple_to_list(Rec),
+	Encode = mochijson2:encoder([{utf8, true}]),
+	list_to_binary( Encode({struct, lists:zip(Keys, Values)}) ).
+
 series_record_csv(_Rec) -> ok.
 
-probe_record_to_json(_Rec) -> ok.
+probe_record_to_json(_Rec) ->
+	Keys = [ <<"timestamp">>, <<"value">> ],
+	{_Object_id, Timestamp} = Probe#probe.id,
+	Value = Probe#probe.value,
+	Encode = mochijson2:encoder([{utf8, true}]),
+	list_to_binary( Encode({struct, lists:zip(Keys, [Timestamp, Value])}) ).
+
 probe_record_to_csv(_Rec) -> ok.
 
 probe_record_from_json(_Series_id, _Json) -> ok.
