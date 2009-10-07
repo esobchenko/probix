@@ -21,7 +21,9 @@ dispatch_requests(Req) ->
 	Post = Req:recv_body(),
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
-
+    
+    log4erl:info("Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
+ 
 	R = try
         handle(Method, Splitted, Query, Post)
 	catch	
@@ -36,62 +38,108 @@ dispatch_requests(Req) ->
 
 %% TODO: check Args and create different prototypes depending if Args/Post is passed
 
-%% Create a new series
-handle('POST', ["series"], _, Post) ->
-    probix_series:new_series();
+%% Create a new series without data
+handle('POST', ["series"], [], undefined) ->
+    log4erl:info("Creating series without label"),
+    %% probix_series:new_series();
+    ok();
 
-%% Add probes to existing series
-handle('POST', ["series", Id_string], _, Post) ->
-    probix_series:add_probes();
+handle('POST', ["series"], [{"label", Label}], undefined) ->
+    log4erl:info("Creating series with label ~s", [ Label ]),
+    %% probix_series:new_series(Label);
+    ok();
+
+%% Create a new series with data
+handle('POST', ["series"], [], _Post) ->
+    log4erl:info("Creating series without label and adding data"),
+    %% probix_series:new_series(),
+    %% probix_series:add_probes(Post);
+    ok();
+
+handle('POST', ["series"], [{"label", Label}], _Post) ->
+    log4erl:info("Creating series with label: ~s and adding data", [ Label ]),
+    %% Id = probix_series:new_series(Label),
+    %% probix_series:add_probes(Id, Post);
+    ok();
+
+%% Update series with data
+handle('POST', ["series", Id], [], _Post) ->
+    log4erl:info("Updating series ~s", [ Id ]),
+    %% probix_series:add_probes(Id, Post);
+    ok();
 
 %% Get all existing series
-handle('GET', ["series"], _, _) ->
-    probix_series:all_series();
+handle('GET', ["series"], [], undefined) ->
+    log4erl:info("Getting all series"),
+    %% probix_series:all_series();
+    ok();
 
 %% Get a list of probes in this series
+handle('GET', ["series", Id], [], undefined) ->
+    log4erl:info("Selecting all data for series ~s", [ Id ]),
+    %% probix_series:get_probes(Id);
+    ok();
+
+
+handle('GET', ["series", Id], [{from, From}], undefined) ->
+    log4erl:info("Selecting all data for series ~s, from: ~p", 
+                 [Id, From]),
+    %% probix_series:get_probes(Id);
+    ok();
+
+
+handle('GET', ["series", Id], [{to, To}], undefined) ->
+    log4erl:info("Selecting all data for series ~s, to: ~p", 
+                 [Id, To]),
+    %% probix_series:get_probes(Id);
+    ok();
+
+handle('GET', ["series", Id], [{from, From}, {to, To}], undefined) ->
+    log4erl:info("Selecting all data for series ~s, from: ~p, to: ~p", 
+                 [Id, From, To]),
+    %% probix_series:get_probes(Id,{From, To});
+    ok();
+
 %% Get a slice of probes for this series
-handle('GET', ["series", Id_string], Args, _) ->
-    probix_series:get_probes();
 
 %% Removing data from series
 %%
-handle('DELETE', ["series", Id_string], Args, _) ->
-    probix_series:delete_probes();
+handle('DELETE', ["series", Id], [], undefined) ->
+    log4erl:info("Deleting series with id: ~s", [ Id ]),
+    %% probix_series:delete_probes();
+    ok();
 
 handle(_, _, _, _) ->
-	throw(
-      probix_error:create(bad_request, "unknown request")
-     ).
+    log4erl:error("Unknown request").
 
 %%
 %% ok and error functions help to construct mochiweb's http response tuples;
 %% they used in handle/5 functions.
 %%
 
-ok(Content) ->
-	{200, [{"Content-Type", "application/json"}], Content}.
+%% ok(Content) ->
+%%	{200, [{"Content-Type", "application/json"}], Content}.
 
 %% empty response
 ok() ->
 	{200, [{"Content-Type", "application/json"}], ""}.
 
 error(Error) ->
-	{http_code(Error), [{"Content-Type", "application/json"}], 
-     probix_utils:record_to_json(Error, probix_error)}.
+    log4erl:error(Error).
 
 %% returns http numeric response code for
 %% given error according to specification
-http_code(Error) when is_record(Error, error) ->
-	case Error#error.code of
-		not_found ->
-			404;
-		unknown_format ->
-			406;
-		internal_error ->
-			500;
-		_Other ->
-			400
-	end.
+%% http_code(Error) when is_record(Error, error) ->
+%%	case Error#error.code of
+%%		not_found ->
+%% 			404;
+%% 		unknown_format ->
+%% 			406;
+%% 		internal_error ->
+%% 			500;
+%% 		_Other ->
+%% 			400
+%% 	end.
 
 %% do we need this here?
 
