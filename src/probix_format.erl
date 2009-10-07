@@ -16,10 +16,10 @@ series_record_to_json(Rec) ->
 
 series_record_csv(_Rec) -> ok.
 
-probe_record_to_json(_Rec) ->
+probe_record_to_json(Rec) ->
 	Keys = [ <<"timestamp">>, <<"value">> ],
-	{_Object_id, Timestamp} = Probe#probe.id,
-	Value = Probe#probe.value,
+	{_Series_id, Timestamp} = Rec#probe.id,
+	Value = Rec#probe.value,
 	Encode = mochijson2:encoder([{utf8, true}]),
 	list_to_binary( Encode({struct, lists:zip(Keys, [Timestamp, Value])}) ).
 
