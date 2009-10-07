@@ -34,78 +34,34 @@ dispatch_requests(Req) ->
 	end,
 	Req:respond(R).
 
-handle('GET', ["objects"], _,  _) ->
-	Objects = probix_object:read_all(),
-	Output = probix_utils:record_to_json(Objects, probix_object),
-	ok(Output);
+%% TODO: check Args and create different prototypes depending if Args/Post is passed
 
-handle('GET', ["object", Id_string], _, _) ->
-	Id = to_integer(Id_string),
-	Object = probix_object:read(Id), 
-	Output = probix_utils:record_to_json(Object, probix_object),
-	ok(Output);
+%% Create a new series
+handle('POST', ["series"], _, Post) ->
+    probix_series:new_series();
 
-handle('PUT', ["object", Id_string], _, Post) ->
-	Id = to_integer(Id_string),
-	Record = probix_utils:json_to_record(Post, probix_object),
-	Result = probix_object:update(Id, Record),
-	Output = probix_utils:record_to_json(Result, probix_object),
-	ok(Output);
+%% Add probes to existing series
+handle('POST', ["series", Id_string], _, Post) ->
+    probix_series:add_probes();
 
-handle('DELETE', ["object", Id_string], _, _) ->
-	Id = to_integer(Id_string),
-	probix_object:delete(Id),
-	ok();
+%% Get all existing series
+handle('GET', ["series"], _, _) ->
+    probix_series:all_series();
 
-handle('POST', ["object"], _, Post) ->
-	Record = probix_utils:json_to_record(Post, probix_object),
-	Result = probix_object:create(Record),
-	Output = probix_utils:record_to_json(Result, probix_object),
-	ok(Output);
+%% Get a list of probes in this series
+%% Get a slice of probes for this series
+handle('GET', ["series", Id_string], Args, _) ->
+    probix_series:get_probes();
 
-%% to get probes for object by timestamp
-handle('GET', [ "object", Id_string, "probes" ], Args, _) ->
-	Id = to_integer(Id_string),
-	Probes = case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
-		[undefined, undefined] ->
-			probix_probe:probes_by_object_id(Id);
-		[undefined, To] when is_list(To) ->
-			probix_probe:probes_by_object_id(
-				Id,
-				{to, to_integer(To)}
-			);
-		[From, undefined] when is_list(From) ->
-			probix_probe:probes_by_object_id(
-				Id,
-				{from, to_integer(From)}
-			);
-		[From, To] when is_list(From); is_list(To) ->
-			probix_probe:probes_by_object_id(
-				Id,
-				to_integer(From),
-				to_integer(To)
-			)
-	end,
-	Output = probix_utils:record_to_json(Probes, probix_probe),
-	ok(Output);
-
-%% creating probes for object
-handle('POST', [ "object", Id_string, "probes" ], Args, Post) ->
-	Id = to_integer(Id_string),
-	Records = probix_utils:json_to_record(Post, probix_probe),
-	Result = probix_probe:create(Id, Records),
-
-	%% return newly added probes using the "?return=1" in URI
-	case proplists:get_value("return", Args) of
-		"1" -> 	Output = probix_utils:record_to_json(Result, probix_probe),
-                ok(Output);
-		_Other -> ok()
-	end;
+%% Removing data from series
+%%
+handle('DELETE', ["series", Id_string], Args, _) ->
+    probix_series:delete_probes();
 
 handle(_, _, _, _) ->
 	throw(
-		probix_error:create(bad_request, "unknown request")
-	).
+      probix_error:create(bad_request, "unknown request")
+     ).
 
 %%
 %% ok and error functions help to construct mochiweb's http response tuples;
@@ -137,13 +93,15 @@ http_code(Error) when is_record(Error, error) ->
 			400
 	end.
 
+%% do we need this here?
+
 %% this function is used to convert some strings to integers (e.g. object id) because
 %% bad_request exception must be raised to inform user about the problem.
-to_integer(L) when is_list(L) ->
-	try erlang:list_to_integer(L)
-	catch
-		error:badarg -> throw(
-			probix_error:create(bad_request, "got string where integer is expected")
-		)
-	end.
+%% to_integer(L) when is_list(L) ->
+%% 	try erlang:list_to_integer(L)
+%%	catch
+%%		error:badarg -> throw(
+%%			probix_error:create(bad_request, "got string where integer is expected")
+%%		)
+%%	end.
 
