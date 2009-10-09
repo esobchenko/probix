@@ -6,8 +6,8 @@
 -export([
 	start_link/0, new_series/0, new_series/1,
 	all_series/0, delete_series/1, series/1,
-	add_probes/1, get_probes/1, get_probes/2,
-	delete_probes/1, delete_probes/2
+	add_ticks/1, get_ticks/1, get_ticks/2,
+	delete_ticks/1, delete_ticks/2
 ]).
 
 %% gen_server callbacks
@@ -28,18 +28,18 @@ delete_series(Id) ->
 series(Id) ->
 	gen_server:call(?MODULE, {series, Id}).
 
-add_probes(Probes) ->
-	gen_server:call(?MODULE, {add_probes, Probes}).
+add_ticks(Probes) ->
+	gen_server:call(?MODULE, {add_ticks, Probes}).
 
-get_probes(Series_id) ->
-	gen_server:call(?MODULE, {get_probes, Series_id}).
-get_probes(Series_id, Range) ->
-	gen_server:call(?MODULE, {get_probes, Series_id, Range}).
+get_ticks(Series_id) ->
+	gen_server:call(?MODULE, {get_ticks, Series_id}).
+get_ticks(Series_id, Range) ->
+	gen_server:call(?MODULE, {get_ticks, Series_id, Range}).
 
-delete_probes(Series_id) ->
-	gen_server:call(?MODULE, {delete_probes, Series_id}).
-delete_probes(Series_id, Range) ->
-	gen_server:call(?MODULE, {delete_probes, Series_id, Range}).
+delete_ticks(Series_id) ->
+	gen_server:call(?MODULE, {delete_ticks, Series_id}).
+delete_ticks(Series_id, Range) ->
+	gen_server:call(?MODULE, {delete_ticks, Series_id, Range}).
 
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -64,26 +64,26 @@ handle_call({series, Id}, _From, State) ->
 	{reply, Reply, State};
 
 
-handle_call({add_probes, Probes}, _From, State) ->
-	Reply = probix_db:add_probes(Probes),
+handle_call({add_ticks, Probes}, _From, State) ->
+	Reply = probix_db:add_ticks(Probes),
 	{reply, Reply, State};
 
 
-handle_call({get_probes, Series_id}, _From, State) ->
-	Reply = probix_db:get_probes(Series_id),
+handle_call({get_ticks, Series_id}, _From, State) ->
+	Reply = probix_db:get_ticks(Series_id),
 	{reply, Reply, State};
 
-handle_call({get_probes, Series_id, Range}, _From, State) ->
-	Reply = probix_db:get_probes(Series_id, Range),
+handle_call({get_ticks, Series_id, Range}, _From, State) ->
+	Reply = probix_db:get_ticks(Series_id, Range),
 	{reply, Reply, State};
 
 
-handle_call({delete_probes, Series_id}, _From, State) ->
-	Reply = probix_db:delete_probes(Series_id),
+handle_call({delete_ticks, Series_id}, _From, State) ->
+	Reply = probix_db:delete_ticks(Series_id),
 	{reply, Reply, State};
 
-handle_call({delete_probes, Series_id, Range}, _From, State) ->
-	Reply = probix_db:delete_probes(Series_id, Range),
+handle_call({delete_ticks, Series_id, Range}, _From, State) ->
+	Reply = probix_db:delete_ticks(Series_id, Range),
 	{reply, Reply, State}.
 
 

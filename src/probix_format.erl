@@ -16,17 +16,17 @@ series_record_to_json(Rec) ->
 
 series_record_csv(_Rec) -> ok.
 
-probe_record_to_json(Rec) ->
+tick_record_to_json(Rec) ->
 	Keys = [ <<"timestamp">>, <<"value">> ],
-	{_Series_id, Timestamp} = Rec#probe.id,
-	Value = Rec#probe.value,
+	{_Series_id, Timestamp} = Rec#tick.id,
+	Value = Rec#tick.value,
 	Encode = mochijson2:encoder([{utf8, true}]),
 	list_to_binary( Encode({struct, lists:zip(Keys, [Timestamp, Value])}) ).
 
-probe_record_to_csv(_Rec) -> ok.
+tick_record_to_csv(_Rec) -> ok.
 
-probe_record_from_json(_Series_id, _Json) -> ok.
-probe_record_from_csv(_Series_id, _Csv) -> ok.
+tick_record_from_json(_Series_id, _Json) -> ok.
+tick_record_from_csv(_Series_id, _Csv) -> ok.
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
@@ -47,5 +47,5 @@ gregorian_epoch_to_iso_8601(Epoch) ->
 	io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
 		[Year, Month, Day, Hour, Min, Sec]).
 
-%% Fuck. It will be difficult.
+%% Fuck.
 iso_8601_to_gregorian_epoch(_Iso_8601) -> ok.

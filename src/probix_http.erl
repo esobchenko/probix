@@ -53,19 +53,19 @@ handle('POST', ["series"], [{"label", Label}], undefined) ->
 handle('POST', ["series"], [], _Post) ->
     log4erl:info("Creating series without label and adding data"),
     %% probix_series:new_series(),
-    %% probix_series:add_probes(Post);
+    %% probix_series:add_ticks(Post);
     ok();
 
 handle('POST', ["series"], [{"label", Label}], _Post) ->
     log4erl:info("Creating series with label: ~s and adding data", [ Label ]),
     %% Id = probix_series:new_series(Label),
-    %% probix_series:add_probes(Id, Post);
+    %% probix_series:add_ticks(Id, Post);
     ok();
 
 %% Update series with data
 handle('POST', ["series", Id], [], _Post) ->
     log4erl:info("Updating series ~s", [ Id ]),
-    %% probix_series:add_probes(Id, Post);
+    %% probix_series:add_ticks(Id, Post);
     ok();
 
 %% Get all existing series
@@ -74,24 +74,24 @@ handle('GET', ["series"], [], undefined) ->
     %% probix_series:all_series();
     ok();
 
-%% Get a list of probes in this series
+%% Get a list of ticks in this series
 handle('GET', ["series", Id], [], undefined) ->
     log4erl:info("Selecting all data for series ~s", [ Id ]),
-    %% probix_series:get_probes(Id);
+    %% probix_series:get_ticks(Id);
     ok();
 
 
 handle('GET', ["series", Id], [{from, From}], undefined) ->
     log4erl:info("Selecting all data for series ~s, from: ~p", 
                  [Id, From]),
-    %% probix_series:get_probes(Id);
+    %% probix_series:get_ticks(Id);
     ok();
 
 
 handle('GET', ["series", Id], [{to, To}], undefined) ->
     log4erl:info("Selecting all data for series ~s, to: ~p", 
                  [Id, To]),
-    %% probix_series:get_probes(Id);
+    %% probix_series:get_ticks(Id);
     ok();
 
 handle('GET', ["series", Id], Args, undefined) ->
@@ -102,16 +102,16 @@ handle('GET', ["series", Id], Args, undefined) ->
         _ -> 
             error("Wrong args")
     end,
-    %% probix_series:get_probes(Id,{From, To});
+    %% probix_series:get_ticks(Id,{From, To});
     ok();
 
-%% Get a slice of probes for this series
+%% Get a slice of ticks for this series
 
 %% Removing data from series
 %%
 handle('DELETE', ["series", Id], [], undefined) ->
     log4erl:info("Deleting series with id: ~s", [ Id ]),
-    %% probix_series:delete_probes();
+    %% probix_series:delete_ticks();
     ok();
 
 handle(_, _, _, _) ->

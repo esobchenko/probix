@@ -4,7 +4,7 @@
 -include("probix.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
--define(MNESIA_TABLES, [series, probe]).
+-define(MNESIA_TABLES, [series, tick]).
 
 stop() -> mnesia:stop().
 
@@ -94,10 +94,10 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 			{attributes, record_info(fields, series)}
 		]
 	),
-	{atomic, ok} = mnesia:create_table(probe,
+	{atomic, ok} = mnesia:create_table(tick,
 		[
 			{Storage_type, Nodes},
-			{attributes, record_info(fields, probe)},
+			{attributes, record_info(fields, tick)},
 			{type, ordered_set}
 		]
 	),
@@ -131,7 +131,7 @@ all_series() ->
 
 delete_series(Id) ->
 	F = fun() ->
-		ok = delete_probes(Id),
+		ok = delete_ticks(Id),
 		mnesia:delete({series, Id})
 	end,
 	{atomic, ok} = mnesia:transaction(F),
@@ -146,17 +146,17 @@ series(Id) ->
 		{atomic, [Rec]} -> Rec
 	end.
 
-%% XXX I do not check the existence of the series in add_probes/1 and other probe functions
-%% because it's expensive and should be done outside e.g. probix_format:probe_record_from/3
+%% XXX I do not check the existence of the series in add_ticks/1 and other tick functions
+%% because it's expensive and should be done outside e.g. probix_format:tick_record_from/3
 
-add_probes(Rec) when is_record(Rec, probe) ->
+add_ticks(Rec) when is_record(Rec, tick) ->
 	F = fun() ->
 		mnesia:write(Rec)
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-add_probes(List) when is_list(List) ->
+add_ticks(List) when is_list(List) ->
 	F = fun() ->
 		lists:foreach( fun mnesia:write/1, List ),
 		ok
@@ -164,91 +164,91 @@ add_probes(List) when is_list(List) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-get_probes(Series_id) ->
+get_ticks(Series_id) ->
 	F = fun() ->
-		Q = qlc:q([ P || P <- mnesia:table(probe), element(1, P#probe.id) == Series_id ]),
+		Q = qlc:q([ P || P <- mnesia:table(tick), element(1, P#tick.id) == Series_id ]),
 		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
 
-get_probes(Series_id, {from, From}) ->
+get_ticks(Series_id, {from, From}) ->
 	F = fun() ->
-		Q = qlc:q([ P || P <- mnesia:table(probe),
-			element(1, P#probe.id) == Series_id,
-			element(2, P#probe.id) >= From ]),
+		Q = qlc:q([ P || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			element(2, P#tick.id) >= From ]),
 		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
-get_probes(Series_id, {to, To}) ->
+get_ticks(Series_id, {to, To}) ->
 	F = fun() ->
-		Q = qlc:q([ P || P <- mnesia:table(probe),
-			element(1, P#probe.id) == Series_id,
-			element(2, P#probe.id) =< To ]),
+		Q = qlc:q([ P || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			element(2, P#tick.id) =< To ]),
 		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
-get_probes(Series_id, {From, To}) ->
+get_ticks(Series_id, {From, To}) ->
 	F = fun() ->
-		Q = qlc:q([ P || P <- mnesia:table(probe),
-			element(1, P#probe.id) == Series_id,
-			element(2, P#probe.id) >= From,
-			element(2, P#probe.id) =< To ]),
+		Q = qlc:q([ P || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			element(2, P#tick.id) >= From,
+			element(2, P#tick.id) =< To ]),
 		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
 
 %% XXX not sure this function is needed
-delete_probe(Id) ->
+delete_tick(Id) ->
 	F = fun() ->
-		mnesia:delete({probe, Id})
+		mnesia:delete({tick, Id})
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-delete_probes(Series_id) ->
+delete_ticks(Series_id) ->
 	F = fun() ->
-		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
-			element(1, P#probe.id) == Series_id ]),
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id ]),
 		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
 		ok
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-delete_probes(Series_id, {from, From}) ->
+delete_ticks(Series_id, {from, From}) ->
 	F = fun() ->
-		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
-			element(1, P#probe.id) == Series_id,
-			element(2, P#probe.id) >= From ]),
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			element(2, P#tick.id) >= From ]),
 		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
 		ok
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-delete_probes(Series_id, {to, To}) ->
+delete_ticks(Series_id, {to, To}) ->
 	F = fun() ->
-		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
-			element(1, P#probe.id) == Series_id,
-			element(2, P#probe.id) =< To ]),
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			element(2, P#tick.id) =< To ]),
 		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
 		ok
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-delete_probes(Series_id, {From, To}) ->
+delete_ticks(Series_id, {From, To}) ->
 	F = fun() ->
-		Q = qlc:q([ {probe, P#probe.id} || P <- mnesia:table(probe),
-			element(1, P#probe.id) == Series_id,
-			element(2, P#probe.id) >= From,
-			element(2, P#probe.id) =< To ]),
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			element(2, P#tick.id) >= From,
+			element(2, P#tick.id) =< To ]),
 		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
 		ok
 	end,
