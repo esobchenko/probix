@@ -60,8 +60,9 @@ now_to_gregorian_epoch() ->
 
 gregorian_epoch_to_iso_8601(Epoch) ->
 	{{Year, Month, Day}, {Hour, Min, Sec}} = calendar:gregorian_seconds_to_datetime(Epoch),
-	io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
-		[Year, Month, Day, Hour, Min, Sec]).
+	Deeplist = io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
+		[Year, Month, Day, Hour, Min, Sec]),
+	lists:flatten(Deeplist).
 
 iso_8601_to_gregorian_epoch(Date) when is_binary(Date) ->
 	iso_8601_to_gregorian_epoch( binary_to_list(Date) );
