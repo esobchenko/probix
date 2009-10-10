@@ -63,5 +63,26 @@ gregorian_epoch_to_iso_8601(Epoch) ->
 	io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
 		[Year, Month, Day, Hour, Min, Sec]).
 
-%% Fuck.
-iso_8601_to_gregorian_epoch(_Iso_8601) -> ok.
+iso_8601_to_gregorian_epoch(Date) when is_binary(Date) ->
+	iso_8601_to_gregorian_epoch( binary_to_list(Date) );
+
+iso_8601_to_gregorian_epoch([
+	Y1, Y2, Y3, Y4,
+	$-,
+	Mon1, Mon2,
+	$-,
+	D1, D2,
+	_, % T or space
+	H1, H2,
+	$:,
+	Min1, Min2,
+	$:,
+	S1, S2 | _Rest ]) ->
+	Year = list_to_integer([Y1, Y2, Y3, Y4]),
+	Month = list_to_integer([Mon1, Mon2]),
+	Day = list_to_integer([D1, D2]),
+	Hour = list_to_integer([H1, H2]),
+	Min = list_to_integer([Min1, Min2]),
+	Sec = list_to_integer([S1, S2]),
+	calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Min, Sec}}).
+
