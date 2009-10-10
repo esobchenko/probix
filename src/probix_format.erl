@@ -39,7 +39,7 @@ tick_record_from_json(Series_id, Json) ->
 tick_record_from_json_term(Series_id, {struct, Proplist}) ->
 	#tick{
 		id = {Series_id, proplists:get_value(<<"timestamp">>, Proplist)},
-		value = proplists:get_value(<<"value">>)
+		value = proplists:get_value(<<"value">>, Proplist)
 	};
 
 tick_record_from_json_term(Series_id, {array, List}) ->
