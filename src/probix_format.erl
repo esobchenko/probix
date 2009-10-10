@@ -25,8 +25,33 @@ tick_record_to_json(Rec) ->
 
 tick_record_to_csv(_Rec) -> ok.
 
-tick_record_from_json(_Series_id, _Json) -> ok.
-tick_record_from_csv(_Series_id, _Csv) -> ok.
+tick_record_from_json(Series_id, Json) ->
+	case probix_series:series(Series_id) of
+		not_found ->
+			{error, not_found};
+		_Series ->
+			case json_to_json_term(Json) of
+				bad_json -> {error, bad_json};
+				Term -> tick_record_from_json_term(Series_id, Term)
+			end
+	end.
+
+tick_record_from_json_term(Series_id, {struct, Proplist}) ->
+	#tick{
+		id = {Series_id, proplists:get_value(<<"timestamp">>, Proplist)},
+		value = proplists:get_value(<<"value">>)
+	};
+
+tick_record_from_json_term(Series_id, {array, List}) ->
+	[tick_record_from_json_term(Series_id, P) || P <- List].
+
+json_to_json_term(Json) ->
+	try mochijson2:decode(Json) of %% because mochijson2:decode/1 doesn't handle bad json input
+		Json_term -> Json_term
+	catch
+		error:_Any ->
+			bad_json
+	end.
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
