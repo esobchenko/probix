@@ -26,13 +26,15 @@ tick_list_to_json(Rec) ->
 tick_list_to_csv(_Rec) -> ok.
 
 tick_list_from_json(Series_id, Json) ->
-    try mochijson2:decode(Json) of
-        List when is_list(List) -> 
-            [ json_struct_to_tick(Series_id, P) || P <- List ];
-        Struct when is_tuple(Struct) ->
-            [ json_struct_to_tick(Series_id, Struct) ]
+    try
+        case mochijson2:decode(Json) of
+            List when is_list(List) ->
+                [ json_struct_to_tick(Series_id, P) || P <- List ];
+            Struct when is_tuple(Struct) ->
+                [ json_struct_to_tick(Series_id, Struct) ]
+        end
     catch
-        _Any ->
+        error:_Any ->
             {error, bad_json}
     end.
 
