@@ -17,11 +17,11 @@ series_record_to_json(Rec) ->
 series_record_csv(_Rec) -> ok.
 
 tick_list_to_json(Rec) ->
-	Keys = [ <<"timestamp">>, <<"value">> ],
-	{_Series_id, Timestamp} = Rec#tick.id,
-	Value = Rec#tick.value,
-	Encode = mochijson2:encoder([{utf8, true}]),
-	list_to_binary( Encode({struct, lists:zip(Keys, [Timestamp, Value])}) ).
+    Keys = [ <<"timestamp">>, <<"value">> ],
+    {_Series_id, Timestamp} = Rec#tick.id,
+    Value = Rec#tick.value,
+    Encode = mochijson2:encoder([{utf8, true}]),
+    list_to_binary( Encode({struct, lists:zip(Keys, [Timestamp, Value])}) ).
 
 tick_list_to_csv(_Rec) -> ok.
 
@@ -39,22 +39,10 @@ tick_list_from_json(Series_id, Json) ->
     end.
 
 json_struct_to_tick(Series_id, {struct, Struct}) ->
-	#tick{
-		id = {Series_id, proplists:get_value(<<"timestamp">>, Struct)},
-		value = proplists:get_value(<<"value">>, Struct)
-	}.
-
-
-
-
-%tick_record_from_json_term(Series_id, {struct, Proplist}) ->
-%	#tick{
-%		id = {Series_id, proplists:get_value(<<"timestamp">>, Proplist)},
-%		value = proplists:get_value(<<"value">>, Proplist)
-%	};
-
-% tick_record_from_json_term(Series_id, {array, List}) ->
-%	[tick_record_from_json_term(Series_id, P) || P <- List].
+    #tick{
+        id = {Series_id, proplists:get_value(<<"timestamp">>, Struct)},
+        value = proplists:get_value(<<"value">>, Struct)
+    }.
 
 
 %% there are no Erlang functions for the unix epoch, but there are functions
