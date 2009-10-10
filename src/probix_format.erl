@@ -30,10 +30,8 @@ tick_list_from_json(Series_id, Json) ->
 		case mochijson2:decode(Json) of
 			List when is_list(List) ->
 				[ json_struct_to_tick(Series_id, P) || P <- List ];
-			{struct, L} when is_list(L) ->
-				[ json_struct_to_tick(Series_id, {struct, L}) ];
-			_ ->
-				erlang:error("invalid json structure")
+			Struct when is_tuple(Struct) ->
+				[ json_struct_to_tick(Series_id, Struct) ]
 		end
 	catch
 		error:_ ->
