@@ -8,41 +8,48 @@
 %% erlang:atom_to_binary/2 is available in Erlang R13A and newer.
 atom_to_binary(A) when is_atom(A) -> list_to_binary( atom_to_list(A) ).
 
-series_record_to_json(Rec) ->
+series_to_json(Rec) when is_record(Rec, series) ->
 	Keys = [ atom_to_binary(K) || K <- record_info(fields, series) ],
+	%% XXX undefined record labels are stored as undefined, but
+	%% should be set to null according to json specification.
 	[_Name | Values] = tuple_to_list(Rec),
 	Encode = mochijson2:encoder([{utf8, true}]),
 	list_to_binary( Encode({struct, lists:zip(Keys, Values)}) ).
 
-series_record_csv(_Rec) -> ok.
+series_to_csv(_Rec) -> ok.
 
-tick_list_to_json(Rec) ->
+tick_to_json_term(Rec) when is_record(Rec, tick) ->
 	Keys = [ <<"timestamp">>, <<"value">> ],
 	{_Series_id, Timestamp} = Rec#tick.id,
 	Value = Rec#tick.value,
+	{struct, lists:zip(Keys, [Timestamp, Value])};
+
+tick_to_json_term(List) when is_list(List) ->
+	[ tick_to_json_term(R) || R <- List ].
+
+tick_to_json(Tick) ->
 	Encode = mochijson2:encoder([{utf8, true}]),
-	list_to_binary( Encode({struct, lists:zip(Keys, [Timestamp, Value])}) ).
+	list_to_binary( Encode( tick_to_json_term(Tick) ) ).
 
-tick_list_to_csv(_Rec) -> ok.
+tick_to_csv(_Rec) -> ok.
 
-tick_list_from_json(Series_id, Json) ->
+tick_from_json(Series_id, Json) ->
 	try
-		case mochijson2:decode(Json) of
-			List when is_list(List) ->
-				[ json_struct_to_tick(Series_id, P) || P <- List ];
-			Struct when is_tuple(Struct) ->
-				[ json_struct_to_tick(Series_id, Struct) ]
-		end
+		json_term_to_tick( Series_id, mochijson2:decode(Json) )
 	catch
 		error:_ ->
-			{error, bad_json}
+			bad_json
 	end.
 
-json_struct_to_tick(Series_id, {struct, Proplist}) ->
+json_term_to_tick(Series_id, {struct, Proplist}) ->
+	%% XXX check input value correctness here
 	#tick{
 		id = {Series_id, proplists:get_value(<<"timestamp">>, Proplist)},
 		value = proplists:get_value(<<"value">>, Proplist)
-	}.
+	};
+
+json_term_to_tick(Series_id, List) when is_list(List) ->
+	[ json_term_to_tick(Series_id, S) || S <- List ].
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
@@ -85,5 +92,6 @@ iso_8601_to_gregorian_epoch([
 	Hour = list_to_integer([H1, H2]),
 	Min = list_to_integer([Min1, Min2]),
 	Sec = list_to_integer([S1, S2]),
-	calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Min, Sec}}).
+	calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Min, Sec}});
 
+iso_8601_to_gregorian_epoch(_Whatever) -> bad_timestamp.
