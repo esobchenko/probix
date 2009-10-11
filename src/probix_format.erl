@@ -35,7 +35,13 @@ tick_to_csv(_Rec) -> ok.
 
 tick_from_json(Series_id, Json) ->
 	try
-		json_term_to_tick( Series_id, mochijson2:decode(Json) )
+		%json_term_to_tick( Series_id, mochijson2:decode(Json) )
+		case mochijson2:decode(Json) of
+			List when is_list(List) ->
+				[ json_term_to_tick(Series_id, S) || S <- List ];
+			Struct when is_tuple(Struct) ->
+				[ json_term_to_tick(Series_id, Struct) ]
+		end
 	catch
 		error:_ ->
 			bad_json
@@ -46,13 +52,11 @@ json_term_to_tick(Series_id, {struct, Proplist}) ->
 	#tick{
 		id = {Series_id, proplists:get_value(<<"timestamp">>, Proplist)},
 		value = proplists:get_value(<<"value">>, Proplist)
-	};
+	}.
 
-json_term_to_tick(Series_id, List) when is_list(List) ->
-	[
-		json_term_to_tick(Series_id, S) || S <- List,
-		is_tuple(S) %% we don't need nested lists here
-	].
+%json_term_to_tick(Series_id, List) when is_list(List) ->
+%	[ json_term_to_tick(Series_id, S) || S <- List ].
+
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
