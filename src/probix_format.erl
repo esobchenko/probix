@@ -49,7 +49,10 @@ json_term_to_tick(Series_id, {struct, Proplist}) ->
 	};
 
 json_term_to_tick(Series_id, List) when is_list(List) ->
-	[ json_term_to_tick(Series_id, S) || S <- List ].
+	[
+		json_term_to_tick(Series_id, S) || S <- List,
+		is_tuple(S) %% we don't need nested lists here
+	].
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
