@@ -25,8 +25,7 @@ atom_to_binary_test_() ->
 time_transform_test_() ->
 	[
 		?_assertEqual(?EPOCH_ISO8601, probix_format:gregorian_epoch_to_iso_8601(?EPOCH_SECONDS)),
-		?_assertEqual(?EPOCH_SECONDS, probix_format:iso_8601_to_gregorian_epoch(?EPOCH_ISO8601)),
-		?_assertEqual(bad_timestamp, probix_format:iso_8601_to_gregorian_epoch("foo"))
+		?_assertEqual(?EPOCH_SECONDS, probix_format:iso_8601_to_gregorian_epoch(?EPOCH_ISO8601))
 	].
 
 series_to_json_test_() ->
@@ -38,7 +37,7 @@ tick_transform_test_() ->
 	[
 		?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJL1)),
 		?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJR1)),
-		?_assertEqual(?TJL1, probix_format:ticks_from_json(1, ?JTL1)),
-		?_assertEqual(?TJL1, probix_format:ticks_from_json(1, ?JTR1)),
+		?_assertEqual({ok, ?TJL1}, probix_format:ticks_from_json(1, ?JTL1)),
+		?_assertEqual({ok, ?TJL1}, probix_format:ticks_from_json(1, ?JTR1)),
 		?_assertEqual({error, bad_json}, probix_format:ticks_from_json(1, 1))
 	].

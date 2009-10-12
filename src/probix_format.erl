@@ -34,13 +34,13 @@ ticks_to_json(Ticks) ->
 
 ticks_from_json(Series_id, Json) ->
 	try
-		%json_term_to_tick( Series_id, mochijson2:decode(Json) )
-		case mochijson2:decode(Json) of
-			List when is_list(List) ->
-				[ json_object_to_tick(Series_id, S) || S <- List ];
-			Struct when is_tuple(Struct) ->
-				[ json_object_to_tick(Series_id, Struct) ]
-		end
+		List = case mochijson2:decode(Json) of
+			L when is_list(L) ->
+				[ json_object_to_tick(Series_id, S) || S <- L ];
+			T when is_tuple(T) ->
+				[ json_object_to_tick(Series_id, T) ]
+		end,
+		{ok, List}
 	catch
 		error:_ ->
 			{error, bad_json}
@@ -52,9 +52,6 @@ json_object_to_tick(Series_id, {struct, Proplist}) ->
 		id = {Series_id, proplists:get_value(<<"timestamp">>, Proplist)},
 		value = proplists:get_value(<<"value">>, Proplist)
 	}.
-
-%json_term_to_tick(Series_id, List) when is_list(List) ->
-%	[ json_term_to_tick(Series_id, S) || S <- List ].
 
 ticks_to_csv(_Ticks) -> ok.
 ticks_from_csv(_Series_id, _Csv) -> ok.
@@ -100,6 +97,5 @@ iso_8601_to_gregorian_epoch([
 	Hour = list_to_integer([H1, H2]),
 	Min = list_to_integer([Min1, Min2]),
 	Sec = list_to_integer([S1, S2]),
-	calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Min, Sec}});
+	calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Min, Sec}}).
 
-iso_8601_to_gregorian_epoch(_Whatever) -> bad_timestamp.
