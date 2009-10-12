@@ -105,16 +105,13 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 
 new_series(Label) ->
 	F = fun() ->
-		Series = #series{id = probix_util:random_string(10),
+		Series = #series{
+			%% XXX identifier may not be unique, then the function will overwrite the existing series
+			id = probix_util:random_string(10),
 			time_created = probix_format:now_to_gregorian_epoch(),
-			label = Label},
-		%% generated identifier may not be unique: in this case a function will fail.
-		case series(Series) of
-			not_found ->
-				ok = mnesia:write(Series),
-				Series;
-			_Rec -> transaction:abort(duplicate_id)
-		end
+			label = Label
+		},
+		ok = mnesia:write(Series)
 	end,
 	{atomic, Series} = mnesia:transaction(F),
 	Series.
@@ -127,7 +124,7 @@ all_series() ->
 		qlc:e(Q)
 	end,
 	{atomic, List} = mnesia:transaction(F),
-	{ok, List}.
+	List.
 
 delete_series(Id) ->
 	F = fun() ->
@@ -138,16 +135,10 @@ delete_series(Id) ->
 	ok.
 
 series(Id) ->
-	F = fun() ->
-		mnesia:read({series, Id})
-	end,
-	case mnesia:transaction(F) of
-		{atomic, []} -> not_found;
-		{atomic, [Rec]} -> Rec
-	end.
+	mnesia:dirty_read({series, Id}).
 
 %% XXX I do not check the existence of the series in add_ticks/1 and other tick functions
-%% because it's expensive and should be done outside e.g. probix_format:tick_record_from/3
+%% because it's expensive. It should be done outside e.g. in http handle functions.
 
 add_ticks(Rec) when is_record(Rec, tick) ->
 	F = fun() ->
