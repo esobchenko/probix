@@ -16,38 +16,44 @@ series_to_json(Rec) when is_record(Rec, series) ->
 	Encode = mochijson2:encoder([{utf8, true}]),
 	list_to_binary( Encode({struct, lists:zip(Keys, Values)}) ).
 
-series_to_csv(_Rec) -> ok.
-
-tick_to_json_term(Rec) when is_record(Rec, tick) ->
+tick_to_json_object(Rec) when is_record(Rec, tick) ->
 	Keys = [ <<"timestamp">>, <<"value">> ],
 	{_Series_id, Timestamp} = Rec#tick.id,
 	Value = Rec#tick.value,
-	{struct, lists:zip(Keys, [Timestamp, Value])};
+	{struct, lists:zip(Keys, [Timestamp, Value])}.
 
-tick_to_json_term(List) when is_list(List) ->
-	[ tick_to_json_term(R) || R <- List ].
+ticks_to_json(Tick) ->
+    Encode = mochijson2:encoder([{utf8, true}]),
+    try
+        List = case Tick of
+            R when is_record(R, tick) ->
+                [ tick_to_json_object(R) ];
+            L when is_list(L) ->
+                [ tick_to_json_object(R) || R <- L ]
+        end,
+        list_to_binary( Encode(List) )
+    catch
+        error:_ ->
+            {error, internal_error}
+    end.
 
-tick_to_json(Tick) ->
-	Encode = mochijson2:encoder([{utf8, true}]),
-	list_to_binary( Encode( tick_to_json_term(Tick) ) ).
+ticks_to_csv(_Rec) -> ok.
 
-tick_to_csv(_Rec) -> ok.
-
-tick_from_json(Series_id, Json) ->
+ticks_from_json(Series_id, Json) ->
 	try
 		%json_term_to_tick( Series_id, mochijson2:decode(Json) )
 		case mochijson2:decode(Json) of
 			List when is_list(List) ->
-				[ json_term_to_tick(Series_id, S) || S <- List ];
+				[ json_object_to_tick(Series_id, S) || S <- List ];
 			Struct when is_tuple(Struct) ->
-				[ json_term_to_tick(Series_id, Struct) ]
+				[ json_object_to_tick(Series_id, Struct) ]
 		end
 	catch
 		error:_ ->
-			bad_json
+			{error, bad_json}
 	end.
 
-json_term_to_tick(Series_id, {struct, Proplist}) ->
+json_object_to_tick(Series_id, {struct, Proplist}) ->
 	%% XXX check input value correctness here
 	#tick{
 		id = {Series_id, proplists:get_value(<<"timestamp">>, Proplist)},

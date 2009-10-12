@@ -10,8 +10,10 @@
 -define(SJ1, #series{id=1,time_created=1,label=1}).
 -define(JS1, <<"{\"id\":1,\"time_created\":1,\"label\":1}">>).
 
--define(JT1, <<"{\"timestamp\":1,\"value\":1}">>).
--define(TJ1, #tick{id={1,1},value=1}).
+-define(JTL1, <<"[{\"timestamp\":1,\"value\":1}]">>).
+-define(JTR1, <<"{\"timestamp\":1,\"value\":1}">>).
+-define(TJR1, #tick{id={1,1},value=1}).
+-define(TJL1, [ #tick{id={1,1},value=1} ]).
 
 atom_to_binary_test_() ->
 	[
@@ -32,7 +34,9 @@ series_to_json_test_() ->
 
 tick_transform_test_() ->
 	[
-		?_assertEqual(?JT1, probix_format:tick_to_json(?TJ1)),
-		?_assertEqual([?TJ1], probix_format:tick_from_json(1, ?JT1)),
-		?_assertEqual(bad_json, probix_format:tick_from_json(1, 1))
+		?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJL1)),
+        ?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJR1)),
+		?_assertEqual(?TJL1, probix_format:ticks_from_json(1, ?JTL1)),
+		?_assertEqual(?TJL1, probix_format:ticks_from_json(1, ?JTR1)),
+		?_assertEqual({error, bad_json}, probix_format:ticks_from_json(1, 1))
 	].
