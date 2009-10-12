@@ -107,14 +107,15 @@ new_series(Label) ->
 	F = fun() ->
 		Series = #series{
 			%% XXX identifier may not be unique, then the function will overwrite the existing series
-			id = probix_util:random_string(10),
+			id = list_to_binary(probix_util:random_string(10)),
 			time_created = probix_format:now_to_gregorian_epoch(),
-			label = Label
+			label = list_to_binary(Label)
 		},
-		ok = mnesia:write(Series)
+		ok = mnesia:write(Series),
+        Series
 	end,
 	{atomic, Series} = mnesia:transaction(F),
-	Series.
+	{ok, Series}.
 
 all_series() ->
 	F = fun() ->

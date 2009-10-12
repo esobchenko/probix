@@ -21,6 +21,9 @@ dispatch_requests(Req) ->
 	Post = Req:recv_body(),
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
+    %% headers
+    Content_length = Req:get_header_value("Content-Length"),
+    Content_type = Req:get_header_value("Content-Type"),
     
     log4erl:info("Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
  
@@ -41,13 +44,18 @@ dispatch_requests(Req) ->
 %% Create a new series without data
 handle('POST', ["series"], [], undefined) ->
     log4erl:info("Creating series without label"),
-    %% probix_series:new_series();
-    ok();
+    {ok, Series} = probix_series:new_series(),
+    Header = { "Location", "/series/" ++ Series#series.id },
+    Content = probix_format:series_to_json(Series),
+    ok(Content, [ Header ]);
 
 handle('POST', ["series"], [{"label", Label}], undefined) ->
     log4erl:info("Creating series with label ~s", [ Label ]),
-    %% probix_series:new_series(Label);
-    ok();
+    {ok, Series} = probix_series:new_series(Label),
+    Header = { "Location", "/series/" ++ Series#series.id },
+    Content = probix_format:series_to_json(Series),
+    ok(Content, [ Header ]);
+
 
 %% Create a new series with data
 handle('POST', ["series"], [], _Post) ->
@@ -105,8 +113,6 @@ handle('GET', ["series", Id], Args, undefined) ->
     %% probix_series:get_ticks(Id,{From, To});
     ok();
 
-%% Get a slice of ticks for this series
-
 %% Removing data from series
 %%
 handle('DELETE', ["series", Id], [], undefined) ->
@@ -115,19 +121,25 @@ handle('DELETE', ["series", Id], [], undefined) ->
     ok();
 
 handle(_, _, _, _) ->
-    log4erl:error("Unknown request").
+    log4erl:error("Unknown request"),
+    ok().
 
 %%
 %% ok and error functions help to construct mochiweb's http response tuples;
 %% they used in handle/5 functions.
 %%
 
-%% ok(Content) ->
-%%	{200, [{"Content-Type", "application/json"}], Content}.
 
 %% empty response
 ok() ->
 	{200, [{"Content-Type", "application/json"}], ""}.
+
+ok(Content) ->
+	{200, [{"Content-Type", "application/json"}], Content}.
+
+ok(Content, Headers) ->
+    {200, Headers, Content}.
+    
 
 error(Error) ->
     log4erl:error(Error).
