@@ -22,22 +22,15 @@ tick_to_json_object(Rec) when is_record(Rec, tick) ->
 	Value = Rec#tick.value,
 	{struct, lists:zip(Keys, [Timestamp, Value])}.
 
-ticks_to_json(Tick) ->
-    Encode = mochijson2:encoder([{utf8, true}]),
-    try
-        List = case Tick of
-            R when is_record(R, tick) ->
-                [ tick_to_json_object(R) ];
-            L when is_list(L) ->
-                [ tick_to_json_object(R) || R <- L ]
-        end,
-        list_to_binary( Encode(List) )
-    catch
-        error:_ ->
-            {error, internal_error}
-    end.
-
-ticks_to_csv(_Rec) -> ok.
+ticks_to_json(Ticks) ->
+	List = case Ticks of
+		R when is_record(R, tick) ->
+			[ tick_to_json_object(R) ];
+		L when is_list(L) ->
+			[ tick_to_json_object(R) || R <- L ]
+	end,
+	Encode = mochijson2:encoder([{utf8, true}]),
+	list_to_binary( Encode(List) ).
 
 ticks_from_json(Series_id, Json) ->
 	try
@@ -63,6 +56,8 @@ json_object_to_tick(Series_id, {struct, Proplist}) ->
 %json_term_to_tick(Series_id, List) when is_list(List) ->
 %	[ json_term_to_tick(Series_id, S) || S <- List ].
 
+ticks_to_csv(_Ticks) -> ok.
+ticks_from_csv(_Series_id, _Csv) -> ok.
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this

@@ -11,9 +11,11 @@
 -define(JS1, <<"{\"id\":1,\"time_created\":1,\"label\":1}">>).
 
 -define(JTL1, <<"[{\"timestamp\":1,\"value\":1}]">>).
+-define(TJL1, [#tick{id={1,1},value=1}]).
+
 -define(JTR1, <<"{\"timestamp\":1,\"value\":1}">>).
 -define(TJR1, #tick{id={1,1},value=1}).
--define(TJL1, [ #tick{id={1,1},value=1} ]).
+
 
 atom_to_binary_test_() ->
 	[
@@ -35,8 +37,7 @@ series_to_json_test_() ->
 tick_transform_test_() ->
 	[
 		?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJL1)),
-        ?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJR1)),
-        ?_assertEqual({error, internal_error}, probix_format:ticks_to_json(1)),
+		?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJR1)),
 		?_assertEqual(?TJL1, probix_format:ticks_from_json(1, ?JTL1)),
 		?_assertEqual(?TJL1, probix_format:ticks_from_json(1, ?JTR1)),
 		?_assertEqual({error, bad_json}, probix_format:ticks_from_json(1, 1))
