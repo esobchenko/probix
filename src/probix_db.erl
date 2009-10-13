@@ -103,19 +103,19 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	),
 	ok.
 
-new_series(Label) ->
+new_series(Label) when is_binary(Label) ->
 	F = fun() ->
 		Series = #series{
 			%% XXX identifier may not be unique, then the function will overwrite the existing series
-			id = list_to_binary(probix_util:random_string(10)),
+			id = list_to_binary( probix_util:random_string(10) ),
 			time_created = probix_format:now_to_gregorian_epoch(),
 			label = Label
 		},
-		ok = mnesia:write(Series),
-        Series
+		mnesia:write(Series),
+		Series
 	end,
 	{atomic, Series} = mnesia:transaction(F),
-    Series.
+	Series.
 
 all_series() ->
 	F = fun() ->
@@ -127,7 +127,7 @@ all_series() ->
 	{atomic, List} = mnesia:transaction(F),
 	List.
 
-delete_series(Id) ->
+delete_series(Id) when is_binary(Id) ->
 	F = fun() ->
 		ok = delete_ticks(Id),
 		mnesia:delete({series, Id})
@@ -135,7 +135,7 @@ delete_series(Id) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-series(Id) ->
+series(Id) when is_binary(Id) ->
 	mnesia:dirty_read({series, Id}).
 
 %% XXX I do not check the existence of the series in add_ticks/1 and other tick functions
@@ -156,7 +156,7 @@ add_ticks(List) when is_list(List) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-get_ticks(Series_id) ->
+get_ticks(Series_id) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ P || P <- mnesia:table(tick), element(1, P#tick.id) == Series_id ]),
 		qlc:e(Q)
@@ -164,7 +164,7 @@ get_ticks(Series_id) ->
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
 
-get_ticks(Series_id, {from, From}) ->
+get_ticks(Series_id, {from, From}) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ P || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
@@ -174,7 +174,7 @@ get_ticks(Series_id, {from, From}) ->
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
-get_ticks(Series_id, {to, To}) ->
+get_ticks(Series_id, {to, To}) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ P || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
@@ -184,7 +184,7 @@ get_ticks(Series_id, {to, To}) ->
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
-get_ticks(Series_id, {From, To}) ->
+get_ticks(Series_id, {From, To}) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ P || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
@@ -203,7 +203,7 @@ delete_tick(Id) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-delete_ticks(Series_id) ->
+delete_ticks(Series_id) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id ]),
@@ -213,7 +213,7 @@ delete_ticks(Series_id) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-delete_ticks(Series_id, {from, From}) ->
+delete_ticks(Series_id, {from, From}) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
@@ -224,7 +224,7 @@ delete_ticks(Series_id, {from, From}) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-delete_ticks(Series_id, {to, To}) ->
+delete_ticks(Series_id, {to, To}) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
@@ -235,7 +235,7 @@ delete_ticks(Series_id, {to, To}) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-delete_ticks(Series_id, {From, To}) ->
+delete_ticks(Series_id, {From, To}) when is_binary(Series_id) ->
 	F = fun() ->
 		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,

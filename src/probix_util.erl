@@ -5,7 +5,7 @@
 random_string(Length) ->
 	{A1, A2, A3} = now(),
 	random:seed( A1, A2, A3 ),
-	lists:foldl( fun(_I, Acc) -> [do_rand(0) | Acc] end, [], lists:seq(1, Length) ).
+	String = lists:foldl( fun(_I, Acc) -> [do_rand(0) | Acc] end, [], lists:seq(1, Length) ).
 
 %% 48-57: [0-9]; 65-90: [A-Z]; 97-122: [a-z]
 do_rand(R) when R > 47, R < 58; R > 64, R < 91; R > 96, R < 123 ->

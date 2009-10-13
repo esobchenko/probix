@@ -17,9 +17,12 @@
 -include_lib("eunit/include/eunit.hrl").
 
 new_series() ->
-    %% XXX: mochijson can't encode null properly, so storing empty string
+	%% XXX mochijson2 can't encode null properly, so storing empty string
 	gen_server:call(?MODULE, {new_series, <<"">>}).
-new_series(Label) ->
+
+new_series(Label) when is_binary(Label) ->
+	gen_server:call(?MODULE, {new_series, Label});
+new_series(Label) when is_list(Label) ->
 	gen_server:call(?MODULE, {new_series, list_to_binary(Label)}).
 
 all_series() ->
@@ -29,7 +32,7 @@ delete_series(Id) ->
 series(Id) ->
 	gen_server:call(?MODULE, {series, Id}).
 
-add_ticks(Probes) ->
+add_ticks(Probes) when is_list(Probes); is_record(Probes, tick) ->
 	gen_server:call(?MODULE, {add_ticks, Probes}).
 
 get_ticks(Series_id) ->

@@ -11,16 +11,16 @@ atom_to_binary(A) when is_atom(A) -> list_to_binary( atom_to_list(A) ).
 series_to_json_object(Rec) when is_record(Rec, series) ->
 	Keys = [ atom_to_binary(K) || K <- record_info(fields, series) ],
 	[_Name | Values] = tuple_to_list(Rec),
-    {struct, lists:zip(Keys, Values)}.
+	{struct, lists:zip(Keys, Values)}.
 
 series_to_json(Series) ->
-    List = case Series of
-               R when is_record(R, series) ->
-                   [ series_to_json_object(R) ];
-               L when is_list(L) ->
-                   [ series_to_json_object(R) || R <- L ]
-           end,
-    Encode = mochijson2:encoder([{utf8, true}]),
+	List = case Series of
+		R when is_record(R, series) ->
+			[ series_to_json_object(R) ];
+		L when is_list(L) ->
+			[ series_to_json_object(R) || R <- L ]
+		end,
+	Encode = mochijson2:encoder([{utf8, true}]),
 	Encode(List).
 
 tick_to_json_object(Rec) when is_record(Rec, tick) ->
