@@ -109,13 +109,13 @@ new_series(Label) ->
 			%% XXX identifier may not be unique, then the function will overwrite the existing series
 			id = list_to_binary(probix_util:random_string(10)),
 			time_created = probix_format:now_to_gregorian_epoch(),
-			label = list_to_binary(Label)
+			label = Label
 		},
 		ok = mnesia:write(Series),
         Series
 	end,
 	{atomic, Series} = mnesia:transaction(F),
-	{ok, Series}.
+    Series.
 
 all_series() ->
 	F = fun() ->

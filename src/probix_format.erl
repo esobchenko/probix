@@ -8,13 +8,20 @@
 %% erlang:atom_to_binary/2 is available in Erlang R13A and newer.
 atom_to_binary(A) when is_atom(A) -> list_to_binary( atom_to_list(A) ).
 
-series_to_json(Rec) when is_record(Rec, series) ->
+series_to_json_object(Rec) when is_record(Rec, series) ->
 	Keys = [ atom_to_binary(K) || K <- record_info(fields, series) ],
-	%% XXX undefined record labels are stored as undefined, but
-	%% should be set to null according to json specification.
 	[_Name | Values] = tuple_to_list(Rec),
-	Encode = mochijson2:encoder([{utf8, true}]),
-	list_to_binary( Encode({struct, lists:zip(Keys, Values)}) ).
+    {struct, lists:zip(Keys, Values)}.
+
+series_to_json(Series) ->
+    List = case Series of
+               R when is_record(R, series) ->
+                   [ series_to_json_object(R) ];
+               L when is_list(L) ->
+                   [ series_to_json_object(R) || R <- L ]
+           end,
+    Encode = mochijson2:encoder([{utf8, true}]),
+	Encode(List).
 
 tick_to_json_object(Rec) when is_record(Rec, tick) ->
 	Keys = [ <<"timestamp">>, <<"value">> ],

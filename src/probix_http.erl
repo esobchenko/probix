@@ -22,8 +22,8 @@ dispatch_requests(Req) ->
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
     %% headers
-    Content_length = Req:get_header_value("Content-Length"),
-    Content_type = Req:get_header_value("Content-Type"),
+    %%    Content_length = Req:get_header_value("Content-Length"),
+    %%  Content_type = Req:get_header_value("Content-Type"),
     
     log4erl:info("Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
  
@@ -44,31 +44,28 @@ dispatch_requests(Req) ->
 %% Create a new series without data
 handle('POST', ["series"], [], undefined) ->
     log4erl:info("Creating series without label"),
-    {ok, Series} = probix_series:new_series(),
-    Header = { "Location", "/series/" ++ Series#series.id },
-    Content = probix_format:series_to_json(Series),
-    ok(Content, [ Header ]);
+    Series = probix_series:new_series(),
+    redirect("/series/" ++ Series#series.id);
 
 handle('POST', ["series"], [{"label", Label}], undefined) ->
     log4erl:info("Creating series with label ~s", [ Label ]),
-    {ok, Series} = probix_series:new_series(Label),
-    Header = { "Location", "/series/" ++ Series#series.id },
-    Content = probix_format:series_to_json(Series),
-    ok(Content, [ Header ]);
-
+    Series = probix_series:new_series(Label),
+    redirect("/series/" ++ Series#series.id);
 
 %% Create a new series with data
-handle('POST', ["series"], [], _Post) ->
+handle('POST', ["series"], [], Post) ->
     log4erl:info("Creating series without label and adding data"),
-    %% probix_series:new_series(),
-    %% probix_series:add_ticks(Post);
-    ok();
+    Series = probix_series:new_series(),
+    {ok, Ticks} = probix_format:ticks_from_json(Series#series.id, Post),
+    probix_series:add_ticks(Ticks),
+    redirect("/series/" ++ Series#series.id);
 
-handle('POST', ["series"], [{"label", Label}], _Post) ->
+handle('POST', ["series"], [{"label", Label}], Post) ->
     log4erl:info("Creating series with label: ~s and adding data", [ Label ]),
-    %% Id = probix_series:new_series(Label),
-    %% probix_series:add_ticks(Id, Post);
-    ok();
+    Series = probix_series:new_series(Label),
+    {ok, Ticks} = probix_format:ticks_from_json(Series#series.id, Post),
+    probix_series:add_ticks(Ticks),
+    redirect("/series/" ++ Series#series.id);
 
 %% Update series with data
 handle('POST', ["series", Id], [], _Post) ->
@@ -79,8 +76,9 @@ handle('POST', ["series", Id], [], _Post) ->
 %% Get all existing series
 handle('GET', ["series"], [], undefined) ->
     log4erl:info("Getting all series"),
-    %% probix_series:all_series();
-    ok();
+    Series = probix_series:all_series(),
+    Content = probix_format:series_to_json(Series),
+    ok(Content);
 
 %% Get a list of ticks in this series
 handle('GET', ["series", Id], [], undefined) ->
@@ -121,8 +119,7 @@ handle('DELETE', ["series", Id], [], undefined) ->
     ok();
 
 handle(_, _, _, _) ->
-    log4erl:error("Unknown request"),
-    ok().
+    error("Unknown request").
 
 %%
 %% ok and error functions help to construct mochiweb's http response tuples;
@@ -137,12 +134,25 @@ ok() ->
 ok(Content) ->
 	{200, [{"Content-Type", "application/json"}], Content}.
 
-ok(Content, Headers) ->
-    {200, Headers, Content}.
-    
+%% ok(Content, Headers) ->
+%%    {200, Headers, Content}.
 
 error(Error) ->
-    log4erl:error(Error).
+    log4erl:error(Error),
+	{400, [], ""}.
+
+
+redirect(Location) ->
+    {301, [{"Location", Location}], ""}.
+
+    
+%% content_type() ->
+%%     {"Content-Type", "application/json"}.
+%% content_type(json) ->
+%%     {"Content-Type", "application/json"};
+%% content_type(csv) ->
+%%     {"Content-Type", "text/csv"}.
+
 
 %% returns http numeric response code for
 %% given error according to specification

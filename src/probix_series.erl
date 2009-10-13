@@ -17,9 +17,10 @@
 -include_lib("eunit/include/eunit.hrl").
 
 new_series() ->
-	gen_server:call(?MODULE, {new_series, undefined}).
+    %% XXX: mochijson can't encode null properly, so storing empty string
+	gen_server:call(?MODULE, {new_series, <<"">>}).
 new_series(Label) ->
-	gen_server:call(?MODULE, {new_series, Label}).
+	gen_server:call(?MODULE, {new_series, list_to_binary(Label)}).
 
 all_series() ->
 	gen_server:call(?MODULE, all_series).

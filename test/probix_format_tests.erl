@@ -8,7 +8,7 @@
 -define(EPOCH_ISO8601, "1970-01-01 00:00:00").
 
 -define(SJ1, #series{id=1,time_created=1,label=1}).
--define(JS1, <<"{\"id\":1,\"time_created\":1,\"label\":1}">>).
+-define(JS1, <<"[{\"id\":1,\"time_created\":1,\"label\":1}]">>).
 
 -define(JTL1, <<"[{\"timestamp\":1,\"value\":1}]">>).
 -define(TJL1, [#tick{id={1,1},value=1}]).

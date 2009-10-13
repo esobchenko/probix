@@ -49,5 +49,23 @@ basic_object_crud_test_() ->
 
 generate_basic_object_crud_tests(_) ->
 	[
+     ?_assertMatch( %% issue #9
+        {400, _},
+        rest_req('GET', "/")
+       ),
+     ?_assertMatch(
+        {200, <<"[]">>},
+        rest_req('GET', "/series")
+       ),
+     ?_assertMatch(
+        {301, _},
+        rest_req('POST', "/series")
+       ),
+     ?_assertMatch(
+        {301, _},
+        rest_req('POST', "/series?label=Foo")
+       )
+   
+
 	].
 
