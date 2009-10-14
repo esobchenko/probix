@@ -20,8 +20,6 @@ new_series() ->
 	%% XXX mochijson2 can't encode null properly, so storing empty string
 	gen_server:call(?MODULE, {new_series, <<"">>}).
 
-new_series(Label) when is_binary(Label) ->
-	gen_server:call(?MODULE, {new_series, Label});
 new_series(Label) when is_list(Label) ->
 	gen_server:call(?MODULE, {new_series, list_to_binary(Label)}).
 

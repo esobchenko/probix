@@ -17,11 +17,6 @@
 -define(TJR1, #tick{id={1,1},value=1}).
 
 
-atom_to_binary_test_() ->
-	[
-		?_assertEqual(<<"foo">>, probix_format:atom_to_binary(foo))
-	].
-
 time_transform_test_() ->
 	[
 		?_assertEqual(?EPOCH_ISO8601, probix_format:gregorian_epoch_to_iso_8601(?EPOCH_SECONDS)),
@@ -30,13 +25,13 @@ time_transform_test_() ->
 
 series_to_json_test_() ->
 	[
-		?_assertEqual(?JS1, probix_format:series_to_json(?SJ1))
+		?_assertEqual(?JS1, list_to_binary(probix_format:series_to_json(?SJ1)))
 	].
 
 tick_transform_test_() ->
 	[
-		?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJL1)),
-		?_assertEqual(?JTL1, probix_format:ticks_to_json(?TJR1)),
+		?_assertEqual(?JTL1, list_to_binary(probix_format:ticks_to_json(?TJL1))),
+		?_assertEqual(?JTL1, list_to_binary(probix_format:ticks_to_json(?TJR1))),
 		?_assertEqual({ok, ?TJL1}, probix_format:ticks_from_json(1, ?JTL1)),
 		?_assertEqual({ok, ?TJL1}, probix_format:ticks_from_json(1, ?JTR1)),
 		?_assertEqual({error, bad_json}, probix_format:ticks_from_json(1, 1))

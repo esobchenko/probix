@@ -36,7 +36,7 @@ basic_object_crud_test_() ->
 	{
 		setup,
 		fun() ->
-			probix_db:stop(),
+            probix_db:stop(),
 			application:start(inets),
 			probix:start_master([ram_copies])
 		end,
@@ -59,11 +59,11 @@ generate_basic_object_crud_tests(_) ->
        ),
      ?_assertMatch(
         {301, _},
-        rest_req('POST', "/series")
+        rest_req('POST', "/series", "")
        ),
      ?_assertMatch(
         {301, _},
-        rest_req('POST', "/series?label=Foo")
+        rest_req('POST', "/series?label=Foo", "")
        )
    
 
