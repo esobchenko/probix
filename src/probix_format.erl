@@ -73,11 +73,21 @@ now_to_unix_epoch() ->
 now_to_gregorian_epoch() ->
 	calendar:datetime_to_gregorian_seconds( calendar:now_to_universal_time( now() ) ).
 
-gregorian_epoch_to_iso_8601(Epoch) ->
+gregorian_epoch_to_iso_8601(Epoch) when is_integer(Epoch) ->
 	{{Year, Month, Day}, {Hour, Min, Sec}} = calendar:gregorian_seconds_to_datetime(Epoch),
 	Deeplist = io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
 		[Year, Month, Day, Hour, Min, Sec]),
-	lists:flatten(Deeplist).
+	lists:flatten(Deeplist);
+
+gregorian_epoch_to_iso_8601(Epoch) when is_float(Epoch) ->
+	Int = trunc(Epoch),
+	Timestamp = gregorian_epoch_to_iso_8601(Int),
+	Frac = string:sub_string(
+		lists:flatten(
+			io_lib:format("~.3f", [Epoch - Int])
+		),
+	2),
+	string:concat(Timestamp, Frac).
 
 iso_8601_to_gregorian_epoch(Date) when is_binary(Date) ->
 	iso_8601_to_gregorian_epoch( binary_to_list(Date) );
@@ -93,12 +103,23 @@ iso_8601_to_gregorian_epoch([
 	$:,
 	Min1, Min2,
 	$:,
-	S1, S2 | _Rest ]) ->
-	Year = list_to_integer([Y1, Y2, Y3, Y4]),
-	Month = list_to_integer([Mon1, Mon2]),
-	Day = list_to_integer([D1, D2]),
-	Hour = list_to_integer([H1, H2]),
-	Min = list_to_integer([Min1, Min2]),
-	Sec = list_to_integer([S1, S2]),
-	calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Min, Sec}}).
+	S1, S2 | Frac ]) ->
+	Ymd = list_to_tuple([ list_to_integer(L) || L <- [
+			[Y1, Y2, Y3, Y4],
+			[Mon1, Mon2],
+			[D1, D2]
+		]]),
+	Hms = list_to_tuple([ list_to_integer(L) || L <- [
+			[H1, H2],
+			[Min1, Min2],
+			[S1, S2]
+		]]),
+	calendar:datetime_to_gregorian_seconds({Ymd, Hms}) + frac(Frac).
+
+frac([]) ->
+	0.0;
+
+frac(Frac) ->
+	{Float, _} = string:to_float( string:concat("0", Frac) ),
+	Float.
 
