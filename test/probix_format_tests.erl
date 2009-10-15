@@ -4,8 +4,8 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--define(EPOCH_SECONDS, 62167219200.123).
--define(EPOCH_ISO8601, "1970-01-01 00:00:00.123").
+-define(EPOCH_SECONDS, 62167219200.1234).
+-define(EPOCH_ISO8601, "1970-01-01 00:00:00.1234").
 
 -define(SJ1, #series{id=1,time_created=1,label=1}).
 -define(JS1, <<"[{\"id\":1,\"time_created\":1,\"label\":1}]">>).

@@ -81,13 +81,9 @@ gregorian_epoch_to_iso_8601(Epoch) when is_integer(Epoch) ->
 
 gregorian_epoch_to_iso_8601(Epoch) when is_float(Epoch) ->
 	Int = trunc(Epoch),
+	String = mochinum:digits(Epoch),
 	Timestamp = gregorian_epoch_to_iso_8601(Int),
-	Frac = string:sub_string(
-		lists:flatten(
-			io_lib:format("~.3f", [Epoch - Int])
-		),
-	2),
-	string:concat(Timestamp, Frac).
+	string:concat(Timestamp, string:substr(String, string:chr(String, $.))).
 
 iso_8601_to_gregorian_epoch(Date) when is_binary(Date) ->
 	iso_8601_to_gregorian_epoch( binary_to_list(Date) );
