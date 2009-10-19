@@ -97,9 +97,9 @@ iso_to_rec( fraction, <<C:8/bitstring, Rest/bitstring>>, R) ->
 
 %% parsing timezone info
 iso_to_rec( tz_hour_plus, <<Tz_hour:16/bitstring, Rest/bitstring>>, R) ->
-    iso_to_rec(minute, Rest, R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ hour = binary_to_integer(Tz_hour) }} );
+    iso_to_rec(tz_minute, Rest, R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ hour = binary_to_integer(Tz_hour) }} );
 iso_to_rec( tz_hour_minus, <<Tz_hour:16/bitstring, Rest/bitstring>>, R) ->
-    iso_to_rec(minute, Rest, R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ hour = - binary_to_integer(Tz_hour) }} );
+    iso_to_rec(tz_minute, Rest, R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ hour = - binary_to_integer(Tz_hour) }} );
 iso_to_rec( tz_minute, <<Tz_min:16/bitstring, Rest/bitstring>>, R) ->
     iso_to_rec(minute, Rest, R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ minute = binary_to_integer(Tz_min) }} ).
 
