@@ -12,6 +12,10 @@
 		case os:getenv("PROBIX_SERVER_PORT") of false -> "8000"; Env_port -> Env_port end
 ).
 
+-define(JS1, "{\"time_created\":1,\"label\":1}").
+-define(JS2, "[{\"time_created\":2,\"label\":1},{\"time_created\":3,\"label\":1},{\"time_created\":4,\"label\":1},{\"time_created\":5,\"label\":1}]").
+
+
 %% converting all body answers to binary, cause http:requests returns string
 %% and probix_utils:*_to_json return binary
 rest_req('GET', Path) ->
@@ -63,9 +67,19 @@ generate_basic_object_crud_tests(_) ->
        ),
      ?_assertMatch(
         {301, _},
-        rest_req('POST', "/series?label=Foo", "")
+        rest_req('POST', "/series?label=Empty", "")
+       ),
+     ?_assertMatch(
+        {301, _},
+        rest_req('POST', "/series?label=Single", ?JS1)
+       ),
+     ?_assertMatch(
+        {301, _},
+        rest_req('POST', "/series?label=Multiple", ?JS2)
+       ),
+     ?_assertMatch(
+        {301, _},
+        rest_req('POST', "/series", ?JS2)
        )
-   
-
 	].
 

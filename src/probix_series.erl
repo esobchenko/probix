@@ -27,8 +27,12 @@ all_series() ->
 	gen_server:call(?MODULE, all_series).
 delete_series(Id) ->
 	gen_server:call(?MODULE, {delete_series, Id}).
-series(Id) ->
-	gen_server:call(?MODULE, {series, Id}).
+
+series(Id) when is_binary(Id) ->
+	gen_server:call(?MODULE, {series, Id});
+
+series(Id) when is_list(Id) ->
+    series(list_to_binary(Id)).
 
 add_ticks(Probes) when is_list(Probes); is_record(Probes, tick) ->
 	gen_server:call(?MODULE, {add_ticks, Probes}).

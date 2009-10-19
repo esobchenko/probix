@@ -136,7 +136,13 @@ delete_series(Id) when is_binary(Id) ->
 	ok.
 
 series(Id) when is_binary(Id) ->
-	mnesia:dirty_read({series, Id}).
+    case mnesia:dirty_read({series, Id}) of
+        [] ->
+            {error, not_found};
+        Res ->
+            Res
+    end.
+          
 
 %% XXX I do not check the existence of the series in add_ticks/1 and other tick functions
 %% because it's expensive. It should be done outside e.g. in http handle functions.

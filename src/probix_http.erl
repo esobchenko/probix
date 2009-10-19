@@ -17,8 +17,16 @@ dispatch_requests(Req) ->
 	Path = Req:get(path),
 	%% uri query string as proplist
 	Query = Req:parse_qs(),
+
 	%% post body
-	Post = Req:recv_body(),
+    %% adding empty list in case we have undefined post
+    Post = case Req:recv_body() of
+               undefined ->
+                   "[]";
+               P ->
+                   P
+           end,
+                   
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
     %% headers
@@ -41,36 +49,33 @@ dispatch_requests(Req) ->
 
 %% TODO: check Args and create different prototypes depending if Args/Post is passed
 
-%% Create a new series without data
-handle('POST', ["series"], [], undefined) ->
+%% Create a new series with or without data
+handle('POST', ["series"], [], Post) ->
     log4erl:info("Creating series without label"),
     Series = probix_series:new_series(),
     redirect("/series/" ++ Series#series.id);
 
-handle('POST', ["series"], [{"label", Label}], undefined) ->
+handle('POST', ["series"], [{"label", Label}], Post) ->
     log4erl:info("Creating series with label ~s", [ Label ]),
     Series = probix_series:new_series(Label),
-    redirect("/series/" ++ Series#series.id);
-
-%% Create a new series with data
-handle('POST', ["series"], [], Post) ->
-    log4erl:info("Creating series without label and adding data"),
-    Series = probix_series:new_series(),
-    {ok, Ticks} = probix_format:ticks_from_json(Series#series.id, Post),
-    probix_series:add_ticks(Ticks),
-    redirect("/series/" ++ Series#series.id);
-
-handle('POST', ["series"], [{"label", Label}], Post) ->
-    log4erl:info("Creating series with label: ~s and adding data", [ Label ]),
-    Series = probix_series:new_series(Label),
-    {ok, Ticks} = probix_format:ticks_from_json(Series#series.id, Post),
-    probix_series:add_ticks(Ticks),
+    case probix_format:ticks_from_json(Series#series.id, Post) of
+        {ok, Ticks} ->
+            probix_series:add_ticks(Ticks);
+        {error, Error} ->
+            error(Error)
+    end,
     redirect("/series/" ++ Series#series.id);
 
 %% Update series with data
-handle('POST', ["series", Id], [], _Post) ->
+handle('POST', ["series", Id], [], Post) ->
     log4erl:info("Updating series ~s", [ Id ]),
-    %% probix_series:add_ticks(Id, Post);
+    Series = probix_series:get_series(Id),
+    case probix_format:ticks_from_json(Series#series.id, Post) of
+        {ok, Ticks} ->
+            probix_series:add_ticks(Ticks);
+        {error, Error} ->
+            error(Error)
+    end,
     ok();
 
 %% Get all existing series
@@ -83,40 +88,68 @@ handle('GET', ["series"], [], undefined) ->
 %% Get a list of ticks in this series
 handle('GET', ["series", Id], [], undefined) ->
     log4erl:info("Selecting all data for series ~s", [ Id ]),
-    %% probix_series:get_ticks(Id);
-    ok();
+    Ticks = probix_series:get_ticks(Id),
+    Content = probix_format:ticks_to_json(Ticks),
+    ok(Content);
 
 
 handle('GET', ["series", Id], [{from, From}], undefined) ->
     log4erl:info("Selecting all data for series ~s, from: ~p", 
                  [Id, From]),
-    %% probix_series:get_ticks(Id);
-    ok();
-
+    Ticks = probix_series:get_ticks(Id, {from, From}),
+    Content = probix_format:ticks_to_json(Ticks),
+    ok(Content);
 
 handle('GET', ["series", Id], [{to, To}], undefined) ->
     log4erl:info("Selecting all data for series ~s, to: ~p", 
                  [Id, To]),
-    %% probix_series:get_ticks(Id);
-    ok();
+    Ticks = probix_series:get_ticks(Id, {to, To}),
+    Content = probix_format:ticks_to_json(Ticks),
+    ok(Content);
 
 handle('GET', ["series", Id], Args, undefined) ->
     case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
         [From, To] when is_list(From); is_list(To) ->
             log4erl:info("Selecting all data for series ~s, from: ~p, to: ~p", 
-                         [Id, From, To]);
+                         [Id, From, To]),
+            Ticks = probix_series:get_ticks(Id, {From, To}),
+            Content = probix_format:ticks_to_json(Ticks),
+            ok(Content);
         _ -> 
             error("Wrong args")
-    end,
-    %% probix_series:get_ticks(Id,{From, To});
-    ok();
+    end;
 
 %% Removing data from series
 %%
 handle('DELETE', ["series", Id], [], undefined) ->
     log4erl:info("Deleting series with id: ~s", [ Id ]),
-    %% probix_series:delete_ticks();
+    probix_series:delete_ticks(Id), %% dunno if we need this?
+    probix_series:delete_series(Id),
     ok();
+
+handle('DELETE', ["series", Id], [{from, From}], undefined) ->
+    log4erl:info("Deleting data for series ~s, from: ~p", 
+                 [Id, From]),
+    Ticks = probix_series:delete_ticks(Id, {from, From}),
+    ok();
+
+handle('DELETE', ["series", Id], [{to, To}], undefined) ->
+    log4erl:info("Deleting data for series ~s, to: ~p", 
+                 [Id, To]),
+    Ticks = probix_series:delete_ticks(Id, {to, To}),
+    ok();
+
+handle('DELETE', ["series", Id], Args, undefined) ->
+    case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
+        [From, To] when is_list(From); is_list(To) ->
+            log4erl:info("Deleting data for series ~s, from: ~p, to: ~p", 
+                         [Id, From, To]),
+            Ticks = probix_series:delete_ticks(Id, {From, To}),
+            ok();
+        _ -> 
+            error("Wrong args")
+    end;
+
 
 handle(_, _, _, _) ->
     error("Unknown request").
