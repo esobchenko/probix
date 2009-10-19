@@ -64,10 +64,10 @@ iso_to_rec( State, <<"-", Rest/bitstring>>, R ) ->
 	iso_to_rec( State, Rest, R );
 
 %% separators between date and time
-iso_to_rec( State, <<" ", Rest/bitstring>>, R ) ->
-	iso_to_rec( State, Rest, R );
-iso_to_rec( State, <<"T", Rest/bitstring>>, R ) ->
-	iso_to_rec( State, Rest, R );
+iso_to_rec( separator, <<" ", Rest/bitstring>>, R ) ->
+	iso_to_rec( hour, Rest, R );
+iso_to_rec( separator, <<"T", Rest/bitstring>>, R ) ->
+	iso_to_rec( hour, Rest, R );
 
 %% separator between time parts
 iso_to_rec( State, <<":", Rest/bitstring>>, R ) ->
@@ -85,7 +85,7 @@ iso_to_rec( year, <<Year:32/bitstring, Rest/bitstring>>, R ) ->
 iso_to_rec( month, <<Month:16/bitstring, Rest/bitstring>>, R ) ->
 	iso_to_rec( day, Rest, R#timestamp{ month = binary_to_integer(Month) } );
 iso_to_rec( day, <<Day:16/bitstring, Rest/bitstring>>, R ) ->
-	iso_to_rec( hour, Rest, R#timestamp{ day = binary_to_integer(Day) } );
+	iso_to_rec( separator, Rest, R#timestamp{ day = binary_to_integer(Day) } );
 
 %% parsing time
 iso_to_rec( hour, <<Hour:16/bitstring, Rest/bitstring>>, R ) ->
