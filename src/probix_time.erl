@@ -41,7 +41,7 @@ parse_iso8601(Time) when is_binary(Time) ->
         )
         }
     catch
-        error:Err -> {error, not_iso8601, Err}
+        error:_ -> {error, not_iso8601}
     end.
 
 iso_to_rec( _State, <<>>, R ) -> R;
@@ -54,6 +54,10 @@ iso_to_rec(fraction, <<"-", Rest/bitstring>>, R) ->
     iso_to_rec(tz_hour_minus, Rest, R );
 iso_to_rec(_State, <<"+", Rest/bitstring>>, R) ->
     iso_to_rec(tz_hour_plus, Rest, R );
+iso_to_rec(second, <<"Z", Rest/bitstring>>, R) ->
+    iso_to_rec(second, Rest, R);
+iso_to_rec(fraction, <<"Z", Rest/bitstring>>, R) ->
+    iso_to_rec(second, Rest, R);
 
 %% separator between date
 iso_to_rec( State, <<"-", Rest/bitstring>>, R ) ->
@@ -102,6 +106,8 @@ iso_to_rec( tz_hour_minus, <<Tz_hour:16/bitstring, Rest/bitstring>>, R) ->
     iso_to_rec(tz_minute, Rest, R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ hour = - binary_to_integer(Tz_hour) }} );
 iso_to_rec( tz_minute, <<Tz_min:16/bitstring, Rest/bitstring>>, R) ->
     iso_to_rec(minute, Rest, R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ minute = binary_to_integer(Tz_min) }} ).
+
+
 
 
 
