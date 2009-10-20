@@ -41,86 +41,66 @@ server API reference
 1.1. Create a new series with pre-existing ticks
 
 	$ curl -i -X POST http://localhost:8000/series \
-		-d '[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]'
-	HTTP/1.1 200 OK
-	Location: http://localhost:8000/series/B40A1F64
+		-d '[{"timestamp": 1254136036, "value": 123}, {"timestamp": 1254136037, "value": 130}]'
 
 	$ curl -i -X POST http://localhost:8000/series \
-		-d '{"timestamp": 1254136036, "value:" 123}'
-	HTTP/1.1 200 OK
-	Location: http://localhost:8000/series/B40A1F64
+		-d '{"timestamp": 1254136036, "value": 123}'
 
 	$ curl -i -X POST http://localhost:8000/series?label=optonal_label \
-		-d '{"timestamp": 1254136036, "value:" 123}'
-	HTTP/1.1 200 OK
-	Location: http://localhost:8000/series/B40A1F64
+		-d '{"timestamp": 1254136036, "value": 123}'
 
 1.2. Create a new series for later updating
 
 	$ curl -i -X POST http://localhost:8000/series
-	HTTP/1.1 200 OK
-	Location: http://localhost:8000/series/B40A1F64
 
 	$ curl -i -X POST http://localhost:8000/series?label=optional_label
-	HTTP/1.1 200 OK
-	Location: http://localhost:8000/series/B40A1F64
 
 2. Adding new data to existing series
 
 2.1. Add a few ticks at once
 
-	$ curl -i -X POST http://localhost:8000/series/B40A1F64 \
-		-d '[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]'
+	$ curl -i -X POST http://localhost:8000/series/wv1E2FawQp \
+		-d '[{"timestamp": 1254136036, "value": 123}, {"timestamp": 1254136037, "value": 130}]'
 
 2.2. Add a single tick in a series
 
-	$ curl -i -X POST http://localhost:8000/series/B40A1F64 \
-		-d '{"timestamp": 1254136036, "value:" 123}'
+	$ curl -i -X POST http://localhost:8000/series/wv1E2FawQp \
+		-d '{"timestamp": 1254136036, "value": 123}'
 
 3. Retrieving data from the series
 
 3.1. Get all existing series
 
 	$ curl -i -X GET http://localhost:8000/series
-	HTTP/1.1 200 OK
-	[{"uri": "http://localhost:8000/series/B40A1F64", "created": 1254136036}]
 
 3.2. Get a list of ticks in this series
 
-	$ curl -i -X GET http://localhost:8000/series/B40A1F64
-	HTTP/1.1 200 OK
-	[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]
+	$ curl -i -X GET http://localhost:8000/series/wv1E2FawQp
 
 3.3. Get a slice of ticks for this series
 
-	$ curl -i -X GET http://localhost:8000/series/B40A1F64?from=1254136036
-	HTTP/1.1 200 OK
-	[{"timestamp": 1254136036, "value:" 123}, {"timestamp": 1254136037, "value:" 130}]
+	$ curl -i -X GET http://localhost:8000/series/wv1E2FawQp?from=1254136036
 
-	$ curl -i -X GET http://localhost:8000/series/B40A1F64?to=1254136036
-	HTTP/1.1 200 OK
-	[{"timestamp": 1254136036, "value:" 123}]
+	$ curl -i -X GET http://localhost:8000/series/wv1E2FawQp?to=1254136036
 
-	$ curl -i -X GET http://localhost:8000/series/B40A1F64?from=1254136037&to=1254136040
-	HTTP/1.1 200 OK
-	[{"timestamp": 1254136037, "value:" 130}]
+	$ curl -i -X GET http://localhost:8000/series/wv1E2FawQp?from=1254136037&to=1254136040
 
 4. Removing data from series
 
 4.1. Delete a data series and all its contents
 
-	$ curl -i -X DELETE http://localhost:8000/series/B40A1F64
+	$ curl -i -X DELETE http://localhost:8000/series/wv1E2FawQp
 
 4.2. Partial removal of data
 
 	$ curl -i -X DELETE \
-		http://localhost:8000/series/B40A1F64?from=1254136036
+		http://localhost:8000/series/wv1E2FawQp?from=1254136036
 
 	$ curl -i -X DELETE \
-		http://localhost:8000/series/B40A1F64?to=1254136037
+		http://localhost:8000/series/wv1E2FawQp?to=1254136037
 
 	$ curl -i -X DELETE \
-		http://localhost:8000/series/B40A1F64?from=1254136036&to=1254136038
+		http://localhost:8000/series/wv1E2FawQp?from=1254136036&to=1254136038
 
 --------------------------------
 server API codes
