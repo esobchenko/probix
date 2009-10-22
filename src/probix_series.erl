@@ -32,20 +32,31 @@ series(Id) when is_binary(Id) ->
 	gen_server:call(?MODULE, {series, Id});
 
 series(Id) when is_list(Id) ->
-    series(list_to_binary(Id)).
+	series(list_to_binary(Id)).
 
 add_ticks(Probes) when is_list(Probes); is_record(Probes, tick) ->
 	gen_server:call(?MODULE, {add_ticks, Probes}).
 
-get_ticks(Series_id) ->
-	gen_server:call(?MODULE, {get_ticks, Series_id}).
-get_ticks(Series_id, Range) ->
-	gen_server:call(?MODULE, {get_ticks, Series_id, Range}).
+get_ticks(Series_id) when is_binary(Series_id) ->
+	gen_server:call(?MODULE, {get_ticks, Series_id});
+get_ticks(Series_id) when is_list(Series_id) ->
+	get_ticks(list_to_binary(Series_id)).
 
-delete_ticks(Series_id) ->
-	gen_server:call(?MODULE, {delete_ticks, Series_id}).
-delete_ticks(Series_id, Range) ->
-	gen_server:call(?MODULE, {delete_ticks, Series_id, Range}).
+get_ticks(Series_id, Range) when is_binary(Series_id) ->
+	gen_server:call(?MODULE, {get_ticks, Series_id, Range});
+get_ticks(Series_id, Range) when is_list(Series_id) ->
+	get_ticks(list_to_binary(Series_id), Range).
+
+delete_ticks(Series_id) when is_binary(Series_id) ->
+	gen_server:call(?MODULE, {delete_ticks, Series_id});
+delete_ticks(Series_id) when is_list(Series_id) ->
+	delete_ticks(list_to_binary(Series_id)).
+
+delete_ticks(Series_id, Range) when is_binary(Series_id) ->
+	gen_server:call(?MODULE, {delete_ticks, Series_id, Range});
+delete_ticks(Series_id, Range) when is_list(Series_id) ->
+	delete_ticks(list_to_binary(Series_id), Range).
+
 
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).

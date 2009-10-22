@@ -106,7 +106,9 @@ create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 new_series(Label) when is_binary(Label) ->
 	F = fun() ->
 		Series = #series{
-			%% XXX identifier may not be unique, then the function will overwrite the existing series
+			%% XXX identifier may not be unique, then the function will overwrite the existing series;
+			%% XXX identifier is binary because mochijson2 encodes erlang-strings as lists:
+			%% mochijson2:json_encode(Foo) when is_list(Foo) -> json_encode_array(Foo);
 			id = list_to_binary( probix_util:random_string(10) ),
 			time_created = probix_format:now_to_gregorian_epoch(),
 			label = Label
@@ -136,13 +138,12 @@ delete_series(Id) when is_binary(Id) ->
 	ok.
 
 series(Id) when is_binary(Id) ->
-    case mnesia:dirty_read({series, Id}) of
-        [] ->
-            {error, not_found};
-        Res ->
-            Res
-    end.
-          
+	case mnesia:dirty_read({series, Id}) of
+		[] ->
+			{error, not_found};
+		Res ->
+			{ok, Res}
+	end.
 
 %% XXX I do not check the existence of the series in add_ticks/1 and other tick functions
 %% because it's expensive. It should be done outside e.g. in http handle functions.
