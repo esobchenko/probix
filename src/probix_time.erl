@@ -4,6 +4,20 @@
 -record(timestamp, {year, month, day, hour, minute, second, fraction, timezone}).
 -record(timezone, {hour, minute}).
 
+validate(T) when is_record(T, timestamp) ->
+	true = T#timestamp.year >= 0,
+	true = T#timestamp.month >= 1,
+	true = T#timestamp.month =< 12,
+	%% XXX I know we need to implement a more detailed check here
+	true = T#timestamp.day >= 1,
+	true = T#timestamp.day =< 31,
+	true = T#timestamp.hour >= 0,
+	true = T#timestamp.hour =< 23,
+	true = T#timestamp.second >= 0,
+	true = T#timestamp.second =< 59,
+	true = is_record(T#timestamp.timezone, timezone),
+	T.
+
 binary_to_integer(Binary) when is_binary(Binary) ->
 	list_to_integer(binary_to_list(Binary)).
 
@@ -19,8 +33,8 @@ from_iso8601(Time) when is_binary(Time) ->
 			Time,
 			#timestamp{
 				year = 0,
-				month = 0,
-				day = 0,
+				month = 1,
+				day = 1,
 				hour = 0,
 				minute = 0,
 				second = 0,
@@ -32,7 +46,7 @@ from_iso8601(Time) when is_binary(Time) ->
 		error:_ -> {error, bad_input}
 	end.
 
-parse_iso8601( _State, <<>>, R ) -> R;
+parse_iso8601( _State, <<>>, R ) -> validate(R);
 
 %% these are used to come from state of parsing time seconds or
 %% fraction seconds to parsing timezone
