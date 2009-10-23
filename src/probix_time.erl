@@ -8,9 +8,8 @@ validate(T) when is_record(T, timestamp) ->
 	true = T#timestamp.year >= 0,
 	true = T#timestamp.month >= 1,
 	true = T#timestamp.month =< 12,
-	%% XXX I know we need to implement a more detailed check here
 	true = T#timestamp.day >= 1,
-	true = T#timestamp.day =< 31,
+	true = T#timestamp.day =< calendar:last_day_of_the_month(T#timestamp.year, T#timestamp.month),
 	true = T#timestamp.hour >= 0,
 	true = T#timestamp.hour =< 23,
 	true = T#timestamp.second >= 0,
