@@ -1,15 +1,18 @@
 -module(probix_time).
 -compile(export_all).
 
+%% We were obliged to write the own format for timestamps, since the standard {Date, Time}
+%% format is not applicable for fractional seconds and timezone handling.
+
 -record(timestamp, {year, month, day, hour, minute, second, fraction, timezone}).
 -record(timezone, {hour, minute}).
 
 validate(T) when is_record(T, timestamp) ->
-	true = T#timestamp.year >= 0,
-	true = T#timestamp.month >= 1,
-	true = T#timestamp.month =< 12,
-	true = T#timestamp.day >= 1,
-	true = T#timestamp.day =< calendar:last_day_of_the_month(T#timestamp.year, T#timestamp.month),
+	true = calendar:valid_date(
+		T#timestamp.year,
+		T#timestamp.month,
+		T#timestamp.day
+	),
 	true = T#timestamp.hour >= 0,
 	true = T#timestamp.hour =< 23,
 	true = T#timestamp.second >= 0,
@@ -122,7 +125,11 @@ parse_iso8601( tz_minute, <<Tz_min:16/bitstring, Rest/bitstring>>, R) ->
 
 from_unix_epoch(_Time) -> ok.
 
-to_datetime(_Time) -> ok.
+to_datetime(T) when is_record(T, timestamp) ->
+	{
+		{ T#timestamp.year, T#timestamp.month, T#timestamp.day },
+		{ T#timestamp.hour, T#timestamp.minute, T#timestamp.second }
+	}.
 
 to_gregorian_seconds(_Time) -> ok.
 

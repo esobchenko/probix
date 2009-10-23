@@ -62,7 +62,7 @@ t() ->
 		}
 ).
 
-time_transform_test_() ->
+from_iso8601_test_() ->
 	[
 		?_assertEqual(
 			{ok, ?CR1},
@@ -91,6 +91,14 @@ time_transform_test_() ->
 		?_assertEqual(
 			{error, bad_input},
 			probix_time:from_iso8601("foobar")
+		),
+		?_assertEqual(
+			{error, bad_input},
+			probix_time:from_iso8601("2007-02-29")
 		)
+	].
+
+to_datetime_test_() ->
+	[
 	].
 
