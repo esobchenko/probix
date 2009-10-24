@@ -7,6 +7,14 @@
 -record(timestamp, {year, month, day, hour, minute, second, fraction, timezone}).
 -record(timezone, {hour, minute}).
 
+%% there are no Erlang functions for the unix epoch, but there are functions
+%% for gregorean epoch in Erlang's calendar module. We will use this
+%% offset to convert grigorean epoch to the unix epoch and vice versa.
+unix_epoch_offset() -> 62167219200.
+
+unix_to_gregorian_epoch(Epoch) when is_integer(Epoch) -> Epoch + unix_epoch_offset().
+gregorian_to_unix_epoch(Epoch) when is_integer(Epoch) -> Epoch - unix_epoch_offset().
+
 validate(T) when is_record(T, timestamp) ->
 	true = calendar:valid_date(
 		T#timestamp.year,
@@ -23,27 +31,40 @@ validate(T) when is_record(T, timestamp) ->
 binary_to_integer(Binary) when is_binary(Binary) ->
 	list_to_integer(binary_to_list(Binary)).
 
+new() ->
+	#timestamp{
+		year = 0,
+		month = 1,
+		day = 1,
+		hour = 0,
+		minute = 0,
+		second = 0,
+		fraction = 0,
+		timezone = #timezone{ hour = 0, minute = 0}
+	}.
+
 %% We support a subset of ISO 8601: http://www.w3.org/TR/NOTE-datetime
+
+from_datetime({{Year, Month, Day}, {Hour, Minute, Second}}) ->
+	try
+		{ok, validate((new())#timestamp{
+			year = Year,
+			month = Month,
+			day = Day,
+			hour = Hour,
+			minute = Minute,
+			second = Second
+		})}
+	catch
+		error:_ -> {error, bad_input}
+	end.
 
 from_iso8601(Time) when is_list(Time) ->
 	from_iso8601( list_to_binary(Time) );
 
 from_iso8601(Time) when is_binary(Time) ->
 	try
-		{ok, parse_iso8601(
-			year,
-			Time,
-			#timestamp{
-				year = 0,
-				month = 1,
-				day = 1,
-				hour = 0,
-				minute = 0,
-				second = 0,
-				fraction = 0,
-				timezone = #timezone{ hour = 0, minute = 0}
-			})
-		}
+		{ok, parse_iso8601( year, Time, new() ) }
 	catch
 		error:_ -> {error, bad_input}
 	end.
@@ -123,7 +144,32 @@ parse_iso8601( tz_minute, <<Tz_min:16/bitstring, Rest/bitstring>>, R) ->
 		R#timestamp{ timezone = (R#timestamp.timezone)#timezone{ minute = binary_to_integer(Tz_min) }}
 	).
 
-from_unix_epoch(_Time) -> ok.
+from_unix_epoch(Epoch) when is_list(Epoch) ->
+	from_unix_epoch(list_to_binary(Epoch));
+
+from_unix_epoch(Epoch) when is_binary(Epoch) ->
+	try
+		{ok, parse_unix_epoch(int, Epoch, 0, 0) }
+	catch
+		error:_ -> {error, bad_input}
+	end.
+
+parse_unix_epoch(_State, <<>>, Int, Frac) ->
+	{ok, R} = from_datetime(
+		calendar:gregorian_seconds_to_datetime(
+			unix_to_gregorian_epoch(Int)
+		)
+	),
+	validate( R#timestamp{ fraction = Frac } );
+
+parse_unix_epoch(int, <<".", Rest/bitstring>>, Int, Frac) ->
+	parse_unix_epoch(frac, Rest, Int, Frac);
+
+parse_unix_epoch(int, <<C:8/bitstring, Rest/bitstring>>, Int, Frac) ->
+	parse_unix_epoch(int, Rest, Int * 10 + binary_to_integer(C), Frac);
+
+parse_unix_epoch(frac, <<C:8/bitstring, Rest/bitstring>>, Int, Frac) ->
+	parse_unix_epoch(frac, Rest, Int, Frac * 10 + binary_to_integer(C)).
 
 to_datetime(T) when is_record(T, timestamp) ->
 	{
@@ -133,7 +179,8 @@ to_datetime(T) when is_record(T, timestamp) ->
 
 to_gregorian_seconds(_Time) -> ok.
 
-to_unix_seconds(_Time) -> ok.
+to_unix_seconds(Time) when is_record(Time, timestamp) -> ok.
+%%	N/math:pow(10, length(integer_to_list(N))).
 
 to_utc(R) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
 
