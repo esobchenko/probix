@@ -190,6 +190,8 @@ to_unix_epoch(R) when is_record(R, timestamp) ->
 	Fraction_str = string:concat( ".", integer_to_list(R#timestamp.fraction) ),
 	string:concat( integer_to_list(Seconds), Fraction_str ).
 
+to_iso8601(R) when is_record(R, timestamp) -> format("", R).
+
 to_utc(R) when is_record(R, timestamp) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
 
 to_tz(_R, _Tz) -> ok.

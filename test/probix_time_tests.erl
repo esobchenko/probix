@@ -118,3 +118,24 @@ to_unix_epoch_test_() ->
 			})
 		)
 	].
+
+to_tz_test_() ->
+	[
+		?_assertEqual(
+			(t())#timestamp{
+				year=2000,
+				month=1,
+				day=1,
+				hour=2
+			},
+			probix_time:to_tz(
+				(t())#timestamp{
+					year=2000,
+					month=1,
+					day=1
+				},
+				#timezone{hour=2}
+			)
+		)
+	].
+
