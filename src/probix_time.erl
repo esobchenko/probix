@@ -26,6 +26,11 @@ validate(T) when is_record(T, timestamp) ->
 	true = T#timestamp.second >= 0,
 	true = T#timestamp.second =< 59,
 	true = is_record(T#timestamp.timezone, timezone),
+	%% timezone
+	true = (T#timestamp.timezone)#timezone.hour >= -11,
+	true = (T#timestamp.timezone)#timezone.hour =< 11,
+	true = (T#timestamp.timezone)#timezone.minute >= 0,
+	true = (T#timestamp.timezone)#timezone.minute =< 59,
 	T.
 
 binary_to_integer(Binary) when is_binary(Binary) ->
