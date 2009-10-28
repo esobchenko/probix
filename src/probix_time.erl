@@ -186,9 +186,9 @@ to_gregorian_seconds(R) when is_record(R, timestamp) ->
 	calendar:datetime_to_gregorian_seconds( to_datetime(R) ).
 
 to_unix_epoch(R) when is_record(R, timestamp) ->
-	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(R) ),
-	Fraction_str = string:concat( ".", integer_to_list(R#timestamp.fraction) ),
-	string:concat( integer_to_list(Seconds), Fraction_str ).
+	Seconds = integer_to_list( gregorian_to_unix_seconds( to_gregorian_seconds(R) ) ),
+	Fraction = integer_to_list( R#timestamp.fraction ),
+	string:join([Seconds, Fraction], ".").
 
 to_iso8601(R) when is_record(R, timestamp) -> format("", R).
 
