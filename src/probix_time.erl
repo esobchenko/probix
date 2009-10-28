@@ -10,10 +10,10 @@
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
 %% offset to convert grigorean epoch to the unix epoch and vice versa.
-unix_epoch_offset() -> 62167219200.
+unix_seconds_offset() -> 62167219200.
 
-unix_to_gregorian_epoch(Epoch) when is_integer(Epoch) -> Epoch + unix_epoch_offset().
-gregorian_to_unix_epoch(Epoch) when is_integer(Epoch) -> Epoch - unix_epoch_offset().
+unix_to_gregorian_seconds(Epoch) when is_integer(Epoch) -> Epoch + unix_seconds_offset().
+gregorian_to_unix_seconds(Epoch) when is_integer(Epoch) -> Epoch - unix_seconds_offset().
 
 validate(T) when is_record(T, timestamp) ->
 	true = calendar:valid_date(
@@ -162,7 +162,7 @@ from_unix_epoch(Epoch) when is_binary(Epoch) ->
 parse_unix_epoch(_State, <<>>, Int, Frac) ->
 	{ok, R} = from_datetime(
 		calendar:gregorian_seconds_to_datetime(
-			unix_to_gregorian_epoch(Int)
+			unix_to_gregorian_seconds(Int)
 		)
 	),
 	validate( R#timestamp{ fraction = Frac } );
@@ -184,8 +184,12 @@ to_datetime(T) when is_record(T, timestamp) ->
 
 to_gregorian_seconds(_Time) -> ok.
 
-to_unix_seconds(Time) when is_record(Time, timestamp) -> ok.
-%%	N/math:pow(10, length(integer_to_list(N))).
+to_unix_epoch(R) when is_record(R, timestamp) ->
+	Seconds = gregorian_to_unix_seconds(
+		calendar:datetime_to_gregorian_seconds( to_datetime(R) )
+	),
+	Fraction = string:concat( ".", integer_to_list(R#timestamp.fraction) ),
+	string:concat( integer_to_list(Seconds), Fraction ).
 
 to_utc(R) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
 

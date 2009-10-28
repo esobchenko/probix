@@ -90,10 +90,31 @@ from_unix_epoch_test_() ->
 				month=1,
 				day=1
 			}},
-			probix_time:from_unix_epoch("0")
+			probix_time:from_unix_epoch("0.0")
 		)
 	].
 
 to_datetime_test_() ->
-	[].
+	[
+		?_assertEqual(
+			{{2009,7,16},{13,0,0}},
+			probix_time:to_datetime((t())#timestamp{
+				year=2009,
+				month=7,
+				day=16,
+				hour=13
+			})
+		)
+	].
 
+to_unix_epoch_test_() ->
+	[
+		?_assertEqual(
+			"0.0",
+			probix_time:to_unix_epoch((t())#timestamp{
+				year=1970,
+				month=1,
+				day=1
+			})
+		)
+	].
