@@ -182,20 +182,26 @@ to_datetime(T) when is_record(T, timestamp) ->
 		{ T#timestamp.hour, T#timestamp.minute, T#timestamp.second }
 	}.
 
-to_gregorian_seconds(_Time) -> ok.
+to_gregorian_seconds(R) when is_record(R, timestamp) ->
+	calendar:datetime_to_gregorian_seconds( to_datetime(R) ).
 
 to_unix_epoch(R) when is_record(R, timestamp) ->
-	Seconds = gregorian_to_unix_seconds(
-		calendar:datetime_to_gregorian_seconds( to_datetime(R) )
-	),
-	Fraction = string:concat( ".", integer_to_list(R#timestamp.fraction) ),
-	string:concat( integer_to_list(Seconds), Fraction ).
+	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(R) ),
+	Fraction_str = string:concat( ".", integer_to_list(R#timestamp.fraction) ),
+	string:concat( integer_to_list(Seconds), Fraction_str ).
 
-to_utc(R) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
+to_utc(R) when is_record(R, timestamp) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
 
 to_tz(_R, _Tz) -> ok.
 
-cmp(_R1, _R2) -> ok.
+cmp(R1, R2) when is_record(R1, timestamp), is_record(R2, timestamp) ->
+	R1_utc = to_utc(R1),
+	R2_utc = to_utc(R2),
+	if
+		R1_utc < R2_utc -> -1;
+		R1_utc > R2_utc -> 1;
+		R1_utc =:= R2_utc -> 0
+	end.
 
 format(_Format, _R) -> ok.
 
