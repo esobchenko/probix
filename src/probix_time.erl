@@ -194,7 +194,14 @@ to_iso8601(R) when is_record(R, timestamp) -> format("", R).
 
 to_utc(R) when is_record(R, timestamp) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
 
-to_tz(_R, _Tz) -> ok.
+to_tz(R, Tz) ->
+    Tz_offset = ((Tz#timezone.hour * 60) + Tz#timezone.minute) * 60,
+    R_offset = (((R#timestamp.timezone)#timezone.hour * 60) + (R#timestamp.timezone)#timezone.minute) * 60,
+    R_seconds = calendar:datetime_to_gregorian_seconds(to_datetime(R)),
+    New_seconds = R_seconds - R_offset + Tz_offset,
+    Datetime = calendar:gregorian_seconds_to_datetime(New_seconds),
+    {ok, New_R} = from_datetime(Datetime),
+    New_R#timestamp{timezone = Tz, fraction = R#timestamp.fraction}.
 
 cmp(R1, R2) when is_record(R1, timestamp), is_record(R2, timestamp) ->
 	R1_utc = to_utc(R1),

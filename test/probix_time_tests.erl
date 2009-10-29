@@ -126,7 +126,8 @@ to_tz_test_() ->
 				year=2000,
 				month=1,
 				day=1,
-				hour=2
+				hour=2,
+                timezone = #timezone{hour=2,minute=0}
 			},
 			probix_time:to_tz(
 				(t())#timestamp{
@@ -134,7 +135,7 @@ to_tz_test_() ->
 					month=1,
 					day=1
 				},
-				#timezone{hour=2}
+				#timezone{hour=2,minute=0}
 			)
 		)
 	].
