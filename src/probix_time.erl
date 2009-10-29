@@ -212,7 +212,27 @@ cmp(R1, R2) when is_record(R1, timestamp), is_record(R2, timestamp) ->
 		R1_utc =:= R2_utc -> 0
 	end.
 
-format(_Format, _R) -> ok.
+to_iso8601(R) when is_record(R, timestamp) ->
+	Tz = case R#timestamp.timezone of
+		#timezone{ hour=0, minute=0 } ->
+			"Z";
+		#timezone{ hour=Hour, minute=Minute } when Hour >= 0 ->
+			io_lib:format("+~2.10.0B:~2.10.0B", [ Hour, Minute ]);
+		#timezone{ hour=Hour, minute=Minute } ->
+			io_lib:format("-~2.10.0B:~2.10.0B", [-Hour, Minute ])
+	end,
+	Deeplist = io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B.~.B~.s",
+		[
+			R#timestamp.year,
+			R#timestamp.month,
+			R#timestamp.day,
+			R#timestamp.hour,
+			R#timestamp.minute,
+			R#timestamp.second,
+			R#timestamp.fraction,
+			Tz
+		]
+	),
+	lists:flatten(Deeplist).
 
-to_iso8601(R) when is_record(R, timestamp) -> format("%Y%m%dT%H%M%S.%f%Z", R).
 
