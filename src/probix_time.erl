@@ -69,6 +69,7 @@ from_iso8601(Time) when is_list(Time) ->
 
 from_iso8601(Time) when is_binary(Time) ->
 	try
+		true = Time =/= <<"">>,
 		{ok, parse_iso8601( year, Time, new() ) }
 	catch
 		error:_ -> {error, bad_input}
@@ -154,6 +155,7 @@ from_unix_epoch(Epoch) when is_list(Epoch) ->
 
 from_unix_epoch(Epoch) when is_binary(Epoch) ->
 	try
+		true = Epoch =/= <<"">>,
 		{ok, parse_unix_epoch(int, Epoch, 0, 0) }
 	catch
 		error:_ -> {error, bad_input}
@@ -186,6 +188,7 @@ to_gregorian_seconds(R) when is_record(R, timestamp) ->
 	calendar:datetime_to_gregorian_seconds( to_datetime(R) ).
 
 to_unix_epoch(R) when is_record(R, timestamp) ->
+	%% XXX should we allow negative values?
 	Seconds = integer_to_list( gregorian_to_unix_seconds( to_gregorian_seconds(R) ) ),
 	Fraction = integer_to_list( R#timestamp.fraction ),
 	string:join([Seconds, Fraction], ".").
