@@ -4,9 +4,6 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--define(EPOCH_SECONDS, 62167219200.1234).
--define(EPOCH_ISO8601, "1970-01-01 00:00:00.1234").
-
 -define(SJ1, #series{id=1,time_created=1,label=1}).
 -define(JS1, <<"[{\"id\":1,\"time_created\":1,\"label\":1}]">>).
 
@@ -16,12 +13,6 @@
 -define(JTR1, <<"{\"timestamp\":1,\"value\":1}">>).
 -define(TJR1, #tick{id={1,1},value=1}).
 
-
-time_transform_test_() ->
-	[
-		?_assertEqual(?EPOCH_ISO8601, probix_format:gregorian_epoch_to_iso_8601(?EPOCH_SECONDS)),
-		?_assertEqual(?EPOCH_SECONDS, probix_format:iso_8601_to_gregorian_epoch(?EPOCH_ISO8601))
-	].
 
 series_to_json_test_() ->
 	[
