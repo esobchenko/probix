@@ -127,7 +127,7 @@ to_tz_test_() ->
 				month=1,
 				day=1,
 				hour=2,
-                timezone = #timezone{hour=2,minute=0}
+				timezone = #timezone{hour=2,minute=0}
 			},
 			probix_time:to_tz(
 				(t())#timestamp{
@@ -136,6 +136,24 @@ to_tz_test_() ->
 					day=1
 				},
 				#timezone{hour=2,minute=0}
+			)
+		),
+		?_assertEqual(
+			(t())#timestamp{
+				year=1999,
+				month=12,
+				day=31,
+				hour=11,
+				timezone=#timezone{hour=-11,minute=0}
+			},
+			probix_time:to_tz(
+				(t())#timestamp{
+					year=2000,
+					month=1,
+					day=1,
+					timezone=#timezone{hour=2,minute=0}
+				},
+				#timezone{hour=-11,minute=0}
 			)
 		)
 	].
