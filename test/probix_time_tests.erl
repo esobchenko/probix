@@ -4,9 +4,6 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--record(timestamp, {year, month, day, hour, minute, second, fraction, timezone}).
--record(timezone, {hour, minute}).
-
 t() -> probix_time:new().
 
 from_iso8601_test_() ->

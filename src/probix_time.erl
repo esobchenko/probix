@@ -4,8 +4,7 @@
 %% We were obliged to write the own format for timestamps, since the standard {Date, Time}
 %% format is not applicable for fractional seconds and timezone handling.
 
--record(timestamp, {year, month, day, hour, minute, second, fraction, timezone}).
--record(timezone, {hour, minute}).
+-include("probix.hrl").
 
 %% there are no Erlang functions for the unix epoch, but there are functions
 %% for gregorean epoch in Erlang's calendar module. We will use this
@@ -188,16 +187,14 @@ to_gregorian_seconds(R) when is_record(R, timestamp) ->
 	calendar:datetime_to_gregorian_seconds( to_datetime(R) ).
 
 to_unix_epoch(R) when is_record(R, timestamp) ->
-	%% XXX should we allow negative values?
+	%% XXX should we support negative values for unix epoch?
 	Seconds = integer_to_list( gregorian_to_unix_seconds( to_gregorian_seconds(R) ) ),
 	Fraction = integer_to_list( R#timestamp.fraction ),
 	string:join([Seconds, Fraction], ".").
 
-to_iso8601(R) when is_record(R, timestamp) -> format("", R).
-
 to_utc(R) when is_record(R, timestamp) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
 
-to_tz(R, Tz) ->
+to_tz(R, Tz) when is_record(R, timestamp), is_record(Tz, timezone) ->
 	Tz_offset = ((Tz#timezone.hour * 60) + Tz#timezone.minute) * 60,
 	R_offset = (((R#timestamp.timezone)#timezone.hour * 60) + (R#timestamp.timezone)#timezone.minute) * 60,
 	R_seconds = calendar:datetime_to_gregorian_seconds(to_datetime(R)),
@@ -216,4 +213,6 @@ cmp(R1, R2) when is_record(R1, timestamp), is_record(R2, timestamp) ->
 	end.
 
 format(_Format, _R) -> ok.
+
+to_iso8601(R) when is_record(R, timestamp) -> format("%Y%m%dT%H%M%S.%f%Z", R).
 
