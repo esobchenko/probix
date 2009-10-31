@@ -13,7 +13,9 @@
 ).
 
 -define(JS1, "{\"time_created\":1,\"label\":1}").
--define(JS2, "[{\"time_created\":2,\"label\":1},{\"time_created\":3,\"label\":1},{\"time_created\":4,\"label\":1},{\"time_created\":5,\"label\":1}]").
+
+-define(JT1, "{\"timestamp\": 1, \"value\":1}").
+-define(JT2, "[{\"timestamp\": 1, \"value\":1},{\"timestamp\":2, \"value\":2},{\"timestamp\":3, \"value\":3}]").
 
 
 %% converting all body answers to binary, cause http:requests returns string
@@ -36,22 +38,22 @@ rest_req('PUT', Path, Data) ->
 	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
 	{Status, list_to_binary(Body)}.
 
-basic_object_crud_test_() ->
-	{
-		setup,
-		fun() ->
+basic_rest_test_() ->
+    {
+        setup,
+        fun() ->
             probix_db:stop(),
-			application:start(inets),
-			probix:start_master([ram_copies])
-		end,
-		fun(_) ->
-			probix:stop(),
-			application:stop(inets)
-		end,
-		fun generate_basic_object_crud_tests/1
-	}.
+            application:start(inets),
+            probix:start_master([ram_copies])
+        end,
+        fun(_) ->
+            probix:stop(),
+            application:stop(inets)
+        end,
+        fun generate_basic_rest_tests/1
+    }.
 
-generate_basic_object_crud_tests(_) ->
+generate_basic_rest_tests(_) ->
 	[
      ?_assertMatch( %% issue #9
         {400, _},
@@ -71,15 +73,43 @@ generate_basic_object_crud_tests(_) ->
        ),
      ?_assertMatch(
         {301, _},
-        rest_req('POST', "/series?label=Single", ?JS1)
+        rest_req('POST', "/series?label=", "")
        ),
      ?_assertMatch(
         {301, _},
-        rest_req('POST', "/series?label=Multiple", ?JS2)
+        rest_req('POST', "/series?label=Single", ?JT1)
        ),
      ?_assertMatch(
         {301, _},
-        rest_req('POST', "/series", ?JS2)
+        rest_req('POST', "/series?label=Multiple", ?JT2)
+       ),
+     ?_assertMatch(
+        {301, _},
+        rest_req('POST', "/series", ?JT2)
        )
-	].
+    ].
 
+series_update_test_() ->
+    {
+        setup,
+        fun() ->
+            probix_db:stop(),
+            application:start(inets),
+            probix:start_master([ram_copies]),
+            Series = probix_series:new_series(),
+            binary_to_list(Series#series.id)
+        end,
+        fun(_) ->
+            probix:stop(),
+            application:stop(inets)
+        end,
+        fun generate_series_update_test/1
+    }.
+
+generate_series_update_test(Id) ->
+    [
+     ?_assertMatch(
+        {200, _}, 
+        rest_req('POST', "/series/" ++ Id, ?JT2)
+     )
+    ].

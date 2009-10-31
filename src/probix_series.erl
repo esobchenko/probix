@@ -6,7 +6,7 @@
 -export([
 	start_link/0, new_series/0, new_series/1,
 	all_series/0, delete_series/1, series/1,
-	add_ticks/1, get_ticks/1, get_ticks/2,
+	add_ticks/2, get_ticks/1, get_ticks/2,
 	delete_ticks/1, delete_ticks/2
 ]).
 
@@ -16,10 +16,13 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
+
 new_series() ->
 	%% XXX mochijson2 can't encode null properly, so storing empty string
 	gen_server:call(?MODULE, {new_series, <<"">>}).
 
+new_series(undefined) ->
+    gen_server:call(?MODULE, {new_series, <<"">>});
 new_series(Label) when is_list(Label) ->
 	gen_server:call(?MODULE, {new_series, list_to_binary(Label)}).
 
@@ -34,8 +37,8 @@ series(Id) when is_binary(Id) ->
 series(Id) when is_list(Id) ->
 	series(list_to_binary(Id)).
 
-add_ticks(Probes) when is_list(Probes); is_record(Probes, tick) ->
-	gen_server:call(?MODULE, {add_ticks, Probes}).
+add_ticks(Series_id, Probes) when is_list(Probes); is_record(Probes, tick) ->
+	gen_server:call(?MODULE, {add_ticks, Series_id, Probes}).
 
 get_ticks(Series_id) when is_binary(Series_id) ->
 	gen_server:call(?MODULE, {get_ticks, Series_id});
@@ -81,8 +84,8 @@ handle_call({series, Id}, _From, State) ->
 	{reply, Reply, State};
 
 
-handle_call({add_ticks, Probes}, _From, State) ->
-	Reply = probix_db:add_ticks(Probes),
+handle_call({add_ticks, Series_id, Probes}, _From, State) ->
+	Reply = probix_db:add_ticks(Series_id, Probes),
 	{reply, Reply, State};
 
 

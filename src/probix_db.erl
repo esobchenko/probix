@@ -110,7 +110,7 @@ new_series(Label) when is_binary(Label) ->
 			%% XXX identifier is binary because mochijson2 encodes erlang-strings as lists:
 			%% mochijson2:json_encode(Foo) when is_list(Foo) -> json_encode_array(Foo);
 			id = list_to_binary( probix_util:random_string(10) ),
-			time_created = probix_format:now_to_gregorian_epoch(),
+            time_created = probix_time:now(),
 			label = Label
 		},
 		mnesia:write(Series),
@@ -141,23 +141,30 @@ series(Id) when is_binary(Id) ->
 	case mnesia:dirty_read({series, Id}) of
 		[] ->
 			{error, not_found};
-		Res ->
+		[ Res ] ->
 			{ok, Res}
 	end.
 
 %% XXX I do not check the existence of the series in add_ticks/1 and other tick functions
 %% because it's expensive. It should be done outside e.g. in http handle functions.
 
-add_ticks(Rec) when is_record(Rec, tick) ->
+add_ticks(Series_id, Rec) when is_record(Rec, tick) ->
 	F = fun() ->
-		mnesia:write(Rec)
+        Timestamp = element(2, Rec#tick.id),
+		mnesia:write(Rec#tick{id = {Series_id, Timestamp}})
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-add_ticks(List) when is_list(List) ->
+add_ticks(Series_id, List) when is_list(List) ->
 	F = fun() ->
-		lists:foreach( fun mnesia:write/1, List ),
+		lists:foreach( 
+            fun(T) ->
+                 Timestamp = element(2, T#tick.id),
+                 mnesia:write(T#tick{id = {Series_id, Timestamp}})
+            end,
+            List
+        ),
 		ok
 	end,
 	{atomic, ok} = mnesia:transaction(F),
