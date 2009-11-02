@@ -36,15 +36,15 @@ ticks_to_json(Ticks) ->
 	Encode(List).
 
 ticks_from_json(<<>>) ->
-    {error, empty_json};
+	{error, empty_json};
 
 ticks_from_json(undefined) ->
-    {error, empty_json};
+	{error, empty_json};
 
 ticks_from_json(Json) ->
 	try
 		List = case mochijson2:decode(Json) of
-            L when is_list(L) ->
+			L when is_list(L) ->
 				[ json_object_to_tick(S) || S <- L ];
 			T when is_tuple(T) ->
 				[ json_object_to_tick(T) ]
@@ -56,52 +56,52 @@ ticks_from_json(Json) ->
 	end.
 
 json_object_to_tick({struct, Proplist}) ->
-    try 
-        {ok, Value} = parse_value(proplists:get_value(<<"value">>, Proplist)),
-        {ok, Timestamp} = parse_timestamp(proplists:get_value(<<"timestamp">>, Proplist)),
-        #tick{
-             id = {undefined, Timestamp},
-             value = Value
-        }
-    catch
-        error:Error ->
-            {error, Error}
-    end.
+	try
+		{ok, Value} = parse_value(proplists:get_value(<<"value">>, Proplist)),
+		{ok, Timestamp} = parse_timestamp(proplists:get_value(<<"timestamp">>, Proplist)),
+		#tick{
+			id = {undefined, Timestamp},
+			value = Value
+		}
+	catch
+		error:Error ->
+			{error, Error}
+	end.
 
 parse_value(Value) when is_binary(Value) ->
-    binary_to_list(Value);
+	binary_to_list(Value);
 
 parse_value(Value) when is_list(Value) ->
-    case [string:to_float(Value), string:to_integer(Value)] of
-        [{error, _}, {error, _}] ->
-            {error, bad_value};
-        [{Float, _Rest}, {error, _}] ->
-            {ok, Float};
-        [{error, _}, {Integer, _Rest}] ->
-            {ok, Integer}
-    end;
+	case [string:to_float(Value), string:to_integer(Value)] of
+		[{error, _}, {error, _}] ->
+			{error, bad_value};
+		[{Float, _Rest}, {error, _}] ->
+			{ok, Float};
+		[{error, _}, {Integer, _Rest}] ->
+			{ok, Integer}
+	end;
 
 parse_value(Value) when is_number(Value) ->
-    {ok, Value};
+	{ok, Value};
 
 parse_value(_Value) ->
-    {error, bad_value}.
+	{error, bad_value}.
 
 parse_timestamp(Timestamp) when is_list(Timestamp);is_binary(Timestamp) ->
-    case [probix_time:from_iso8601(Timestamp), probix_time:from_unix_epoch(Timestamp)] of
-        [{error, _}, {error, _}] ->
-            throw({error, bad_timestamp});
-        [R, {error, _}] ->
-            R;
-        [{error,_}, R] ->
-            R
-    end;
+	case [probix_time:from_iso8601(Timestamp), probix_time:from_unix_epoch(Timestamp)] of
+		[{error, _}, {error, _}] ->
+			throw({error, bad_timestamp});
+		[R, {error, _}] ->
+			R;
+		[{error,_}, R] ->
+			R
+	end;
 
 parse_timestamp(Timestamp) when is_number(Timestamp) ->
-    probix_time:from_unix_epoch(Timestamp);
+	probix_time:from_unix_epoch(Timestamp);
 
 parse_timestamp(_Value) ->
-    {error, bad_timestamp}.
+	{error, bad_timestamp}.
 
 ticks_to_csv(_Ticks) -> ok.
 ticks_from_csv(_Series_id, _Csv) -> ok.

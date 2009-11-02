@@ -110,7 +110,7 @@ new_series(Label) when is_binary(Label) ->
 			%% XXX identifier is binary because mochijson2 encodes erlang-strings as lists:
 			%% mochijson2:json_encode(Foo) when is_list(Foo) -> json_encode_array(Foo);
 			id = list_to_binary( probix_util:random_string(10) ),
-            time_created = probix_time:now(),
+			time_created = probix_time:now(),
 			label = Label
 		},
 		mnesia:write(Series),
@@ -150,7 +150,7 @@ series(Id) when is_binary(Id) ->
 
 add_ticks(Series_id, Rec) when is_record(Rec, tick) ->
 	F = fun() ->
-        Timestamp = element(2, Rec#tick.id),
+		Timestamp = element(2, Rec#tick.id),
 		mnesia:write(Rec#tick{id = {Series_id, Timestamp}})
 	end,
 	{atomic, ok} = mnesia:transaction(F),
@@ -158,13 +158,13 @@ add_ticks(Series_id, Rec) when is_record(Rec, tick) ->
 
 add_ticks(Series_id, List) when is_list(List) ->
 	F = fun() ->
-		lists:foreach( 
-            fun(T) ->
-                 Timestamp = element(2, T#tick.id),
-                 mnesia:write(T#tick{id = {Series_id, Timestamp}})
-            end,
-            List
-        ),
+		lists:foreach(
+			fun(T) ->
+				Timestamp = element(2, T#tick.id),
+				mnesia:write(T#tick{id = {Series_id, Timestamp}})
+			end,
+			List
+		),
 		ok
 	end,
 	{atomic, ok} = mnesia:transaction(F),
@@ -178,32 +178,32 @@ get_ticks(Series_id) when is_binary(Series_id) ->
 	{atomic, Result} = mnesia:transaction(F),
 	Result.
 
-get_ticks(Series_id, {from, From}) when is_binary(Series_id) ->
+get_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
 	F = fun() ->
 		Q = qlc:q([ P || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
-			element(2, P#tick.id) >= From ]),
+			probix_time:cmp(element(2, P#tick.id), From) >= 0 ]),
 		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
-get_ticks(Series_id, {to, To}) when is_binary(Series_id) ->
+get_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
 	F = fun() ->
 		Q = qlc:q([ P || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
-			element(2, P#tick.id) =< To ]),
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
 		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
 	Result;
 
-get_ticks(Series_id, {From, To}) when is_binary(Series_id) ->
+get_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
 	F = fun() ->
 		Q = qlc:q([ P || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
-			element(2, P#tick.id) >= From,
-			element(2, P#tick.id) =< To ]),
+			probix_time:cmp(element(2, P#tick.id), From) >= 0,
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
 		qlc:e(Q)
 	end,
 	{atomic, Result} = mnesia:transaction(F),
@@ -227,34 +227,34 @@ delete_ticks(Series_id) when is_binary(Series_id) ->
 	{atomic, ok} = mnesia:transaction(F),
 	ok.
 
-delete_ticks(Series_id, {from, From}) when is_binary(Series_id) ->
+delete_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
 	F = fun() ->
 		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
-			element(2, P#tick.id) >= From ]),
+			probix_time:cmp(element(2, P#tick.id), From) >= 0 ]),
 		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
 		ok
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-delete_ticks(Series_id, {to, To}) when is_binary(Series_id) ->
+delete_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
 	F = fun() ->
 		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
-			element(2, P#tick.id) =< To ]),
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
 		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
 		ok
 	end,
 	{atomic, ok} = mnesia:transaction(F),
 	ok;
 
-delete_ticks(Series_id, {From, To}) when is_binary(Series_id) ->
+delete_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
 	F = fun() ->
 		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
 			element(1, P#tick.id) == Series_id,
-			element(2, P#tick.id) >= From,
-			element(2, P#tick.id) =< To ]),
+			probix_time:cmp(element(2, P#tick.id), From) >= 0,
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
 		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
 		ok
 	end,

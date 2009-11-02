@@ -151,7 +151,7 @@ parse_iso8601( tz_minute, <<Tz_min:16/bitstring, Rest/bitstring>>, R) ->
 	).
 
 from_unix_epoch(Epoch) when is_number(Epoch) ->
-    from_unix_epoch(mochinum:digits(Epoch));
+	from_unix_epoch(mochinum:digits(Epoch));
 
 from_unix_epoch(Epoch) when is_list(Epoch) ->
 	from_unix_epoch(list_to_binary(Epoch));
@@ -193,9 +193,8 @@ to_gregorian_seconds(R) when is_record(R, timestamp) ->
 to_unix_epoch(R) when is_record(R, timestamp) ->
 	%% XXX should we support negative values for unix epoch?
 	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(R) ),
-    Deeplist = io_lib:format("~.f", [Seconds+ R#timestamp.fraction]),
-    lists:flatten(Deeplist),
-    list_to_binary(Deeplist).
+	List = mochinum:digits(Seconds + R#timestamp.fraction),
+	list_to_binary(List).
 
 to_utc(R) when is_record(R, timestamp) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
 
@@ -237,12 +236,11 @@ to_iso8601(R) when is_record(R, timestamp) ->
 			Tz
 		]
 	),
-	lists:flatten(Deeplist),
-    list_to_binary(Deeplist).
+	% lists:flatten(Deeplist).
+	list_to_binary(Deeplist).
 
 now() ->
-    Now = erlang:now(),
-    {ok, R} = from_datetime( calendar:now_to_datetime( Now ) ),
-    %% XXX: here we need to get node() timezone to put it into structure
-    %% now assume we're in London
-    R#timestamp{ fraction = element(3, Now) / 1000000 }.
+	Now = erlang:now(),
+	{ok, R} = from_datetime( calendar:now_to_datetime( Now ) ),
+	R#timestamp{ fraction = element(3, Now) / 1000000 }.
+

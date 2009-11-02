@@ -86,7 +86,7 @@ from_unix_epoch_test_() ->
 				year=1970,
 				month=1,
 				day=1,
-                fraction=0.56
+				fraction=0.56
 			}},
 			probix_time:from_unix_epoch("0.56")
 		)
@@ -108,7 +108,7 @@ to_datetime_test_() ->
 to_unix_epoch_test_() ->
 	[
 		?_assertEqual(
-			<<"0.000000">>,
+			<<"0.0">>,
 			probix_time:to_unix_epoch((t())#timestamp{
 				year=1970,
 				month=1,
