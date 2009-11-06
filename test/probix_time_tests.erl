@@ -51,7 +51,7 @@ from_iso8601_test_() ->
 				hour=19,
 				minute=20,
 				second=30,
-				fraction=0.45,
+				fraction=450000,
 				timezone= #timezone{ hour=1, minute=0 }
 			}},
 			probix_time:from_iso8601("1997-07-16T19:20:30.45+01:00")
@@ -86,7 +86,7 @@ from_unix_epoch_test_() ->
 				year=1970,
 				month=1,
 				day=1,
-				fraction=0.56
+				fraction=560000
 			}},
 			probix_time:from_unix_epoch("0.56")
 		)

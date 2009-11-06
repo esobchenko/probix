@@ -43,7 +43,7 @@ new() ->
 		hour = 0,
 		minute = 0,
 		second = 0,
-		fraction = 0.0,
+		fraction = 0,
 		timezone = #timezone{ hour = 0, minute = 0}
 	}.
 
@@ -70,7 +70,7 @@ from_iso8601(Time) when is_binary(Time) ->
 	try
 		true = Time =/= <<"">>,
 		{ok, parse_iso8601( year, Time, new() ) }
-	catch
+    catch
 		error:_ -> {error, bad_input}
 	end.
 
@@ -79,12 +79,16 @@ parse_iso8601( _State, <<>>, R ) ->
 
 %% these are used to come from state of parsing time seconds or
 %% fraction seconds to parsing timezone
-parse_iso8601(second, <<"-", Rest/bitstring>>, R) ->
+ parse_iso8601(second, <<"-", Rest/bitstring>>, R) ->
 	parse_iso8601(tz_hour_minus, Rest, R );
 parse_iso8601({fraction, _}, <<"-", Rest/bitstring>>, R) ->
-	parse_iso8601(tz_hour_minus, Rest, R );
-parse_iso8601(_State, <<"+", Rest/bitstring>>, R) ->
+	parse_iso8601(tz_hour_minus, Rest, R);
+
+parse_iso8601(second, <<"+", Rest/bitstring>>, R) ->
 	parse_iso8601(tz_hour_plus, Rest, R );
+parse_iso8601({fraction, _}, <<"+", Rest/bitstring>>, R) ->
+	parse_iso8601(tz_hour_plus, Rest, R);
+
 parse_iso8601(second, <<"Z", Rest/bitstring>>, R) ->
 	parse_iso8601(second, Rest, R);
 parse_iso8601({fraction, _}, <<"Z", Rest/bitstring>>, R) ->
@@ -105,9 +109,9 @@ parse_iso8601( State, <<":", Rest/bitstring>>, R ) ->
 	parse_iso8601( State, Rest, R );
 
 %% separators of fractional part
-parse_iso8601( fraction, <<".", Rest/bitstring>>, R ) ->
+parse_iso8601( {fraction, 1}, <<".", Rest/bitstring>>, R ) ->
 	parse_iso8601( {fraction, 1}, Rest, R );
-parse_iso8601( fraction, <<",", Rest/bitstring>>, R ) ->
+parse_iso8601( {fraction, 1}, <<",", Rest/bitstring>>, R ) ->
 	parse_iso8601( {fraction, 1}, Rest, R );
 
 %% parsing date
@@ -124,11 +128,14 @@ parse_iso8601( hour, <<Hour:16/bitstring, Rest/bitstring>>, R ) ->
 parse_iso8601( minute, <<Minute:16/bitstring, Rest/bitstring>>, R ) ->
 	parse_iso8601( second, Rest, R#timestamp{ minute = binary_to_integer(Minute) } );
 parse_iso8601( second, <<Second:16/bitstring, Rest/bitstring>>, R ) ->
-	parse_iso8601( fraction, Rest, R#timestamp{ second = binary_to_integer(Second) } );
+	parse_iso8601( {fraction, 1}, Rest, R#timestamp{ second = binary_to_integer(Second) } );
 
 %% parsing fraction by character, cause we don't know its length
+parse_iso8601( {fraction, N}, <<_C:8/bitstring, Rest/bitstring>>, R) when N > 6 ->
+	parse_iso8601( {fraction, N + 1}, Rest, R);
+
 parse_iso8601( {fraction, N}, <<C:8/bitstring, Rest/bitstring>>, R) ->
-	parse_iso8601( {fraction, N + 1}, Rest, R#timestamp{ fraction = R#timestamp.fraction + binary_to_integer(C) / math:pow(10, N)});
+	parse_iso8601( {fraction, N + 1}, Rest, R#timestamp{ fraction = R#timestamp.fraction + binary_to_integer(C) * round(math:pow(10, 6 - N)) } );
 
 %% parsing timezone info
 parse_iso8601( tz_hour_plus, <<Tz_hour:16/bitstring, Rest/bitstring>>, R) ->
@@ -159,7 +166,7 @@ from_unix_epoch(Epoch) when is_list(Epoch) ->
 from_unix_epoch(Epoch) when is_binary(Epoch) ->
 	try
 		true = Epoch =/= <<"">>,
-		{ok, parse_unix_epoch(int, Epoch, 0, 0.0) }
+		{ok, parse_unix_epoch(int, Epoch, 0, 0) }
 	catch
 		error:_ -> {error, bad_input}
 	end.
@@ -178,8 +185,11 @@ parse_unix_epoch(int, <<".", Rest/bitstring>>, Int, Frac) ->
 parse_unix_epoch(int, <<C:8/bitstring, Rest/bitstring>>, Int, Frac) ->
 	parse_unix_epoch(int, Rest, Int * 10 + binary_to_integer(C), Frac);
 
+parse_unix_epoch({frac, N}, <<_C:8/bitstring, Rest/bitstring>>, Int, Frac) when N > 6 ->
+    parse_unix_epoch({frac, N + 1}, Rest, Int, Frac);
+
 parse_unix_epoch({frac, N}, <<C:8/bitstring, Rest/bitstring>>, Int, Frac) ->
-	parse_unix_epoch({frac, N + 1}, Rest, Int, Frac + binary_to_integer(C) / math:pow(10, N)).
+	parse_unix_epoch({frac, N + 1}, Rest, Int, Frac + binary_to_integer(C) * round( math:pow(10, 6 - N))).
 
 to_datetime(T) when is_record(T, timestamp) ->
 	{
@@ -192,8 +202,8 @@ to_gregorian_seconds(R) when is_record(R, timestamp) ->
 
 to_unix_epoch(R) when is_record(R, timestamp) ->
 	%% XXX should we support negative values for unix epoch?
-	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(R) ),
-	List = mochinum:digits(Seconds + R#timestamp.fraction),
+	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(to_utc(R)) ),
+	List = mochinum:digits(Seconds + R#timestamp.fraction / 1000000),
 	list_to_binary(List).
 
 to_utc(R) when is_record(R, timestamp) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).
@@ -225,14 +235,15 @@ to_iso8601(R) when is_record(R, timestamp) ->
 		#timezone{ hour=Hour, minute=Minute } ->
 			io_lib:format("-~2.10.0B:~2.10.0B", [-Hour, Minute ])
 	end,
-	Deeplist = io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~9..0f~.s",
+	Deeplist = io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B.~B~s",
 		[
 			R#timestamp.year,
 			R#timestamp.month,
 			R#timestamp.day,
 			R#timestamp.hour,
 			R#timestamp.minute,
-			R#timestamp.second + R#timestamp.fraction,
+			R#timestamp.second,
+            R#timestamp.fraction,
 			Tz
 		]
 	),
