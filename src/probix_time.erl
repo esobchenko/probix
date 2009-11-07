@@ -212,7 +212,12 @@ to_gregorian_seconds(R) when is_record(R, timestamp) ->
 to_unix_epoch(R) when is_record(R, timestamp) ->
 	%% XXX should we support negative values for unix epoch?
 	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(to_utc(R)) ),
-	List = mochinum:digits(Seconds + R#timestamp.fraction / 1000000),
+	List = case R#timestamp.fraction of
+		F when F > 0 ->
+			mochinum:digits(Seconds + R#timestamp.fraction / 1000000);
+		0 ->
+			mochinum:digits(Seconds)
+	end,
 	list_to_binary(List).
 
 to_utc(R) when is_record(R, timestamp) -> to_tz(R, #timezone{ hour = 0, minute = 0 }).

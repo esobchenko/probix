@@ -108,7 +108,7 @@ to_datetime_test_() ->
 to_unix_epoch_test_() ->
 	[
 		?_assertEqual(
-			<<"0.0">>,
+			<<"0">>,
 			probix_time:to_unix_epoch((t())#timestamp{
 				year=1970,
 				month=1,
