@@ -79,7 +79,7 @@ parse_iso8601( _State, <<>>, R ) ->
 
 %% these are used to come from state of parsing time seconds or
 %% fraction seconds to parsing timezone
- parse_iso8601(second, <<"-", Rest/bitstring>>, R) ->
+parse_iso8601(second, <<"-", Rest/bitstring>>, R) ->
 	parse_iso8601(tz_hour_minus, Rest, R );
 parse_iso8601({fraction, _}, <<"-", Rest/bitstring>>, R) ->
 	parse_iso8601(tz_hour_minus, Rest, R);
@@ -135,7 +135,11 @@ parse_iso8601( {fraction, N}, <<_C:8/bitstring, Rest/bitstring>>, R) when N > 6 
 	parse_iso8601( {fraction, N + 1}, Rest, R);
 
 parse_iso8601( {fraction, N}, <<C:8/bitstring, Rest/bitstring>>, R) ->
-	parse_iso8601( {fraction, N + 1}, Rest, R#timestamp{ fraction = R#timestamp.fraction + binary_to_integer(C) * round(math:pow(10, 6 - N)) } );
+	parse_iso8601(
+		{fraction, N + 1},
+		Rest,
+		R#timestamp{ fraction = R#timestamp.fraction + binary_to_integer(C) * round( math:pow(10, 6 - N) ) }
+	);
 
 %% parsing timezone info
 parse_iso8601( tz_hour_plus, <<Tz_hour:16/bitstring, Rest/bitstring>>, R) ->
@@ -180,16 +184,21 @@ parse_unix_epoch(_State, <<>>, Int, Frac) ->
 	validate( R#timestamp{ fraction = Frac } );
 
 parse_unix_epoch(int, <<".", Rest/bitstring>>, Int, Frac) ->
-	parse_unix_epoch({frac, 1}, Rest, Int, Frac);
+	parse_unix_epoch({fraction, 1}, Rest, Int, Frac);
 
 parse_unix_epoch(int, <<C:8/bitstring, Rest/bitstring>>, Int, Frac) ->
 	parse_unix_epoch(int, Rest, Int * 10 + binary_to_integer(C), Frac);
 
-parse_unix_epoch({frac, N}, <<_C:8/bitstring, Rest/bitstring>>, Int, Frac) when N > 6 ->
-    parse_unix_epoch({frac, N + 1}, Rest, Int, Frac);
+parse_unix_epoch({fraction, N}, <<_C:8/bitstring, Rest/bitstring>>, Int, Frac) when N > 6 ->
+	parse_unix_epoch({fraction, N + 1}, Rest, Int, Frac);
 
-parse_unix_epoch({frac, N}, <<C:8/bitstring, Rest/bitstring>>, Int, Frac) ->
-	parse_unix_epoch({frac, N + 1}, Rest, Int, Frac + binary_to_integer(C) * round( math:pow(10, 6 - N))).
+parse_unix_epoch({fraction, N}, <<C:8/bitstring, Rest/bitstring>>, Int, Frac) ->
+	parse_unix_epoch(
+		{fraction, N + 1},
+		Rest,
+		Int,
+		Frac + binary_to_integer(C) * round( math:pow(10, 6 - N) )
+	).
 
 to_datetime(T) when is_record(T, timestamp) ->
 	{
@@ -235,7 +244,14 @@ to_iso8601(R) when is_record(R, timestamp) ->
 		#timezone{ hour=Hour, minute=Minute } ->
 			io_lib:format("-~2.10.0B:~2.10.0B", [-Hour, Minute ])
 	end,
-	Deeplist = io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B.~B~s",
+	Fraction = case R#timestamp.fraction of
+		F when F > 0 ->
+			String = mochinum:digits(F / 1000000),
+			string:substr(String, string:chr(String, $.));
+		0 ->
+			""
+	end,
+	Deeplist = io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B~s~s",
 		[
 			R#timestamp.year,
 			R#timestamp.month,
@@ -243,15 +259,14 @@ to_iso8601(R) when is_record(R, timestamp) ->
 			R#timestamp.hour,
 			R#timestamp.minute,
 			R#timestamp.second,
-            R#timestamp.fraction,
+			Fraction,
 			Tz
 		]
 	),
-	% lists:flatten(Deeplist).
 	list_to_binary(Deeplist).
 
 now() ->
 	Now = erlang:now(),
 	{ok, R} = from_datetime( calendar:now_to_datetime( Now ) ),
-	R#timestamp{ fraction = element(3, Now) / 1000000 }.
+	R#timestamp{ fraction = element(3, Now) }.
 

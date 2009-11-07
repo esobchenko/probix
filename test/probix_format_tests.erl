@@ -10,9 +10,9 @@
 -define(JTL1, <<"[{\"timestamp\":1,\"value\":1}]">>).
 
 -define(TJL1, [#tick{id={undefined,{timestamp,1970,1,1,0,0,1,0,{timezone,0,0}}},value=1}]).
--define(TICKS_TO_JSON_LIST, <<"[{\"timestamp\":\"1970-01-01 00:00:01.0Z\",\"value\":1}]">>).
+-define(TICKS_TO_JSON_LIST, <<"[{\"timestamp\":\"1970-01-01 00:00:01Z\",\"value\":1}]">>).
 -define(TJR1, #tick{id={undefined,{timestamp,1970,1,1,0,0,1,0,{timezone,0,0}}},value=1}).
--define(TICKS_TO_JSON_RECORD, <<"{\"timestamp\":\"1970-01-01 00:00:01.0Z\",\"value\":1}">>).
+-define(TICKS_TO_JSON_RECORD, <<"{\"timestamp\":\"1970-01-01 00:00:01Z\",\"value\":1}">>).
 
 
 
