@@ -24,6 +24,8 @@ validate(T) when is_record(T, timestamp) ->
 	true = T#timestamp.hour =< 23,
 	true = T#timestamp.second >= 0,
 	true = T#timestamp.second =< 59,
+	true = T#timestamp.microsec >= 0,
+	true = T#timestamp.microsec < 1000000,
 	true = is_record(T#timestamp.timezone, timezone),
 	%% timezone
 	true = (T#timestamp.timezone)#timezone.hour >= -11,
@@ -43,7 +45,7 @@ new() ->
 		hour = 0,
 		minute = 0,
 		second = 0,
-		fraction = 0,
+		microsec = 0,
 		timezone = #timezone{ hour = 0, minute = 0}
 	}.
 
@@ -138,7 +140,7 @@ parse_iso8601( {fraction, N}, <<C:8/bitstring, Rest/bitstring>>, R) ->
 	parse_iso8601(
 		{fraction, N + 1},
 		Rest,
-		R#timestamp{ fraction = R#timestamp.fraction + binary_to_integer(C) * round( math:pow(10, 6 - N) ) }
+		R#timestamp{ microsec = R#timestamp.microsec + binary_to_integer(C) * round( math:pow(10, 6 - N) ) }
 	);
 
 %% parsing timezone info
@@ -181,7 +183,7 @@ parse_unix_epoch(_State, <<>>, Int, Frac) ->
 			unix_to_gregorian_seconds(Int)
 		)
 	),
-	validate( R#timestamp{ fraction = Frac } );
+	validate( R#timestamp{ microsec = Frac } );
 
 parse_unix_epoch(int, <<".", Rest/bitstring>>, Int, Frac) ->
 	parse_unix_epoch({fraction, 1}, Rest, Int, Frac);
@@ -212,9 +214,9 @@ to_gregorian_seconds(R) when is_record(R, timestamp) ->
 to_unix_epoch(R) when is_record(R, timestamp) ->
 	%% XXX should we support negative values for unix epoch?
 	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(to_utc(R)) ),
-	List = case R#timestamp.fraction of
+	List = case R#timestamp.microsec of
 		F when F > 0 ->
-			mochinum:digits(Seconds + R#timestamp.fraction / 1000000);
+			mochinum:digits(Seconds + R#timestamp.microsec / 1000000);
 		0 ->
 			mochinum:digits(Seconds)
 	end,
@@ -229,7 +231,7 @@ to_tz(R, Tz) when is_record(R, timestamp), is_record(Tz, timezone) ->
 	New_seconds = R_seconds - R_offset + Tz_offset,
 	Datetime = calendar:gregorian_seconds_to_datetime(New_seconds),
 	{ok, New_R} = from_datetime(Datetime),
-	New_R#timestamp{timezone = Tz, fraction = R#timestamp.fraction}.
+	New_R#timestamp{timezone = Tz, microsec = R#timestamp.microsec}.
 
 cmp(R1, R2) when is_record(R1, timestamp), is_record(R2, timestamp) ->
 	R1_utc = to_utc(R1),
@@ -249,7 +251,7 @@ to_iso8601(R) when is_record(R, timestamp) ->
 		#timezone{ hour=Hour, minute=Minute } ->
 			io_lib:format("-~2.10.0B:~2.10.0B", [-Hour, Minute ])
 	end,
-	Fraction = case R#timestamp.fraction of
+	Fraction = case R#timestamp.microsec of
 		F when F > 0 ->
 			String = mochinum:digits(F / 1000000),
 			string:substr(String, string:chr(String, $.));
@@ -273,5 +275,5 @@ to_iso8601(R) when is_record(R, timestamp) ->
 now() ->
 	Now = erlang:now(),
 	{ok, R} = from_datetime( calendar:now_to_datetime( Now ) ),
-	R#timestamp{ fraction = element(3, Now) }.
+	R#timestamp{ microsec = element(3, Now) }.
 
