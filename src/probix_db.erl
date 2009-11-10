@@ -76,12 +76,16 @@ create_schema(Storage_type) ->
 
 is_fresh_startup() ->
 	yes = mnesia:system_info(is_running),
-	Node = node(),
 	case mnesia:system_info(tables) of
 		[schema] -> yes;
 		_Tables ->
 			case mnesia:table_info(schema, cookie) of
-				{_, Node} -> no;
+				{_, Node} when Node =:= node() -> no;
+				{_, Node} when Node =/= node() ->
+					%% this may happen when the database schema was originally created on
+					%% another machine and then copied to the current machine, or when the
+					%% current machine changed its original hostname
+					erlang:error("node name in schema cookie doesn't match the current node name");
 				_ -> yes
 			end
 	end.
