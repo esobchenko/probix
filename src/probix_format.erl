@@ -82,7 +82,9 @@ parse_value(Value) when is_list(Value) ->
 		[{Float, _Rest}, {error, _}] ->
 			{ok, Float};
 		[{error, _}, {Integer, _Rest}] ->
-			{ok, Integer}
+			{ok, Integer};
+        [{Float, _Rest}, {0, _}] ->
+            {ok, Float}
 	end;
 
 parse_value(Value) when is_number(Value) ->
