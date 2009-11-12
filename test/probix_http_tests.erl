@@ -86,6 +86,10 @@ generate_basic_rest_tests(_) ->
      ?_assertMatch(
         {301, _},
         rest_req('POST', "/series", ?JT2)
+       ),
+     ?_assertMatch(
+        {200, _},
+        rest_req('GET', "/series")
        )
     ].
 
@@ -109,7 +113,28 @@ series_update_test_() ->
 generate_series_update_test(Id) ->
     [
      ?_assertMatch(
-        {200, _}, 
+        {200, _},
         rest_req('POST', "/series/" ++ Id, ?JT2)
+     ),
+     ?_assertMatch(
+        {200, _},
+        rest_req('GET', "/series/" ++ Id)
+     ),
+     ?_assertMatch(
+        {404, _},
+        rest_req('POST', "/series/Foobar", ?JT2)
+     ),
+     ?_assertMatch(
+        {404, _},
+        rest_req('DELETE', "/series/Foobar")
+     ),
+     ?_assertMatch(
+        {200, _},
+        rest_req('DELETE', "/series/" ++ Id)
+     ),
+     ?_assertMatch(
+        {404, _},
+        rest_req('DELETE', "/series/" ++ Id)
      )
     ].
+

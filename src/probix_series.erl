@@ -28,7 +28,10 @@ new_series(Label) when is_list(Label) ->
 
 all_series() ->
 	gen_server:call(?MODULE, all_series).
-delete_series(Id) ->
+
+delete_series(Id) when is_list(Id) ->
+    delete_series(list_to_binary(Id));
+delete_series(Id) when is_binary(Id) ->
 	gen_server:call(?MODULE, {delete_series, Id}).
 
 series(Id) when is_binary(Id) ->
@@ -37,6 +40,8 @@ series(Id) when is_binary(Id) ->
 series(Id) when is_list(Id) ->
 	series(list_to_binary(Id)).
 
+add_ticks(Series_id, Probes) when is_list(Series_id) ->
+    add_ticks(list_to_binary(Series_id), Probes);
 add_ticks(Series_id, Probes) when is_list(Probes); is_record(Probes, tick) ->
 	gen_server:call(?MODULE, {add_ticks, Series_id, Probes}).
 

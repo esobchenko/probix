@@ -34,9 +34,11 @@ dispatch_requests(Req) ->
         handle(Method, Splitted, Query, Post)
     catch
         %% regular throw exceptions
-        throw:Error when is_record(Error, error) -> error(Error);
+        throw:Error when is_atom(Error) -> error(Error);
+
         %% erlang errors and other exceptions
         _Exception ->
+            log4erl:info("Exception: ~p", [_Exception]),
             error(internal_error)
     end,
     Req:respond(R).
@@ -70,10 +72,11 @@ handle('POST', ["series"], Args, Post) ->
 %% Update series with data
 handle('POST', ["series", Id], [], Post) ->
     log4erl:info("Updating series ~s", [ Id ]),
-    {ok, Series} = probix_series:series(Id),
+    probix_series:series(Id) == {error, not_found} andalso throw(not_found),
+
     case probix_format:ticks_from_json(Post) of
         {ok, Ticks} ->
-            probix_series:add_ticks(Series#series.id, Ticks);
+            probix_series:add_ticks(Id, Ticks);
         {error, Error} ->
             error(Error)
     end,
@@ -87,64 +90,85 @@ handle('GET', ["series"], [], undefined) ->
     ok(Content);
 
 handle('GET', ["series", Id], Args, undefined) ->
-    case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
-        [undefined, undefined] ->
+    probix_series:series(Id) == {error, not_found} andalso throw(not_found),
+
+    From = proplists:get_value("from", Args) =:= undefined
+        orelse probix_format:parse_timestamp( proplists:get_value("from", Args) ),
+    
+    To = proplists:get_value("to", Args) =:= undefined
+        orelse probix_format:parse_timestamp( proplists:get_value("from", Args) ),
+
+    case [ From, To ] of
+        [true, true] ->
             log4erl:info("Selecting all data for series ~s", [ Id ]),
             Ticks = probix_series:get_ticks(Id),
             Content = probix_format:ticks_to_json(Ticks),
             ok(Content);
 
-        [undefined, To] when is_list(To) ->
+        [true, {ok, To}] when is_record(To, timestamp) ->
             log4erl:info("Selecting all data for series ~s, to: ~p",
                          [Id, To]),
             Ticks = probix_series:get_ticks(Id, {to, To}),
             Content = probix_format:ticks_to_json(Ticks),
             ok(Content);
 
-        [From, undefined] when is_list(From) ->
+        [{ok, From}, true] when is_record(From, timestamp) ->
             log4erl:info("Selecting all data for series ~s, from: ~p",
                          [Id, From]),
             Ticks = probix_series:get_ticks(Id, {from, From}),
             Content = probix_format:ticks_to_json(Ticks),
             ok(Content);
 
-        [From, To] when is_list(From); is_list(To) ->
+        [{ok, From}, {ok, To}] when is_record(From, timestamp); is_record(To, timestamp) ->
             log4erl:info("Selecting all data for series ~s, from: ~p, to: ~p",
                          [Id, From, To]),
+            probix_format:parse_timestamp(To),
             Ticks = probix_series:get_ticks(Id, {From, To}),
             Content = probix_format:ticks_to_json(Ticks),
             ok(Content);
 
         _ ->
-            error("Wrong args")
+            error(bad_arguments)
     end;
 
 %% Removing data from series
 %%
 handle('DELETE', ["series", Id], Args, undefined) ->
-    case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
-        [undefined, undefined] ->
-            log4erl:info("Deleting series with id: ~s", [ Id ]),
-            probix_series:delete_ticks(Id), %% dunno if we need this?
-            probix_series:delete_series(Id);
 
-        [undefined, To] when is_list(To) ->
+    probix_series:series(Id) == {error, not_found} andalso throw(not_found),
+
+    From = proplists:get_value("from", Args) =:= undefined
+        orelse probix_format:parse_timestamp( proplists:get_value("from", Args) ),
+
+    To = proplists:get_value("to", Args) =:= undefined
+        orelse probix_format:parse_timestamp( proplists:get_value("from", Args) ),
+
+    case [From, To] of
+        %% empty args
+        [true, true] ->
+            log4erl:info("Deleting series with id: ~s", [ Id ]),
+            probix_series:delete_series(Id),
+            ok();
+        [true, {ok, To}] when is_record(To, timestamp) ->
             log4erl:info("Deleting data for series ~s, to: ~p",
                          [Id, To]),
-            probix_series:delete_ticks(Id, {to, To});
+            probix_series:delete_ticks(Id, {to, To}),
+            ok();
 
-        [From, undefined] when is_list(From) ->
+        [{ok, From}, true] when is_record(From, timestamp) ->
             log4erl:info("Deleting data for series ~s, from: ~p",
                          [Id, From]),
-            probix_series:delete_ticks(Id, {from, From});
+            probix_series:delete_ticks(Id, {from, From}),
+            ok();
 
-        [From, To] when is_list(From); is_list(To) ->
+        [{ok, From}, {ok, To}] when is_record(From, timestamp); is_record(To, timestamp) ->
             log4erl:info("Deleting data for series ~s, from: ~p, to: ~p",
                          [Id, From, To]),
             probix_series:delete_ticks(Id, {From, To}),
             ok();
+
         _ ->
-            error("Wrong args")
+            error("bad_arguments")
     end;
 
 handle(_, _, _, _) ->

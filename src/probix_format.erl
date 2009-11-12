@@ -5,9 +5,13 @@
 -include_lib("eunit/include/eunit.hrl").
 
 series_to_json_object(Rec) when is_record(Rec, series) ->
-	Keys = record_info(fields, series),
-	[_Name | Values] = tuple_to_list(Rec),
-	{struct, lists:zip(Keys, Values)}.
+    { struct,
+      [
+        { <<"id">>, Rec#series.id },
+        { <<"time_created">>, probix_time:to_iso8601(Rec#series.time_created) },
+        { <<"label">>, Rec#series.label }
+      ]
+    }.
 
 series_to_json(Series) ->
 	List = case Series of
@@ -69,7 +73,7 @@ json_object_to_tick({struct, Proplist}) ->
 	end.
 
 parse_value(Value) when is_binary(Value) ->
-	binary_to_list(Value);
+	parse_value(binary_to_list(Value));
 
 parse_value(Value) when is_list(Value) ->
 	case [string:to_float(Value), string:to_integer(Value)] of
@@ -90,11 +94,17 @@ parse_value(_Value) ->
 parse_timestamp(Timestamp) when is_list(Timestamp);is_binary(Timestamp) ->
 	case [probix_time:from_iso8601(Timestamp), probix_time:from_unix_epoch(Timestamp)] of
 		[{error, _}, {error, _}] ->
-			throw({error, bad_timestamp});
+			{error, bad_timestamp};
 		[R, {error, _}] ->
 			R;
 		[{error,_}, R] ->
-			R
+			R;
+        %% corner case when we can't detect
+        %% if only year in ISO passed or
+        %% very small unix timestamp.
+        %% Treating passed value as ISO year
+        [R_iso, _R_unix] ->
+            R_iso
 	end;
 
 parse_timestamp(Timestamp) when is_number(Timestamp) ->

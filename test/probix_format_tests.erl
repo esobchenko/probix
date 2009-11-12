@@ -4,8 +4,8 @@
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--define(SJ1, #series{id=1,time_created=1,label=1}).
--define(JS1, <<"[{\"id\":1,\"time_created\":1,\"label\":1}]">>).
+-define(SJ1, #series{id=1,time_created={timestamp,1970,1,1,0,0,1,0,{timezone,0,0}},label=1}).
+-define(JS1, <<"[{\"id\":1,\"time_created\":\"1970-01-01 00:00:01Z\",\"label\":1}]">>).
 
 -define(JTL1, <<"[{\"timestamp\":1,\"value\":1}]">>).
 
