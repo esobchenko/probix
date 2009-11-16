@@ -72,12 +72,12 @@ from_iso8601(Time) when is_binary(Time) ->
 	try
 		true = Time =/= <<"">>,
 		{ok, parse_iso8601( year, Time, new() ) }
-    catch
+	catch
 		error:_ -> {error, bad_input}
 	end.
 
-parse_iso8601( _State, <<>>, R ) -> 
-    validate(R);
+parse_iso8601( _State, <<>>, R ) ->
+	validate(R);
 
 %% these are used to come from state of parsing time seconds or
 %% fraction seconds to parsing timezone

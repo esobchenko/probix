@@ -22,7 +22,7 @@ new_series() ->
 	gen_server:call(?MODULE, {new_series, <<"">>}).
 
 new_series(undefined) ->
-    gen_server:call(?MODULE, {new_series, <<"">>});
+	gen_server:call(?MODULE, {new_series, <<"">>});
 new_series(Label) when is_list(Label) ->
 	gen_server:call(?MODULE, {new_series, list_to_binary(Label)}).
 
@@ -30,7 +30,7 @@ all_series() ->
 	gen_server:call(?MODULE, all_series).
 
 delete_series(Id) when is_list(Id) ->
-    delete_series(list_to_binary(Id));
+	delete_series(list_to_binary(Id));
 delete_series(Id) when is_binary(Id) ->
 	gen_server:call(?MODULE, {delete_series, Id}).
 
@@ -41,7 +41,7 @@ series(Id) when is_list(Id) ->
 	series(list_to_binary(Id)).
 
 add_ticks(Series_id, Probes) when is_list(Series_id) ->
-    add_ticks(list_to_binary(Series_id), Probes);
+	add_ticks(list_to_binary(Series_id), Probes);
 add_ticks(Series_id, Probes) when is_list(Probes); is_record(Probes, tick) ->
 	gen_server:call(?MODULE, {add_ticks, Series_id, Probes}).
 
@@ -65,7 +65,6 @@ delete_ticks(Series_id, Range) when is_binary(Series_id) ->
 delete_ticks(Series_id, Range) when is_list(Series_id) ->
 	delete_ticks(list_to_binary(Series_id), Range).
 
-
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -88,11 +87,9 @@ handle_call({series, Id}, _From, State) ->
 	Reply = probix_db:series(Id),
 	{reply, Reply, State};
 
-
 handle_call({add_ticks, Series_id, Probes}, _From, State) ->
 	Reply = probix_db:add_ticks(Series_id, Probes),
 	{reply, Reply, State};
-
 
 handle_call({get_ticks, Series_id}, _From, State) ->
 	Reply = probix_db:get_ticks(Series_id),
@@ -102,7 +99,6 @@ handle_call({get_ticks, Series_id, Range}, _From, State) ->
 	Reply = probix_db:get_ticks(Series_id, Range),
 	{reply, Reply, State};
 
-
 handle_call({delete_ticks, Series_id}, _From, State) ->
 	Reply = probix_db:delete_ticks(Series_id),
 	{reply, Reply, State};
@@ -110,7 +106,6 @@ handle_call({delete_ticks, Series_id}, _From, State) ->
 handle_call({delete_ticks, Series_id, Range}, _From, State) ->
 	Reply = probix_db:delete_ticks(Series_id, Range),
 	{reply, Reply, State}.
-
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
