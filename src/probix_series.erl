@@ -50,6 +50,7 @@ get_ticks(Series_id) when is_binary(Series_id) ->
 get_ticks(Series_id) when is_list(Series_id) ->
 	get_ticks(list_to_binary(Series_id)).
 
+get_ticks(Series_id, all) -> get_ticks(Series_id);
 get_ticks(Series_id, Range) when is_binary(Series_id) ->
 	gen_server:call(?MODULE, {get_ticks, Series_id, Range});
 get_ticks(Series_id, Range) when is_list(Series_id) ->
@@ -60,6 +61,7 @@ delete_ticks(Series_id) when is_binary(Series_id) ->
 delete_ticks(Series_id) when is_list(Series_id) ->
 	delete_ticks(list_to_binary(Series_id)).
 
+delete_ticks(Series_id, all) -> delete_series(Series_id);
 delete_ticks(Series_id, Range) when is_binary(Series_id) ->
 	gen_server:call(?MODULE, {delete_ticks, Series_id, Range});
 delete_ticks(Series_id, Range) when is_list(Series_id) ->

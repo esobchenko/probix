@@ -31,8 +31,8 @@ dispatch_requests(Req) ->
 		throw:Error when is_atom(Error) -> error(Error);
 
 		%% erlang errors and other exceptions
-		_Exception ->
-			log4erl:info("Exception: ~p", [_Exception]),
+		error:Exception ->
+			log4erl:info("exception caught: ~p", [Exception]),
 			error(internal_error)
 	end,
 	Req:respond(R).
@@ -48,7 +48,7 @@ handle('POST', ["series"], Args, Post) ->
 		{ok, Ticks} ->
 			log4erl:info("creating series"),
 			Series = probix_series:new_series(Label),
-			log4erl:info("adding ticks to series: ~p", [ Series#series.id ]),
+			log4erl:info("adding ticks to series: ~s", [ Series#series.id ]),
 			probix_series:add_ticks(Series#series.id, Ticks),
 			redirect("/series/" ++ Series#series.id);
 
@@ -86,73 +86,72 @@ handle('GET', ["series"], [], undefined) ->
 handle('GET', ["series", Id], Args, undefined) ->
 	probix_series:series(Id) == {error, not_found} andalso throw(not_found),
 
-	case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
+	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
 		[undefined, undefined] ->
 			log4erl:info("selecting all data for series ~s", [ Id ]),
-			Ticks = probix_series:get_ticks(Id),
-			Content = probix_format:ticks_to_json(Ticks),
-			ok(Content);
+			all;
 
 		[undefined, To] when is_list(To) ->
-			log4erl:info("selecting all data for series ~s, to: ~p", [Id, To]),
-			{ok, To_ts} = probix_format:parse_timestamp(To),
-			Ticks = probix_series:get_ticks(Id, {to, To_ts}),
-			Content = probix_format:ticks_to_json(Ticks),
-			ok(Content);
+			log4erl:info("selecting all data for series ~s, to: ~s", [Id, To]),
+			case probix_format:parse_timestamp(To) of
+				{ok, Ts} -> {to, Ts};
+				_ -> throw(bad_arguments)
+			end;
 
 		[From, undefined] when is_list(From) ->
-			log4erl:info("selecting all data for series ~s, from: ~p", [Id, From]),
-			{ok, From_ts} = probix_format:parse_timestamp(From),
-			Ticks = probix_series:get_ticks(Id, {from, From_ts}),
-			Content = probix_format:ticks_to_json(Ticks),
-			ok(Content);
+			log4erl:info("selecting all data for series ~s, from: ~s", [Id, From]),
+			case probix_format:parse_timestamp(From) of
+				{ok, Ts} -> {from, Ts};
+				_ -> throw(bad_arguments)
+			end;
 
 		[From, To] when is_list(From); is_list(To) ->
-			log4erl:info("selecting all data for series ~s, from: ~p, to: ~p", [Id, From, To]),
-			{ok, From_ts} = probix_format:parse_timestamp(From),
-			{ok, To_ts} = probix_format:parse_timestamp(To),
-			Ticks = probix_series:get_ticks(Id, {From_ts, To_ts}),
-			Content = probix_format:ticks_to_json(Ticks),
-			ok(Content);
+			log4erl:info("selecting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
+			case [probix_format:parse_timestamp(From), probix_format:parse_timestamp(To)] of
+				[{ok, F}, {ok, T}] -> {F, T};
+				_ -> throw(bad_arguments)
+			end
+	end,
 
-		_ ->
-			error(bad_arguments)
-	end;
+	Ticks = probix_series:get_ticks(Id, Range),
+	Content = probix_format:ticks_to_json(Ticks),
+	ok(Content);
+
 
 %% removing data from series
 handle('DELETE', ["series", Id], Args, undefined) ->
 
 	probix_series:series(Id) == {error, not_found} andalso throw(not_found),
 
-	case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
-		%% empty args
+	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
 		[undefined, undefined] ->
-			log4erl:info("deleting series with id: ~s", [ Id ]),
-			probix_series:delete_series(Id),
-			ok();
+			log4erl:info("deleting all data for series ~s", [ Id ]),
+			all;
 
 		[undefined, To] when is_list(To) ->
-			log4erl:info("deleting data for series ~s, to: ~p", [Id, To]),
-			{ok, To_ts} = probix_format:parse_timestamp(To),
-			probix_series:delete_ticks(Id, {to, To_ts}),
-			ok();
+			log4erl:info("deleting all data for series ~s, to: ~s", [Id, To]),
+			case probix_format:parse_timestamp(To) of
+				{ok, Ts} -> {to, Ts};
+				_ -> throw(bad_arguments)
+			end;
 
 		[From, undefined] when is_list(From) ->
-			log4erl:info("deleting data for series ~s, from: ~p", [Id, From]),
-			{ok, From_ts} = probix_format:parse_timestamp(From),
-			probix_series:delete_ticks(Id, {from, From_ts}),
-			ok();
+			log4erl:info("deleting all data for series ~s, from: ~s", [Id, From]),
+			case probix_format:parse_timestamp(From) of
+				{ok, Ts} -> {from, Ts};
+				_ -> throw(bad_arguments)
+			end;
 
 		[From, To] when is_list(From); is_list(To) ->
-			log4erl:info("deleting data for series ~s, from: ~p, to: ~p", [Id, From, To]),
-			{ok, From_ts} = probix_format:parse_timestamp(From),
-			{ok, To_ts} = probix_format:parse_timestamp(To),
-			probix_series:delete_ticks(Id, {From_ts, To_ts}),
-			ok();
+			log4erl:info("deleting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
+			case [probix_format:parse_timestamp(From), probix_format:parse_timestamp(To)] of
+				[{ok, F}, {ok, T}] -> {F, T};
+				_ -> throw(bad_arguments)
+			end
+	end,
 
-		_ ->
-			error("bad_arguments")
-	end;
+	probix_series:delete_ticks(Id, Range),
+	ok();
 
 handle(_, _, _, _) ->
 	error(bad_request).
