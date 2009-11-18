@@ -72,7 +72,7 @@ handle('POST', ["series", Id], [], Post) ->
 		{ok, Ticks} ->
 			probix_series:add_ticks(Id, Ticks);
 		{error, Error} ->
-			error(Error)
+			throw(Error)
 	end,
 	ok();
 
@@ -89,7 +89,7 @@ handle('GET', ["series", Id], Args, undefined) ->
 	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
 		[undefined, undefined] ->
 			log4erl:info("selecting all data for series ~s", [ Id ]),
-			all;
+			{};
 
 		[undefined, To] when is_list(To) ->
 			log4erl:info("selecting all data for series ~s, to: ~s", [Id, To]),
@@ -126,7 +126,7 @@ handle('DELETE', ["series", Id], Args, undefined) ->
 	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
 		[undefined, undefined] ->
 			log4erl:info("deleting all data for series ~s", [ Id ]),
-			all;
+			{};
 
 		[undefined, To] when is_list(To) ->
 			log4erl:info("deleting all data for series ~s, to: ~s", [Id, To]),
