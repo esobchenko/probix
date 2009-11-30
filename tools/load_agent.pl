@@ -3,13 +3,12 @@
 use strict;
 use warnings;
 
+use FindBin qw($Script);
+
 use Getopt::Long;
 
 use LWP::UserAgent;
 use JSON::Any;
-
-my $prog = $0;
-$prog =~ s@.*/@@;
 
 # program defaults
 my $base = "http://127.0.0.1:8000";
@@ -52,7 +51,7 @@ sub get_value {
 sub usage {
 	my $status = shift;
 	print <<EOF;
-usage: $prog [options]
+usage: $Script [options]
 
   The system load agent for Probix.
 
