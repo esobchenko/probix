@@ -11,6 +11,7 @@ use JSON::Any;
 my $prog = $0;
 $prog =~ s@.*/@@;
 
+# program defaults
 my $base = "http://127.0.0.1:8000";
 my $freq = 3;
 my $series = "new";
@@ -34,10 +35,11 @@ if ( $series eq "new" ) {
 
 while (1) {
 	my $tick = JSON::Any->new()->encode( { timestamp => time(), value => get_value() } );
-	if ( add_ticks($base, $series, $tick) ) {
+	my $res = add_ticks($base, $series, $tick);
+	if ( $res->is_success ) {
 		print STDERR "$tick added to $series\n" unless $silent;
 	} else {
-		warn "failed to add $tick to $series\n";
+		warn sprintf "failed to add %s to %s: %s", $tick, $series, $res->status_line;
 	}
 	sleep $freq;
 }
@@ -65,14 +67,12 @@ EOF
 	exit($status);
 }
 
-
 sub add_ticks {
 	my ($base, $id, $ticks) = @_;
 	my $uri = URI->new( $base );
 	$uri->path_segments( 'series', $id );
 	my $r = HTTP::Request->new( 'POST', $uri, [], $ticks );
-
-	return _http_req($r)->is_success;
+	return _http_req($r);
 }
 
 sub create_series {
