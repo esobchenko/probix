@@ -8,8 +8,24 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-	Ip = case os:getenv("PROBIX_SERVER_IP") of false -> "0.0.0.0"; Env_ip -> Env_ip end,
-	Port = case os:getenv("PROBIX_SERVER_PORT") of false -> "8000"; Env_port -> Env_port end,
+	case os:getenv("PROBIX_SERVER_IP") of
+        false -> false;
+        Env_ip -> application:set_env(probix, probix_host, Env_ip)
+    end,
+	case os:getenv("PROBIX_SERVER_PORT") of
+        false -> false;
+        Env_port -> application:set_env(probix, probix_port, Env_port)
+    end,
+
+    {ok, Ip} = application:get_env(probix, probix_host),
+    {ok, Port} = application:get_env(probix, probix_port),
+
+    case Port of
+        "80" ->
+            application:set_env(probix, probix_hostname, "http://" ++ Ip);
+        Port ->
+            application:set_env(probix, probix_hostname, "http://" ++ Ip ++ ":" ++ Port)
+    end,
 
 	Http_config = [
 		{ip, Ip},
@@ -30,5 +46,4 @@ init([]) ->
 	},
 
 	Processes = [Http, Series],
-%	Processes = [Series],
 	{ok, {{one_for_one, 10, 10}, Processes}}.

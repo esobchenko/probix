@@ -13,8 +13,10 @@ stop() ->
 dispatch_requests(Req) ->
 	%% http method
 	Method = Req:get(method),
+
 	%% uri path
 	Path = Req:get(path),
+
 	%% uri query string as proplist
 	Query = Req:parse_qs(),
 
@@ -42,6 +44,7 @@ handle('POST', ["series"], Args, Post) ->
 	%% creating series
 	Label = proplists:get_value("label", Args),
 
+    {ok, Hostname} = application:get_env(probix, probix_hostname),
 	%% adding ticks if passed in json
 	case probix_format:ticks_from_json(Post) of
 		%% adding series with data
@@ -50,13 +53,13 @@ handle('POST', ["series"], Args, Post) ->
 			Series = probix_series:new_series(Label),
 			log4erl:info("adding ticks to series: ~s", [ Series#series.id ]),
 			probix_series:add_ticks(Series#series.id, Ticks),
-			redirect("/series/" ++ Series#series.id);
+			redirect(Hostname ++ "/series/" ++ Series#series.id);
 
 		%% adding series without data
 		{error, empty_json} ->
 			log4erl:info("creating series"),
 			Series = probix_series:new_series(Label),
-			redirect("/series/" ++ Series#series.id);
+			redirect(Hostname ++ "/series/" ++ Series#series.id);
 
 		%% wrong data, doing nothing
 		{error, Error} ->
