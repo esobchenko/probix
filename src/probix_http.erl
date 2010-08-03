@@ -13,120 +13,183 @@ stop() ->
 dispatch_requests(Req) ->
 	%% http method
 	Method = Req:get(method),
+
 	%% uri path
 	Path = Req:get(path),
+
 	%% uri query string as proplist
 	Query = Req:parse_qs(),
+
 	%% post body
 	Post = Req:recv_body(),
+
 	%% split path string for handy request handling
 	Splitted = string:tokens(Path, "/"),
 
 	R = try
-        handle(Method, Splitted, Query, Post)
-	catch	
+        log4erl:info("Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
+		handle(Method, Splitted, Query, Post)
+	catch
 		%% regular throw exceptions
-		throw:Error when is_record(Error, error) -> error(Error);
+		throw:Error when is_atom(Error) -> error(Error);
+
 		%% erlang errors and other exceptions
-		_Exception ->
-			Error = probix_error:create(internal_error, "something bad happened"),
-			error(Error)
+		error:Exception ->
+			log4erl:info("exception caught: ~p", [Exception]),
+			error(internal_error)
 	end,
 	Req:respond(R).
 
-handle('GET', ["objects"], _,  _) ->
-	Objects = probix_object:read_all(),
-	Output = probix_utils:record_to_json(Objects, probix_object),
-	ok(Output);
+%% create series
+handle('POST', ["series"], Args, Post) ->
+	%% creating series
+	Label = proplists:get_value("label", Args),
 
-handle('GET', ["object", Id_string], _, _) ->
-	Id = to_integer(Id_string),
-	Object = probix_object:read(Id), 
-	Output = probix_utils:record_to_json(Object, probix_object),
-	ok(Output);
+    {ok, Hostname} = application:get_env(probix, probix_hostname),
+	%% adding ticks if passed in json
+	case probix_format:ticks_from_json(Post) of
+		%% adding series with data
+		{ok, Ticks} ->
+			log4erl:info("creating series"),
+			Series = probix_series:new_series(Label),
+			log4erl:info("adding ticks to series: ~s", [ Series#series.id ]),
+			probix_series:add_ticks(Series#series.id, Ticks),
+			redirect(Hostname ++ "/series/" ++ Series#series.id);
 
-handle('PUT', ["object", Id_string], _, Post) ->
-	Id = to_integer(Id_string),
-	Record = probix_utils:json_to_record(Post, probix_object),
-	Result = probix_object:update(Id, Record),	
-	Output = probix_utils:record_to_json(Result, probix_object),
-	ok(Output);
+		%% adding series without data
+		{error, empty_json} ->
+			log4erl:info("creating series"),
+			Series = probix_series:new_series(Label),
+			redirect(Hostname ++ "/series/" ++ Series#series.id);
 
-handle('DELETE', ["object", Id_string], _, _) ->
-	Id = to_integer(Id_string),
-	probix_object:delete(Id),
-	ok();
-
-handle('POST', ["object"], _, Post) ->
-	Record = probix_utils:json_to_record(Post, probix_object),
-	Result = probix_object:create(Record),
-	Output = probix_utils:record_to_json(Result, probix_object),
-	ok(Output);
-
-%% to get probes for object by timestamp
-handle('GET', [ "object", Id_string, "probes" ], Args, _) ->
-	Id = to_integer(Id_string),
-	Probes = case [proplists:get_value("from", Args), proplists:get_value("to", Args)] of
-		[undefined, undefined] ->
-			probix_probe:probes_by_object_id(Id);
-		[undefined, To] when is_list(To) ->
-			probix_probe:probes_by_object_id(
-				Id,
-				{to, to_integer(To)}
-			);
-		[From, undefined] when is_list(From) ->
-			probix_probe:probes_by_object_id(
-				Id,
-				{from, to_integer(From)}
-			);
-		[From, To] when is_list(From); is_list(To) ->
-			probix_probe:probes_by_object_id(
-				Id,
-				to_integer(From),
-				to_integer(To)
-			)
-	end,
-	Output = probix_utils:record_to_json(Probes, probix_probe),
-	ok(Output);
-
-%% creating probes for object
-handle('POST', [ "object", Id_string, "probes" ], Args, Post) ->
-	Id = to_integer(Id_string),
-	Records = probix_utils:json_to_record(Post, probix_probe),
-	Result = probix_probe:create(Id, Records),
-
-	%% return newly added probes using the "?return=1" in URI
-	case proplists:get_value("return", Args) of
-		"1" -> 	Output = probix_utils:record_to_json(Result, probix_probe),
-                ok(Output);
-		_Other -> ok()
+		%% wrong data, doing nothing
+		{error, Error} ->
+			error(Error)
 	end;
 
+%% update series with data
+handle('POST', ["series", Id], [], Post) ->
+	log4erl:info("updating series ~s", [ Id ]),
+	probix_series:series(Id) == {error, not_found} andalso throw(not_found),
+
+	case probix_format:ticks_from_json(Post) of
+		{ok, Ticks} ->
+			probix_series:add_ticks(Id, Ticks);
+		{error, Error} ->
+			throw(Error)
+	end,
+	ok();
+
+%% get all existing series
+handle('GET', ["series"], [], undefined) ->
+	log4erl:info("getting all series"),
+	Series = probix_series:all_series(),
+	Content = probix_format:series_to_json(Series),
+	ok(Content);
+
+handle('GET', ["series", Id], Args, undefined) ->
+	probix_series:series(Id) == {error, not_found} andalso throw(not_found),
+
+	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
+		[undefined, undefined] ->
+			log4erl:info("selecting all data for series ~s", [ Id ]),
+			{};
+
+		[undefined, To] when is_list(To) ->
+			log4erl:info("selecting all data for series ~s, to: ~s", [Id, To]),
+			case probix_format:parse_timestamp(To) of
+				{ok, Ts} -> {to, Ts};
+				_ -> throw(bad_arguments)
+			end;
+
+		[From, undefined] when is_list(From) ->
+			log4erl:info("selecting all data for series ~s, from: ~s", [Id, From]),
+			case probix_format:parse_timestamp(From) of
+				{ok, Ts} -> {from, Ts};
+				_ -> throw(bad_arguments)
+			end;
+
+		[From, To] when is_list(From); is_list(To) ->
+			log4erl:info("selecting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
+			case [probix_format:parse_timestamp(From), probix_format:parse_timestamp(To)] of
+				[{ok, F}, {ok, T}] -> {F, T};
+				_ -> throw(bad_arguments)
+			end
+	end,
+
+	Ticks = probix_series:get_ticks(Id, Range),
+	Content = probix_format:ticks_to_json(Ticks),
+	ok(Content);
+
+
+%% removing data from series
+handle('DELETE', ["series", Id], Args, undefined) ->
+
+	probix_series:series(Id) == {error, not_found} andalso throw(not_found),
+
+	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
+		[undefined, undefined] ->
+			log4erl:info("deleting all data for series ~s", [ Id ]),
+			{};
+
+		[undefined, To] when is_list(To) ->
+			log4erl:info("deleting all data for series ~s, to: ~s", [Id, To]),
+			case probix_format:parse_timestamp(To) of
+				{ok, Ts} -> {to, Ts};
+				_ -> throw(bad_arguments)
+			end;
+
+		[From, undefined] when is_list(From) ->
+			log4erl:info("deleting all data for series ~s, from: ~s", [Id, From]),
+			case probix_format:parse_timestamp(From) of
+				{ok, Ts} -> {from, Ts};
+				_ -> throw(bad_arguments)
+			end;
+
+		[From, To] when is_list(From); is_list(To) ->
+			log4erl:info("deleting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
+			case [probix_format:parse_timestamp(From), probix_format:parse_timestamp(To)] of
+				[{ok, F}, {ok, T}] -> {F, T};
+				_ -> throw(bad_arguments)
+			end
+	end,
+
+	probix_series:delete_ticks(Id, Range),
+	ok();
+
+handle('OPTIONS', _Any, _Query, _Post) ->
+    ok("");
+
 handle(_, _, _, _) ->
-	throw(
-		probix_error:create(bad_request, "unknown request")
-	).
+	error(bad_request).
 
 %%
 %% ok and error functions help to construct mochiweb's http response tuples;
 %% they used in handle/5 functions.
 %%
 
-ok(Content) ->
-	{200, [{"Content-Type", "application/json"}], Content}.
-
 %% empty response
 ok() ->
 	{200, [{"Content-Type", "application/json"}], ""}.
 
+ok(Content) ->
+	{200, [ { "Access-Control-Allow-Origin", "*" },
+            { "Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, DELETE" },
+            { "Access-Control-Allow-Headers", "Accept, X-Requested-With" },
+            {"Content-Type", "application/json"},
+            {"Cache-Control", "no-cache"}], Content }.
+
 error(Error) ->
-	{http_code(Error), [{"Content-Type", "application/json"}], 
-     probix_utils:record_to_json(Error, probix_error)}.
+	log4erl:error(Error),
+	{http_code(Error), [], ""}.
+
+redirect(Location) ->
+	{301, [{"Location", Location}], ""}.
 
 %% returns http numeric response code for
 %% given error according to specification
-http_code(Error) when is_record(Error, error) ->
-	case Error#error.code of
+http_code(Error) when is_atom(Error) ->
+	case Error of
 		not_found ->
 			404;
 		unknown_format ->
@@ -136,14 +199,3 @@ http_code(Error) when is_record(Error, error) ->
 		_Other ->
 			400
 	end.
-
-%% this function is used to convert some strings to integers (e.g. object id) because
-%% bad_request exception must be raised to inform user about the problem.
-to_integer(L) when is_list(L) ->
-	try erlang:list_to_integer(L)
-	catch
-		error:badarg -> throw(
-			probix_error:create(bad_request, "got string where integer is expected")
-		)
-	end.
-

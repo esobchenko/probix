@@ -4,16 +4,16 @@
 -include("probix.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
--define(MNESIA_TABLES, [counter, object]).
+-define(MNESIA_TABLES, [series, tick]).
 
 stop() -> mnesia:stop().
 
-stop_replica(Node) when is_atom(Node) ->
-	rpc:call(Node, probix_db, stop, []).
+%stop_replica(Node) when is_atom(Node) ->
+%	rpc:call(Node, probix_db, stop, []).
 
-remove_replica(Node) when is_atom(Node) ->
-	stop_replica(Node),
-	mnesia:del_table_copy(schema, Node).
+%remove_replica(Node) when is_atom(Node) ->
+%	stop_replica(Node),
+%	mnesia:del_table_copy(schema, Node).
 
 start_replica(Master_node) when is_atom(Master_node) ->
 	ok = mnesia:start(),
@@ -35,10 +35,11 @@ start_replica(Master_node) when is_atom(Master_node) ->
 
 	ok = create_schema(disc_copies),
 
-	Tables = mnesia:system_info(tables),
+	%Tables = mnesia:system_info(tables),
+	Tables = ?MNESIA_TABLES,
 	ok = replicate_tables(Tables),
 
-	case mnesia:wait_for_tables(Tables, 200000) of
+	case mnesia:wait_for_tables(Tables, 20000) of
 		{timeout, Remaining} -> erlang:error({missing_required_tables, Remaining});
 		ok -> ok
 	end.
@@ -48,7 +49,7 @@ replicate_tables([H|T]) ->
 		true -> {atomic, ok};
 		false ->
 			case H of
-				schema -> {atomic, ok}; %% schema is already created
+				schema -> {atomic, ok}; %% schema is created in start_replica/1
 				_ -> mnesia:add_table_copy(H, node(), disc_copies)
 			end
 	end,
@@ -75,109 +76,193 @@ create_schema(Storage_type) ->
 
 is_fresh_startup() ->
 	yes = mnesia:system_info(is_running),
-	Node = node(),
 	case mnesia:system_info(tables) of
 		[schema] -> yes;
 		_Tables ->
 			case mnesia:table_info(schema, cookie) of
-				{_, Node} -> no;
+				{_, Node} when Node =:= node() -> no;
+				{_, Node} when Node =/= node() ->
+					%% this may happen when the database schema was originally created on
+					%% another machine and then copied to the current machine, or when the
+					%% current machine changed its original hostname
+					erlang:error("node name in schema cookie doesn't match the current node name");
 				_ -> yes
 			end
 	end.
 
 create_tables(Storage_type, Nodes) when is_atom(Storage_type) ->
 	yes = mnesia:system_info(is_running),
+	{atomic, ok} = mnesia:create_table(series,
+		[
+			{Storage_type, Nodes},
+			{attributes, record_info(fields, series)}
+		]
+	),
+	{atomic, ok} = mnesia:create_table(tick,
+		[
+			{Storage_type, Nodes},
+			{attributes, record_info(fields, tick)},
+			{type, ordered_set}
+		]
+	),
+	ok.
+
+new_series(Label) when is_binary(Label) ->
 	F = fun() ->
-		ok = create_table(counter,
-			[
-				{Storage_type, Nodes},
-				{attributes, record_info(fields, counter)}
-			]
-		),
-		ok = create_table(object,
-			[
-				{Storage_type, Nodes},
-				{attributes, record_info(fields, object)}
-			]
-		)
+		Series = #series{
+			%% XXX identifier may not be unique, then the function will overwrite the existing series;
+			%% XXX identifier is binary because mochijson2 encodes erlang-strings as lists:
+			%% mochijson2:json_encode(Foo) when is_list(Foo) -> json_encode_array(Foo);
+			id = list_to_binary( probix_util:random_string(10) ),
+			time_created = probix_time:now(),
+			label = Label
+		},
+		mnesia:write(Series),
+		Series
 	end,
-	transaction(F).
+	{atomic, Series} = mnesia:transaction(F),
+	Series.
 
-new_id(Key) ->
-	mnesia:dirty_update_counter({counter, Key}, 1).
-
-create_table(Name, Properties) ->
-	%% because mnesia:create_table/2 is not allowed in mnesia:transaction/1
-	Cs = mnesia_schema:list2cs([{name, Name}|Properties]),
-	mnesia_schema:do_create_table(Cs).
-
-delete_table(Name) ->
-	%% because mnesia:delete_table/1 is not allowed in mnesia:transaction/1
-	mnesia_schema:do_delete_table(Name).
-
-find(Q) ->
+all_series() ->
 	F = fun() ->
+		Q = qlc:q([X || X <- mnesia:table(series)]),
+		%% XXX I know that qlc:eval/1 may return error, but
+		%% hardly can imagine in what cases it can happen.
 		qlc:e(Q)
 	end,
-	transaction(F).
+	{atomic, List} = mnesia:transaction(F),
+	List.
 
-transaction(F) ->
-	case mnesia:transaction(F) of
-		{atomic, Result} ->
-			Result;
-		{aborted, {throw, Exception}} ->
-			erlang:throw(Exception);
-		{aborted, Reason} ->
-			erlang:error({db_error, Reason})
-	end.
-
-read_all(Table) ->
-	Q = qlc:q([X || X <- mnesia:table(Table)]),
-	find(Q).
-
-read(Oid) ->
+delete_series(Id) when is_binary(Id) ->
 	F = fun() ->
-		mnesia:read(Oid)
+		ok = delete_ticks(Id),
+		mnesia:delete({series, Id})
 	end,
-	case transaction(F) of
-		[ Object ] ->
-			Object;
+	{atomic, ok} = mnesia:transaction(F),
+	ok.
+
+series(Id) when is_binary(Id) ->
+	case mnesia:dirty_read({series, Id}) of
 		[] ->
-			throw(probix_error:create(not_found, "not found"))
+			{error, not_found};
+		[ Res ] ->
+			{ok, Res}
 	end.
 
-create(Rec) when is_tuple(Rec) ->
-	F = fun () ->
-			mnesia:write(Rec),
-			Rec
-	end,
-	transaction(F);
+%% XXX I do not check the existence of the series in add_ticks/1 and other tick functions
+%% because it's expensive. It should be done outside e.g. in http handle functions.
 
-create(List) when is_list(List) -> lists:map( fun(R) -> create(R) end, List ).
-
-create(Tab, Rec) when is_atom(Tab), is_tuple(Rec) ->
-	F = fun () ->
-			mnesia:write(Tab, Rec, write),
-			Rec
-	end,
-	transaction(F);
-
-create(Tab, List) when is_atom(Tab), is_list(List) -> lists:map( fun(R) -> create(Tab, R) end, List ).
-
-update(Rec) ->
-	F =	fun () ->
-			[ Record, Id | _Tail ] = tuple_to_list(Rec),
-			read({Record, Id}), %% foreign key check
-			mnesia:write(Rec),
-			Rec
-	end,
-	transaction(F).
-
-delete(Oid) ->
+add_ticks(Series_id, Rec) when is_record(Rec, tick) ->
 	F = fun() ->
-		read(Oid),
-		mnesia:delete(Oid),
-		Oid
+		Timestamp = element(2, Rec#tick.id),
+		mnesia:write(Rec#tick{id = {Series_id, Timestamp}})
 	end,
-	transaction(F).
+	{atomic, ok} = mnesia:transaction(F),
+	ok;
+
+add_ticks(Series_id, List) when is_list(List) ->
+	F = fun() ->
+		lists:foreach(
+			fun(T) ->
+				Timestamp = element(2, T#tick.id),
+				mnesia:write(T#tick{id = {Series_id, Timestamp}})
+			end,
+			List
+		),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok.
+
+get_ticks(Series_id) when is_binary(Series_id) ->
+	F = fun() ->
+		Q = qlc:q([ P || P <- mnesia:table(tick), element(1, P#tick.id) == Series_id ]),
+		qlc:e(Q)
+	end,
+	{atomic, Result} = mnesia:transaction(F),
+	Result.
+
+get_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
+	F = fun() ->
+		Q = qlc:q([ P || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			probix_time:cmp(element(2, P#tick.id), From) >= 0 ]),
+		qlc:e(Q)
+	end,
+	{atomic, Result} = mnesia:transaction(F),
+	Result;
+
+get_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
+	F = fun() ->
+		Q = qlc:q([ P || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
+		qlc:e(Q)
+	end,
+	{atomic, Result} = mnesia:transaction(F),
+	Result;
+
+get_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
+	F = fun() ->
+		Q = qlc:q([ P || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			probix_time:cmp(element(2, P#tick.id), From) >= 0,
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
+		qlc:e(Q)
+	end,
+	{atomic, Result} = mnesia:transaction(F),
+	Result.
+
+%% XXX not sure this function is needed
+delete_tick(Id) ->
+	F = fun() ->
+		mnesia:delete({tick, Id})
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok.
+
+delete_ticks(Series_id) when is_binary(Series_id) ->
+	F = fun() ->
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok.
+
+delete_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
+	F = fun() ->
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			probix_time:cmp(element(2, P#tick.id), From) >= 0 ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok;
+
+delete_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
+	F = fun() ->
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok;
+
+delete_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
+	F = fun() ->
+		Q = qlc:q([ {tick, P#tick.id} || P <- mnesia:table(tick),
+			element(1, P#tick.id) == Series_id,
+			probix_time:cmp(element(2, P#tick.id), From) >= 0,
+			probix_time:cmp(element(2, P#tick.id), To) =< 0 ]),
+		lists:foreach( fun mnesia:delete/1, qlc:e(Q) ),
+		ok
+	end,
+	{atomic, ok} = mnesia:transaction(F),
+	ok.
+
 

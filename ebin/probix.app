@@ -13,7 +13,12 @@
 		},
 		{registered, []},
 		{mod, {probix_app, []}},
-		{env, []},
+		{env,
+         [
+          { probix_host, "0.0.0.0" },
+          { probix_port, "8000" }
+         ]
+        },
 		{applications, [kernel, stdlib, crypto, mnesia]}
 	]
 }.

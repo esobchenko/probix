@@ -4,5 +4,5 @@
 -include_lib("eunit/include/eunit.hrl").
 
 acceptance() ->
-	eunit:test([probix_utils, probix_object, probix_probe, probix_http]).
+	eunit:test([probix_format, probix_series, probix_http, probix_time]).
 
