@@ -27,6 +27,7 @@ dispatch_requests(Req) ->
 	Splitted = string:tokens(Path, "/"),
 
 	R = try
+        log4erl:info("Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
 		handle(Method, Splitted, Query, Post)
 	catch
 		%% regular throw exceptions
@@ -156,6 +157,9 @@ handle('DELETE', ["series", Id], Args, undefined) ->
 	probix_series:delete_ticks(Id, Range),
 	ok();
 
+handle('OPTIONS', _Any, _Query, _Post) ->
+    ok("");
+
 handle(_, _, _, _) ->
 	error(bad_request).
 
@@ -169,7 +173,11 @@ ok() ->
 	{200, [{"Content-Type", "application/json"}], ""}.
 
 ok(Content) ->
-	{200, [{"Content-Type", "application/json"}], Content}.
+	{200, [ { "Access-Control-Allow-Origin", "*" },
+            { "Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, DELETE" },
+            { "Access-Control-Allow-Headers", "Accept, X-Requested-With" },
+            {"Content-Type", "application/json"},
+            {"Cache-Control", "no-cache"}], Content }.
 
 error(Error) ->
 	log4erl:error(Error),

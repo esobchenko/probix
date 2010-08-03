@@ -70,7 +70,6 @@ CMD="erl \
       -mnesia dump_log_write_threshold 100000 \
       -mnesia dc_dump_limit 100 \
       -sname $PROBIX_NODE_NAME \
-      -setcookie probix \
       -s probix"
 
 ## Setting running defaults
