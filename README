@@ -14,18 +14,29 @@ running probix server
 
 	$ git clone git@github.com:esobchenko/probix.git
 
+2. download and install rebar
+	
+	$ wget http://bitbucket.org/basho/rebar/downloads/rebar
+
+or build from source:
+  
+        $ hg clone http://bitbucket.org/basho/rebar
+        $ cd rebar
+        $ ./bootstrap
+
 2. compile the source code:
 
 	$ cd probix
-	$ erl -make
+	$ rebar compile
 
 3. run the tests:
 
-	$ ./bin/run_tests.sh
+	$ rebar eunit
 
 4. if the tests were successful, start the server:
 
-	$ ./bin/start_server.sh
+	$ ./bootstrap
+	$ erl -boot start_probix -config ebin/app.config
 
 5. point your browser to http://localhost:8000
 
