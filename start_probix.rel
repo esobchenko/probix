@@ -1,0 +1,13 @@
+{release,
+ {"probix_start", "A"},
+ {erts, "5.3"},
+ [{kernel, "2.13.5"},
+  {stdlib, "1.16.5"},
+  {sasl, "2.1.9"},
+  {mnesia, "4.4.13"},
+  {log4erl, "0.8.6"},
+  {mochiweb, "1.3"},
+  {crypto, "1.6.4"},
+  {inets, "5.3"},
+  {probix, "1"}]
+}.

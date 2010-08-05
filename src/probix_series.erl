@@ -71,6 +71,7 @@ start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
+    probix_db:start_master(disc_copies, [node()]),
 	{ok, null}.
 
 handle_call({new_series, Label}, _From, State) ->

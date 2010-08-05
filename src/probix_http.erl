@@ -1,5 +1,5 @@
 -module(probix_http).
--export([start/1, stop/0, dispatch_requests/1, handle/4]).
+-export([start/1, stop/0, dispatch_requests/1]).
 
 -include("probix.hrl").
 -include_lib("eunit/include/eunit.hrl").

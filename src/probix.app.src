@@ -1,0 +1,17 @@
+{application, probix,
+ [
+  {description, "Probix monitoring"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  inets,
+                  crypto,
+                  mnesia,
+                  mochiweb,
+                  log4erl
+                 ]},
+  {mod, { probix_app, []}},
+  {env, [ {probix_host, "127.0.0.1"}, {probix_port, "8000"}]}
+ ]}.

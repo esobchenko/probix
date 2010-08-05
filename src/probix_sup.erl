@@ -27,12 +27,11 @@ init([]) ->
             application:set_env(probix, probix_hostname, "http://" ++ Ip ++ ":" ++ Port)
     end,
 
-    application:set_env(probix, probix_docroot, "priv/www"),
+%    application:set_env(probix, probix_docroot, "priv/www"),
 
 	Http_config = [
 		{ip, Ip},
-		{port, Port},
-		{max, 100000}
+		{port, Port}
 	],
 
 	Http = {
@@ -41,17 +40,17 @@ init([]) ->
 		permanent, 2048, worker, dynamic
 	},
 
-    Console_config = [
-		{ip, Ip},
-		{port, 8888}, %% fixme
-		{max, 100000}
-	],
+%    Console_config = [
+%		{ip, Ip},
+%		{port, 8888}, %% fixme
+%		{max, 100000}
+%	],
 
-    Console = {
-		probix_console,
-		{probix_console, start, [Console_config]},
-		permanent, 2048, worker, dynamic
-	},
+%    Console = {
+%		probix_console,
+%		{probix_console, start, [Console_config]},
+%		permanent, 2048, worker, dynamic
+%	},
 
 	Series = {
 		probix_series,
@@ -59,5 +58,5 @@ init([]) ->
 		permanent, 2048, worker, dynamic
 	},
 
-	Processes = [Http, Series, Console],
+	Processes = [Http, Series],
 	{ok, {{one_for_one, 10, 10}, Processes}}.

@@ -44,11 +44,16 @@ basic_rest_test_() ->
         fun() ->
             probix_db:stop(),
             application:start(inets),
-            probix:start_master([ram_copies])
+	    application:start(crypto),
+	    application:start(mnesia),
+	    application:start(log4erl),
+	    application:start(mochiweb),
+	    application:start(probix)
         end,
         fun(_) ->
-            probix:stop(),
-            application:stop(inets)
+            application:stop(inets),
+	    application:stop(mochiweb),
+	    application:stop(probix)
         end,
         fun generate_basic_rest_tests/1
     }.
@@ -98,14 +103,18 @@ series_update_test_() ->
         setup,
         fun() ->
             probix_db:stop(),
-            application:start(inets),
-            probix:start_master([ram_copies]),
+	    application:start(inets),
+            application:start(crypto),
+            application:start(mnesia),
+            application:start(log4erl),
+            application:start(mochiweb),
+            application:start(probix),
             Series = probix_series:new_series(),
             binary_to_list(Series#series.id)
         end,
         fun(_) ->
-            probix:stop(),
-            application:stop(inets)
+            application:stop(inets),
+	    application:stop(probix)
         end,
         fun generate_series_update_test/1
     }.
