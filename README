@@ -38,7 +38,7 @@ or build from source:
 5. if the tests were successful, start the server:
 
 	$ ./bootstrap
-	$ erl -boot start_probix -config ebin/app.config
+	$ erl -boot start_probix -config ebin/app.config -pa deps/*/ebin
 
 6. point your browser to http://localhost:8000
 
