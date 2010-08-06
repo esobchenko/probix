@@ -3,8 +3,6 @@ prerequisites
 ------------------------------
 
 1. Erlang R12 or newer
-2. Mochiweb from http://code.google.com/p/mochiweb/
-3. Log4erl from http://github.com/ahmednawras/log4erl/
 
 ------------------------------
 running probix server
@@ -24,21 +22,25 @@ or build from source:
         $ cd rebar
         $ ./bootstrap
 
-2. compile the source code:
+2. get dependencies
+       
+        $ rebar get-deps
+
+3. compile the source code:
 
 	$ cd probix
 	$ rebar compile
 
-3. run the tests:
+4. run the tests:
 
 	$ rebar eunit
 
-4. if the tests were successful, start the server:
+5. if the tests were successful, start the server:
 
 	$ ./bootstrap
 	$ erl -boot start_probix -config ebin/app.config
 
-5. point your browser to http://localhost:8000
+6. point your browser to http://localhost:8000
 
 By default, the server binds to 0.0.0.0 and uses port 8000, but you can change
 these values by setting PROBIX_SERVER_IP and PROBIX_SERVER_PORT environment variables.
