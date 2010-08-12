@@ -9,8 +9,6 @@ This script starts probix server in master or replica mode
 
 OPTIONS:
    -h      Show this message
-   -m      Running mode: master or replica. Default: master
-   -M      Master node. Relevant only for 'replica' mode.
    -N      Erlang node shortname. Default: probix
    -I      Mochiweb interface address. Default: 0.0.0.0
    -P      Mochiweb port. Default: 8000
@@ -43,34 +41,18 @@ if [ -z ""$PROBIX_NODE_NAME ]; then
     PROBIX_NODE_NAME="probix";
 fi
 
-if [ -z ""$PROBIX_MODE ]; then
-    PROBIX_MODE="master";
-fi
-
 if [ -z ""$PROBIX_DATA_DIR ]; then
     PROBIX_DATA_DIR=$PROBIX_HOME/data;
 fi
-
-## Checking arguments consistency
-if [ ""$PROBIX_MODE = "replica" -a -z ""$PROBIX_MASTER_NODE ]; then
-    echo "";
-    echo "Please specify MASTER_NODE with -M option or set environment variable for 'replica' mode";
-    echo "";
-    usage;
-    exit;
-fi
-
 
 
 CMD="erl \
      +K true \
       -pa ebin \
+      -pa deps/*/ebin \
       -boot start_sasl \
-      -mnesia dir '$PROBIX_DATA_DIR' \
-      -mnesia dump_log_write_threshold 100000 \
-      -mnesia dc_dump_limit 100 \
       -sname $PROBIX_NODE_NAME \
-      -s probix"
+      -s start_probix"
 
 ## Setting running defaults
 export PROBIX_TEST_MODE=0
@@ -86,10 +68,4 @@ fi
 
 cd $PROBIX_HOME
 
-if [ ""$PROBIX_MODE = "master" ]; then
-    $CMD start_master disc_copies
-elif [ ""$PROBIX_MODE = "replica" ]; then
-    $CMD start_replica $PROBIX_MASTER_NODE
-fi
-
-
+$CMD 

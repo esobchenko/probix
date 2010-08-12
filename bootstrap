@@ -1,3 +1,0 @@
-#!/bin/sh
-
-erl -noshell -pa ebin -s systools make_script start_probix 
