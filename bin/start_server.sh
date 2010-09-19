@@ -52,6 +52,7 @@ CMD="erl \
       -pa deps/*/ebin \
       -boot start_sasl \
       -sname $PROBIX_NODE_NAME \
+      -conf priv/probix_app
       -s start_probix"
 
 ## Setting running defaults
