@@ -5,14 +5,13 @@ usage()
 cat << EOF
 usage: $0 options
 
-This script starts probix server in master or replica mode
+This script starts probix server
 
 OPTIONS:
    -h      Show this message
    -N      Erlang node shortname. Default: probix
    -I      Mochiweb interface address. Default: 0.0.0.0
    -P      Mochiweb port. Default: 8000
-   -D      Data directory. Directory for mnesia data
 
 All options can be passed as environment variables:
     PROBIX_MODE, PROBIX_NODE_NAME, PROBIX_SERVER_IP, PROBIX_SERVER_PORT
@@ -52,7 +51,7 @@ CMD="erl \
       -pa deps/*/ebin \
       -boot start_sasl \
       -sname $PROBIX_NODE_NAME \
-      -conf priv/probix_app
+      -config priv/probix_app \
       -s start_probix"
 
 ## Setting running defaults

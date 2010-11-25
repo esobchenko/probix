@@ -8,4 +8,5 @@ start() ->
 	application:start(crypto),
 	application:start(mochiweb),
 	application:start(mnesia),
+	application:start(emongo),
 	application:start(probix).

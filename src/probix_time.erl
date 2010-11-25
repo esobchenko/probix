@@ -211,6 +211,10 @@ to_datetime(T) when is_record(T, timestamp) ->
 to_gregorian_seconds(R) when is_record(R, timestamp) ->
 	calendar:datetime_to_gregorian_seconds( to_datetime(R) ).
 
+to_secs_tuple(R) when is_record(R, timestamp) ->
+	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(to_utc(R)) ),
+    {trunc(Seconds/1000000), Seconds - trunc(Seconds/1000000)*1000000, R#timestamp.microsec}.   
+
 to_unix_epoch(R) when is_record(R, timestamp) ->
 	%% XXX should we support negative values for unix epoch?
 	Seconds = gregorian_to_unix_seconds( to_gregorian_seconds(to_utc(R)) ),
@@ -276,4 +280,6 @@ now() ->
 	Now = erlang:now(),
 	{ok, R} = from_datetime( calendar:now_to_datetime( Now ) ),
 	R#timestamp{ microsec = element(3, Now) }.
+
+
 

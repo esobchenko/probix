@@ -8,6 +8,10 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
+%%    log4erl:conf("priv/log4erl.conf"),
+    {ok, Logger_Conf} = application:get_env(probix, log4erl_conf),
+    log4erl:conf(Logger_Conf),
+
 	case os:getenv("PROBIX_SERVER_IP") of
         false -> false;
         Env_ip -> application:set_env(probix, probix_host, Env_ip)
