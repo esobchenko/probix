@@ -23,16 +23,21 @@ new_series() ->
 
 new_series(undefined) ->
 	gen_server:call(?MODULE, {new_series, <<"">>});
+
 new_series(Label) when is_list(Label) ->
 	gen_server:call(?MODULE, {new_series, list_to_binary(Label)}).
+
 
 all_series() ->
 	gen_server:call(?MODULE, all_series).
 
-delete_series(Id) when is_list(Id) ->
-	delete_series(list_to_binary(Id));
+
 delete_series(Id) when is_binary(Id) ->
-	gen_server:call(?MODULE, {delete_series, Id}).
+	gen_server:call(?MODULE, {delete_series, Id});
+
+delete_series(Id) when is_list(Id) ->
+	delete_series(list_to_binary(Id)).
+
 
 series(Id) when is_binary(Id) ->
 	gen_server:call(?MODULE, {series, Id});
@@ -40,84 +45,108 @@ series(Id) when is_binary(Id) ->
 series(Id) when is_list(Id) ->
 	series(list_to_binary(Id)).
 
-add_ticks(Series_id, Probes) when is_list(Series_id) ->
-	add_ticks(list_to_binary(Series_id), Probes);
-add_ticks(Series_id, Probes) when is_list(Probes); is_record(Probes, tick) ->
-	gen_server:call(?MODULE, {add_ticks, Series_id, Probes}).
+
+add_ticks(Series_id, Ticks) when is_list(Series_id) ->
+	add_ticks(list_to_binary(Series_id), Ticks);
+
+add_ticks(Series_id, Ticks) when is_list(Ticks) ->
+	gen_server:call(?MODULE, {add_ticks, Series_id, Ticks}).
+
 
 get_ticks(Series_id) when is_binary(Series_id) ->
 	gen_server:call(?MODULE, {get_ticks, Series_id});
+
 get_ticks(Series_id) when is_list(Series_id) ->
 	get_ticks(list_to_binary(Series_id)).
 
 get_ticks(Series_id, {}) -> get_ticks(Series_id);
+
 get_ticks(Series_id, Range) when is_binary(Series_id) ->
 	gen_server:call(?MODULE, {get_ticks, Series_id, Range});
+
 get_ticks(Series_id, Range) when is_list(Series_id) ->
 	get_ticks(list_to_binary(Series_id), Range).
 
+
 delete_ticks(Series_id) when is_binary(Series_id) ->
 	gen_server:call(?MODULE, {delete_ticks, Series_id});
+
 delete_ticks(Series_id) when is_list(Series_id) ->
 	delete_ticks(list_to_binary(Series_id)).
 
 delete_ticks(Series_id, {}) -> delete_series(Series_id);
+
 delete_ticks(Series_id, Range) when is_binary(Series_id) ->
 	gen_server:call(?MODULE, {delete_ticks, Series_id, Range});
+
 delete_ticks(Series_id, Range) when is_list(Series_id) ->
 	delete_ticks(list_to_binary(Series_id), Range).
+
 
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    probix_db:start(),
-    {ok, null}.    
+    {ok, Backend} = application:get_env(probix, db_backend),
+    Backend:init().
 
 handle_call({new_series, Label}, _From, State) ->
-	Reply = probix_db:new_series(Label),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:new_series(Label),
 	{reply, Reply, State};
 
 handle_call(all_series, _From, State) ->
-	Reply = probix_db:all_series(),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:all_series(),
 	{reply, Reply, State};
 
 handle_call({delete_series, Id}, _From, State) ->
-	Reply = probix_db:delete_series(Id),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:delete_series(Id),
 	{reply, Reply, State};
 
 handle_call({series, Id}, _From, State) ->
-	Reply = probix_db:series(Id),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:series(Id),
 	{reply, Reply, State};
 
 handle_call({add_ticks, Series_id, Probes}, _From, State) ->
-	Reply = probix_db:add_ticks(Series_id, Probes),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:add_ticks(Series_id, Probes),
 	{reply, Reply, State};
 
 handle_call({get_ticks, Series_id}, _From, State) ->
-	Reply = probix_db:get_ticks(Series_id),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:get_ticks(Series_id),
 	{reply, Reply, State};
 
 handle_call({get_ticks, Series_id, Range}, _From, State) ->
-	Reply = probix_db:get_ticks(Series_id, Range),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:get_ticks(Series_id, Range),
 	{reply, Reply, State};
 
 handle_call({delete_ticks, Series_id}, _From, State) ->
-	Reply = probix_db:delete_ticks(Series_id),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:delete_ticks(Series_id),
 	{reply, Reply, State};
 
 handle_call({delete_ticks, Series_id, Range}, _From, State) ->
-	Reply = probix_db:delete_ticks(Series_id, Range),
+    {ok, Backend} = application:get_env(probix, db_backend),
+	Reply = Backend:delete_ticks(Series_id, Range),
 	{reply, Reply, State}.
+
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
+
 handle_info(_Info, State) ->
 	{noreply, State}.
 
+
 terminate(_Reason, _State) ->
-	ok.
+    {ok, Backend} = application:get_env(probix, db_backend),
+    Backend:terminate().
 
 code_change(_Old_version, State, _Extra) ->
 	{ok, State}.

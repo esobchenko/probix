@@ -2,19 +2,16 @@
 -compile(export_all).
 -include("probix.hrl").
 
-start() ->
-    ok.
-  
+init() ->
+    {ok, undefined}.
 
-stop() ->
+terminate() ->
     ok.
-  
 
 new_series(Label) when is_binary(Label) ->
     Series = [ { "id", probix_util:random_string(10) },
                { "time_created", probix_time:to_secs_tuple(probix_time:now()) },
                { "label", Label } ],
-
     emongo:insert(pool1, "series", Series).
 
 all_series() ->
@@ -32,7 +29,7 @@ add_ticks(Series_id, Rec) when is_record(Rec, tick) ->
              { "timestamp", probix_time:to_secs_tuple(Timestamp) },
              { "value", Rec#tick.value } ],
     emongo:insert(pool1, "ticks", Tick),
-	ok;
+    ok;
 
 add_ticks(Series_id, List) when is_list(List) ->
     Ticks = lists:foreach(
@@ -44,7 +41,7 @@ add_ticks(Series_id, List) when is_list(List) ->
       end,
       List),
     emongo:insert(pool1, "ticks", Ticks),
-	ok.
+    ok.
 
 get_ticks(Series_id) when is_binary(Series_id) ->
     emongo:find(pool1, "ticks", [{ "series_id", Series_id }]).
