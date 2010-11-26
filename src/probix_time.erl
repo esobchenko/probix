@@ -51,6 +51,11 @@ new() ->
 
 %% We support a subset of ISO 8601: http://www.w3.org/TR/NOTE-datetime
 
+from_secs_tuple({MegaSecs, Secs, MicroSecs}) ->
+    DateTime = calendar:now_to_universal_time({MegaSecs, Secs, MicroSecs}),
+    {ok, T} = from_datetime(DateTime),
+    T#timestamp{microsec = MicroSecs}.
+
 from_datetime({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 	try
 		{ok, validate((new())#timestamp{

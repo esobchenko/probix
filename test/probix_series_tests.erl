@@ -8,8 +8,7 @@ basic_test_() ->
 	{
 		setup,
 		fun() ->
-			probix_db:stop(),
-			probix_db:start_master(ram_copies, [node()])
+                ok
 		end,
 		fun generate_basic_tests/1
 	}.

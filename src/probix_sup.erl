@@ -9,8 +9,8 @@ start_link() ->
 
 init([]) ->
 %%    log4erl:conf("priv/log4erl.conf"),
-    {ok, Logger_Conf} = application:get_env(probix, log4erl_conf),
-    log4erl:conf(Logger_Conf),
+%%    {ok, Logger_Conf} = application:get_env(probix, log4erl_conf),
+%%    log4erl:conf(Logger_Conf),
 
 	case os:getenv("PROBIX_SERVER_IP") of
         false -> false;
