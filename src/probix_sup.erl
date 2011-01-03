@@ -8,8 +8,19 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    {ok, Logger_Conf} = application:get_env(probix, log4erl_conf),
-    log4erl:conf(Logger_Conf),
+    case application:get_env(probix, log4erl_conf) of 
+        {ok, Logger_Conf} ->
+            log4erl:conf(Logger_Conf);
+        undefined ->
+            false
+    end,
+
+    case application:get_env(emongo, pools) of 
+        undefined ->
+            emongo:add_pool(test_pool, "localhost", 27017, "test_db", 1);
+        {ok, _Pools} ->
+            false
+    end,
 
 	case os:getenv("PROBIX_SERVER_IP") of
         false -> false;
@@ -42,18 +53,6 @@ init([]) ->
 		{probix_http, start, [Http_config]},
 		permanent, 2048, worker, dynamic
 	},
-
-%    Console_config = [
-%		{ip, Ip},
-%		{port, 8888}, %% fixme
-%		{max, 100000}
-%	],
-
-%    Console = {
-%		probix_console,
-%		{probix_console, start, [Console_config]},
-%		permanent, 2048, worker, dynamic
-%	},
 
 	Series = {
 		probix_series,

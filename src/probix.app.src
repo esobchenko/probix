@@ -8,10 +8,15 @@
                   stdlib,
                   inets,
                   crypto,
-                  mnesia,
                   mochiweb,
+                  emongo,
                   log4erl
                  ]},
   {mod, { probix_app, []}},
-  {env, [ {probix_host, "127.0.0.1"}, {probix_port, "8000"}]}
+  {env, [
+          {probix_host, "127.0.0.1"},
+          {probix_port, "8000"},
+          {db_backend, probix_db_mongo}
+        ]
+  }
  ]}.

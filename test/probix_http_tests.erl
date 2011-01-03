@@ -41,18 +41,23 @@ rest_req('PUT', Path, Data) ->
 basic_rest_test_() ->
     {
         setup,
-        fun() ->
+        fun() ->                
+                application:start(sasl),
                 application:start(inets),
                 application:start(crypto),
-                application:start(log4erl),
                 application:start(mochiweb),
                 application:start(emongo),
-                application:start(probix)
+                application:start(log4erl),
+                application:start(probix),
+                emongo:delete(test_pool, "series"),
+                emongo:delete(test_pool, "ticks")
         end,
         fun(_) ->
-                application:stop(inets),
+                application:stop(probix),
+                application:stop(emongo),
                 application:stop(mochiweb),
-                application:stop(probix)
+                application:stop(log4erl)
+
         end,
         fun generate_basic_rest_tests/1
     }.
@@ -101,19 +106,22 @@ series_update_test_() ->
     {
         setup,
         fun() ->
-                probix_db:stop(),
+                application:start(sasl),
                 application:start(inets),
                 application:start(crypto),
-                application:start(mnesia),
+                application:start(emongo),
                 application:start(log4erl),
                 application:start(mochiweb),
                 application:start(probix),
                 Series = probix_series:new_series(),
-                binary_to_list(Series#series.id)
+                proplists:get_value(id, Series)
         end,
         fun(_) ->
-            application:stop(inets),
-	    application:stop(probix)
+                application:stop(probix),
+                application:stop(emongo),
+                application:stop(mochiweb),
+                application:stop(log4erl)
+                
         end,
         fun generate_series_update_test/1
     }.

@@ -52,15 +52,15 @@ handle('POST', ["series"], Args, Post) ->
 		{ok, Ticks} ->
 			log4erl:info(http_logger, "creating series"),
 			Series = probix_series:new_series(Label),
-			log4erl:info(http_logger, "adding ticks to series: ~s", [ Series#series.id ]),
-			probix_series:add_ticks(Series#series.id, Ticks),
-			redirect(Hostname ++ "/series/" ++ Series#series.id);
+			log4erl:info(http_logger, "adding ticks to series: ~s", [ proplists:get_value(id, Series) ]),
+			probix_series:add_ticks(proplists:get_value(id, Series), Ticks),
+			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series));
 
 		%% adding series without data
 		{error, empty_json} ->
 			log4erl:info(http_logger, "creating series"),
 			Series = probix_series:new_series(Label),
-			redirect(Hostname ++ "/series/" ++ Series#series.id);
+			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series));
 
 		%% wrong data, doing nothing
 		{error, Error} ->
