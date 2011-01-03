@@ -52,6 +52,7 @@ CMD="erl \
       -boot start_sasl \
       -sname $PROBIX_NODE_NAME \
       -config priv/probix_app \
+      -s reloader \
       -s start_probix"
 
 ## Setting running defaults
