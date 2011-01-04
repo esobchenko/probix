@@ -42,7 +42,6 @@ basic_rest_test_() ->
     {
         setup,
         fun() ->                
-                application:start(sasl),
                 application:start(inets),
                 application:start(crypto),
                 application:start(mochiweb),
@@ -106,7 +105,6 @@ series_update_test_() ->
     {
         setup,
         fun() ->
-                application:start(sasl),
                 application:start(inets),
                 application:start(crypto),
                 application:start(emongo),

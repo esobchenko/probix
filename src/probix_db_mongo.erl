@@ -22,7 +22,7 @@ new_series(Label) when is_binary(Label) ->
     Series.
 
 all_series() ->
-    Series = emongo:find(?POOL, "series"),
+    Series = emongo:find_all(?POOL, "series"),
     [
      [ 
        { id, proplists:get_value(<<"id">>, S) },
@@ -35,7 +35,7 @@ delete_series(Id) when is_binary(Id) ->
     emongo:delete(?POOL, "series", [{"id", Id}]).
 
 series(Id) when is_binary(Id) ->
-    case emongo:find(?POOL, "series", [{"id", Id}]) of
+    case emongo:find_one(?POOL, "series", [{"id", Id}]) of
         [] ->
             {error, not_found};
         Res ->
@@ -55,7 +55,7 @@ add_ticks(Series_id, List) when is_list(List) ->
     emongo:insert(?POOL, "ticks", Ticks).
 
 get_ticks(Series_id) when is_binary(Series_id) ->
-    Ticks = emongo:find(?POOL, "ticks", [{ "series_id", Series_id }]),
+    Ticks = emongo:find_all(?POOL, "ticks", [{ "series_id", Series_id }]),
     lists:map(
       fun(T) ->
               [
@@ -66,15 +66,15 @@ get_ticks(Series_id) when is_binary(Series_id) ->
       end, Ticks).
 
 get_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
-    emongo:find(?POOL, "ticks", [ { "series_id", Series_id },
+    emongo:find_all(?POOL, "ticks", [ { "series_id", Series_id },
                                   { "timestamp", [ {'>=', probix_time:to_secs_tuple(From) } ] } ]);
 
 get_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
-    emongo:find(?POOL, "ticks", [ { "series_id", Series_id },
+    emongo:find_all(?POOL, "ticks", [ { "series_id", Series_id },
                                   { "timestamp", [ {'<', probix_time:to_secs_tuple(To) } ] } ]);
 
 get_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
-    emongo:find(?POOL, "ticks", [ { "series_id", Series_id },
+    emongo:find_all(?POOL, "ticks", [ { "series_id", Series_id },
                                   { "timestamp", [ {'>=', probix_time:to_secs_tuple(From) }, {'<', probix_time:to_secs_tuple(To) } ] } ] ).
 
 % delete_ticks(Series_id) when is_binary(Series_id) ->
