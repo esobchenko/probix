@@ -5,13 +5,6 @@
 
 -include("probix.hrl").
 
--define(URL,
-	"http://" ++
-		case os:getenv("PROBIX_SERVER_IP") of false -> "127.0.0.1"; Env_ip -> Env_ip end
-	++ ":" ++
-		case os:getenv("PROBIX_SERVER_PORT") of false -> "8000"; Env_port -> Env_port end
-).
-
 -define(JS1, "{\"time_created\":1,\"label\":1}").
 
 -define(JT1, "{\"timestamp\": 1, \"value\":1}").
@@ -21,27 +14,32 @@
 %% converting all body answers to binary, cause http:requests returns string
 %% and probix_utils:*_to_json return binary
 rest_req('GET', Path) ->
-	Result = http:request(get, {?URL ++ Path, []}, [], []),
-	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, list_to_binary(Body)};
+    {ok, Url} = application:get_env(probix, probix_hostname),
+    Result = http:request(get, {Url ++ Path, []}, [], []),
+    {ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
+    {Status, list_to_binary(Body)};
 rest_req('DELETE', Path) ->
-	Result = http:request(delete, {?URL ++ Path, []}, [], []),
-	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, list_to_binary(Body)}.
+    {ok, Url} = application:get_env(probix, probix_hostname),
+    Result = http:request(delete, {Url ++ Path, []}, [], []),
+    {ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
+    {Status, list_to_binary(Body)}.
 
 rest_req('POST', Path, Data) ->
-	Result = http:request(post, {?URL ++ Path, [], [], Data}, [], []),
-	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, list_to_binary(Body)};
+    {ok, Url} = application:get_env(probix, probix_hostname),
+    Result = http:request(post, {Url ++ Path, [], [], Data}, [], []),
+    {ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
+    {Status, list_to_binary(Body)};
 rest_req('PUT', Path, Data) ->
-	Result = http:request(put, {?URL ++ Path, [], [], Data}, [], []),
-	{ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
-	{Status, list_to_binary(Body)}.
+    {ok, Url} = application:get_env(probix, probix_hostname),
+    Result = http:request(put, {Url ++ Path, [], [], Data}, [], []),
+    {ok, {{"HTTP/1.1", Status, _Reason}, _Headers, Body}} = Result,
+    {Status, list_to_binary(Body)}.
 
 basic_rest_test_() ->
     {
         setup,
-        fun() ->                
+        fun() ->
+                error_logger:tty(false),
                 application:start(inets),
                 application:start(crypto),
                 application:start(mochiweb),
@@ -62,7 +60,7 @@ basic_rest_test_() ->
     }.
 
 generate_basic_rest_tests(_) ->
-	[
+    [
      ?_assertMatch( %% issue #9
         {400, _},
         rest_req('GET', "/")
@@ -105,12 +103,15 @@ series_update_test_() ->
     {
         setup,
         fun() ->
+                error_logger:tty(false),
                 application:start(inets),
                 application:start(crypto),
                 application:start(emongo),
                 application:start(log4erl),
                 application:start(mochiweb),
                 application:start(probix),
+                emongo:delete(test_pool, "series"),
+                emongo:delete(test_pool, "ticks"),
                 Series = probix_series:new_series(),
                 proplists:get_value(id, Series)
         end,
@@ -119,7 +120,6 @@ series_update_test_() ->
                 application:stop(emongo),
                 application:stop(mochiweb),
                 application:stop(log4erl)
-                
         end,
         fun generate_series_update_test/1
     }.
@@ -130,6 +130,18 @@ generate_series_update_test(Id) ->
         {200, _},
         rest_req('POST', "/series/" ++ Id, ?JT2)
      ),
+     ?_assertMatch(
+        {200, _},
+        rest_req('GET', "/series/" ++ Id ++ "?from=1")
+       ),
+     ?_assertMatch(
+        {200, _},
+        rest_req('GET', "/series/" ++ Id ++ "?to=3")
+       ),
+     ?_assertMatch(
+        {200, _},
+        rest_req('GET', "/series/" ++ Id ++ "?from=1&to=3")
+       ),
      ?_assertMatch(
         {200, _},
         rest_req('GET', "/series/" ++ Id)
@@ -144,6 +156,14 @@ generate_series_update_test(Id) ->
      ),
      ?_assertMatch(
         {200, _},
+        rest_req('DELETE', "/series/" ++ Id ++ "?from=1")
+     ),
+     ?_assertMatch(
+        {200, _},
+        rest_req('GET', "/series/" ++ Id)
+     ),
+     ?_assertMatch(
+        {200, _},
         rest_req('DELETE', "/series/" ++ Id)
      ),
      ?_assertMatch(
@@ -151,4 +171,3 @@ generate_series_update_test(Id) ->
         rest_req('DELETE', "/series/" ++ Id)
      )
     ].
-

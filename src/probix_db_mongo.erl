@@ -45,17 +45,82 @@ series(Id) when is_binary(Id) ->
 add_ticks(Series_id, List) when is_list(List) ->
     Ticks = lists:map(
               fun(T) ->
-                      [ 
+                      [
                         { series_id, Series_id },
                         { timestamp, probix_time:to_secs_tuple(proplists:get_value(timestamp, T)) },
-                        { value, proplists:get_value(value, T) } 
+                        { value, proplists:get_value(value, T) }
                       ]
               end,
               List),
     emongo:insert(?POOL, "ticks", Ticks).
 
 get_ticks(Series_id) when is_binary(Series_id) ->
-    Ticks = emongo:find_all(?POOL, "ticks", [{ "series_id", Series_id }]),
+    ticks_to_proplist(emongo:find_all(?POOL, "ticks", [{ "series_id", Series_id }])).
+
+get_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
+    ticks_to_proplist(emongo:find_all(?POOL, "ticks",
+        [
+          { "series_id", Series_id },
+          { "timestamp", [
+                           {'>=', probix_time:to_secs_tuple(From) }
+                         ] }
+        ]));
+
+get_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
+    ticks_to_proplist(
+      emongo:find_all(?POOL, "ticks",
+        [
+          { "series_id", Series_id },
+          { "timestamp", [
+                           {'<', probix_time:to_secs_tuple(To) }
+                         ] }
+        ]));
+
+get_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
+    ticks_to_proplist(emongo:find_all(?POOL, "ticks",
+        [
+          { "series_id", Series_id },
+          { "timestamp", [
+                           {'>=', probix_time:to_secs_tuple(From) },
+                           {'<', probix_time:to_secs_tuple(To) }
+                         ] }
+        ])).
+
+delete_ticks(Series_id) when is_binary(Series_id) ->
+    emongo:delete(?POOL, "ticks",
+        [
+          { "series_id", Series_id }
+        ]).
+
+delete_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
+    emongo:delete(?POOL, "ticks",
+        [
+          { "series_id", Series_id },
+          { "timestamp", [
+                           {'>=', probix_time:to_secs_tuple(From) }
+                         ] }
+        ]);
+
+delete_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
+    emongo:delete(?POOL, "ticks",
+        [
+          { "series_id", Series_id },
+          { "timestamp", [
+                           {'<', probix_time:to_secs_tuple(To) }
+                         ] }
+        ]);
+
+delete_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
+    emongo:delete(?POOL, "ticks",
+        [
+          { "series_id", Series_id },
+          { "timestamp", [
+                           {'>=', probix_time:to_secs_tuple(From) },
+                           {'<', probix_time:to_secs_tuple(To) }
+                         ] }
+        ]).
+
+ticks_to_proplist(Ticks) when is_list(Ticks) ->
     lists:map(
       fun(T) ->
               [
@@ -64,27 +129,3 @@ get_ticks(Series_id) when is_binary(Series_id) ->
                { value, proplists:get_value(<<"value">>, T) }
               ]
       end, Ticks).
-
-get_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
-    emongo:find_all(?POOL, "ticks", [ { "series_id", Series_id },
-                                  { "timestamp", [ {'>=', probix_time:to_secs_tuple(From) } ] } ]);
-
-get_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
-    emongo:find_all(?POOL, "ticks", [ { "series_id", Series_id },
-                                  { "timestamp", [ {'<', probix_time:to_secs_tuple(To) } ] } ]);
-
-get_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
-    emongo:find_all(?POOL, "ticks", [ { "series_id", Series_id },
-                                  { "timestamp", [ {'>=', probix_time:to_secs_tuple(From) }, {'<', probix_time:to_secs_tuple(To) } ] } ] ).
-
-% delete_ticks(Series_id) when is_binary(Series_id) ->
-%    probix_db_mnesia:delete_ticks(Series_id).
-
-% delete_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
-%     probix_db_mnesia:delete_ticks(Series_id, {from, From});
-
-% delete_ticks(Series_id, {to, To}) when is_binary(Series_id), is_record(To, timestamp) ->
-%     probix_db_mnesia:delete_ticks(Series_id, {to, To});
-
-%delete_ticks(Series_id, {From, To}) when is_binary(Series_id), is_record(From, timestamp), is_record(To, timestamp) ->
-%    probix_db_mnesia:delete_ticks(Series_id, {From, To}).

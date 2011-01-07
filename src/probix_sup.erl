@@ -4,6 +4,12 @@
 
 -export([start_link/0, init/1]).
 
+-ifdef(TEST).
+-define(PORT_KEY, probix_test_port).
+-else.
+-define(PORT_KEY, probix_port).
+-endif.
+
 start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
@@ -28,11 +34,11 @@ init([]) ->
     end,
 	case os:getenv("PROBIX_SERVER_PORT") of
         false -> false;
-        Env_port -> application:set_env(probix, probix_port, Env_port)
+        Env_port -> application:set_env(probix, ?PORT_KEY, Env_port)
     end,
 
     {ok, Ip} = application:get_env(probix, probix_host),
-    {ok, Port} = application:get_env(probix, probix_port),
+    {ok, Port} = application:get_env(probix, ?PORT_KEY),
 
     case Port of
         "80" ->

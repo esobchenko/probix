@@ -16,6 +16,7 @@
   {env, [
           {probix_host, "127.0.0.1"},
           {probix_port, "8000"},
+          {probix_test_port, "8888"},
           {db_backend, probix_db_mongo}
         ]
   }
