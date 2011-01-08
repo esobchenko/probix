@@ -54,13 +54,13 @@ handle('POST', ["series"], Args, Post) ->
 			Series = probix_series:new_series(Label),
 			log4erl:info(http_logger, "adding ticks to series: ~s", [ proplists:get_value(id, Series) ]),
 			probix_series:add_ticks(proplists:get_value(id, Series), Ticks),
-			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series));
+			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series), probix_format:series_to_json([Series]));
 
 		%% adding series without data
 		{error, empty_json} ->
 			log4erl:info(http_logger, "creating series"),
 			Series = probix_series:new_series(Label),
-			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series));
+			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series), probix_format:series_to_json([Series]));
 
 		%% wrong data, doing nothing
 		{error, Error} ->
@@ -183,8 +183,11 @@ error(Error) ->
 	log4erl:error(http_logger, Error),
 	{http_code(Error), [], ""}.
 
-redirect(Location) ->
-	{301, [{"Location", Location}], ""}.
+% redirect(Location) ->
+% {301, [{"Location", Location}], ""}.
+
+redirect(Location, Content) ->
+	{301, [{"Location", Location}], Content}.
 
 %% returns http numeric response code for
 %% given error according to specification

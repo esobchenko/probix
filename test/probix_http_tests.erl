@@ -113,7 +113,7 @@ series_update_test_() ->
                 emongo:delete(test_pool, "series"),
                 emongo:delete(test_pool, "ticks"),
                 Series = probix_series:new_series(),
-                proplists:get_value(id, Series)
+                binary_to_list(proplists:get_value(id, Series))
         end,
         fun(_) ->
                 application:stop(probix),
@@ -124,7 +124,7 @@ series_update_test_() ->
         fun generate_series_update_test/1
     }.
 
-generate_series_update_test(Id) ->
+generate_series_update_test(Id) when is_list(Id) ->
     [
      ?_assertMatch(
         {200, _},
