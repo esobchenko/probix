@@ -49,14 +49,14 @@ init([]) ->
 
 %    application:set_env(probix, probix_docroot, "priv/www"),
 
-	Http_config = [
+	Rest_config = [
 		{ip, Ip},
 		{port, Port}
 	],
 
-	Http = {
-		probix_http,
-		{probix_http, start, [Http_config]},
+	Rest = {
+		probix_rest,
+		{probix_rest, start, [Rest_config]},
 		permanent, 2048, worker, dynamic
 	},
 
@@ -66,5 +66,5 @@ init([]) ->
 		permanent, 2048, worker, dynamic
 	},
 
-	Processes = [Http, Series],
+	Processes = [Rest, Series],
 	{ok, {{one_for_one, 10, 10}, Processes}}.
