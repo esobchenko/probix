@@ -88,6 +88,10 @@ delete_ticks(Series_id) when is_binary(Series_id) ->
     emongo:delete(?POOL, "ticks",
         [
           { "series_id", Series_id }
+        ]),
+    emongo:delete(?POOL, "series",
+        [
+          { "id", Series_id }
         ]).
 
 delete_ticks(Series_id, {from, From}) when is_binary(Series_id), is_record(From, timestamp) ->
