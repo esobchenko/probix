@@ -5,6 +5,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 start(Options) ->
+    log4erl:info(http_logger, "~p", [Options]),
 	mochiweb_http:start([{name, ?MODULE}, {loop, fun dispatch_request/1} | Options]).
 
 stop() ->
@@ -27,7 +28,7 @@ dispatch_request(Req) ->
 	Splitted = string:tokens(Path, "/"),
 
 	R = try
-        log4erl:info(http_logger, "Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
+        log4erl:info(rest_logger, "Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
 		handle(Method, Splitted, Query, Post)
 	catch
 		%% regular throw exceptions
@@ -35,7 +36,7 @@ dispatch_request(Req) ->
 
 		%% erlang errors and other exceptions
 		error:Exception ->
-			log4erl:info(http_logger, "exception caught: ~p", [Exception]),
+			log4erl:info(rest_logger, "exception caught: ~p", [Exception]),
 			error(internal_error)
 	end,
 	Req:respond(R).
@@ -45,20 +46,20 @@ handle('POST', ["series"], Args, Post) ->
 	%% creating series
 	Label = proplists:get_value("label", Args),
 
-    {ok, Hostname} = application:get_env(probix, probix_hostname),
+    {ok, Hostname} = application:get_env(probix, probix_rest_hostname),
 	%% adding ticks if passed in json
 	case probix_format:ticks_from_json(Post) of
 		%% adding series with data
 		{ok, Ticks} ->
-			log4erl:info(http_logger, "creating series"),
+			log4erl:info(rest_logger, "creating series"),
 			Series = probix_series:new_series(Label),
-			log4erl:info(http_logger, "adding ticks to series: ~s", [ proplists:get_value(id, Series) ]),
+			log4erl:info(rest_logger, "adding ticks to series: ~s", [ proplists:get_value(id, Series) ]),
 			probix_series:add_ticks(proplists:get_value(id, Series), Ticks),
 			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series), probix_format:series_to_json([Series]));
 
 		%% adding series without data
 		{error, empty_json} ->
-			log4erl:info(http_logger, "creating series"),
+			log4erl:info(rest_logger, "creating series"),
 			Series = probix_series:new_series(Label),
 			redirect(Hostname ++ "/series/" ++ proplists:get_value(id, Series), probix_format:series_to_json([Series]));
 
@@ -69,7 +70,7 @@ handle('POST', ["series"], Args, Post) ->
 
 %% update series with data
 handle('POST', ["series", Id], [], Post) ->
-	log4erl:info(http_logger, "updating series ~s", [ Id ]),
+	log4erl:info(rest_logger, "updating series ~s", [ Id ]),
 	probix_series:series(Id) == {error, not_found} andalso throw(not_found),
 
 	case probix_format:ticks_from_json(Post) of
@@ -82,7 +83,7 @@ handle('POST', ["series", Id], [], Post) ->
 
 %% get all existing series
 handle('GET', ["series"], [], undefined) ->
-	log4erl:info(http_logger, "getting all series"),
+	log4erl:info(rest_logger, "getting all series"),
 	Series = probix_series:all_series(),
 	Content = probix_format:series_to_json(Series),
 	ok(Content);
@@ -92,25 +93,25 @@ handle('GET', ["series", Id], Args, undefined) ->
 
 	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
 		[undefined, undefined] ->
-			log4erl:info(http_logger, "selecting all data for series ~s", [ Id ]),
+			log4erl:info(rest_logger, "selecting all data for series ~s", [ Id ]),
 			{};
 
 		[undefined, To] when is_list(To) ->
-			log4erl:info(http_logger, "selecting all data for series ~s, to: ~s", [Id, To]),
+			log4erl:info(rest_logger, "selecting all data for series ~s, to: ~s", [Id, To]),
 			case probix_format:parse_timestamp(To) of
 				{ok, Ts} -> {to, Ts};
 				_ -> throw(bad_arguments)
 			end;
 
 		[From, undefined] when is_list(From) ->
-			log4erl:info(http_logger, "selecting all data for series ~s, from: ~s", [Id, From]),
+			log4erl:info(rest_logger, "selecting all data for series ~s, from: ~s", [Id, From]),
 			case probix_format:parse_timestamp(From) of
 				{ok, Ts} -> {from, Ts};
 				_ -> throw(bad_arguments)
 			end;
 
 		[From, To] when is_list(From); is_list(To) ->
-			log4erl:info(http_logger, "selecting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
+			log4erl:info(rest_logger, "selecting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
 			case [probix_format:parse_timestamp(From), probix_format:parse_timestamp(To)] of
 				[{ok, F}, {ok, T}] -> {F, T};
 				_ -> throw(bad_arguments)
@@ -129,25 +130,25 @@ handle('DELETE', ["series", Id], Args, undefined) ->
 
 	Range = case [ proplists:get_value("from", Args), proplists:get_value("to", Args) ] of
 		[undefined, undefined] ->
-			log4erl:info(http_logger, "deleting all data for series ~s", [ Id ]),
+			log4erl:info(rest_logger, "deleting all data for series ~s", [ Id ]),
 			{};
 
 		[undefined, To] when is_list(To) ->
-			log4erl:info(http_logger, "deleting all data for series ~s, to: ~s", [Id, To]),
+			log4erl:info(rest_logger, "deleting all data for series ~s, to: ~s", [Id, To]),
 			case probix_format:parse_timestamp(To) of
 				{ok, Ts} -> {to, Ts};
 				_ -> throw(bad_arguments)
 			end;
 
 		[From, undefined] when is_list(From) ->
-			log4erl:info(http_logger, "deleting all data for series ~s, from: ~s", [Id, From]),
+			log4erl:info(rest_logger, "deleting all data for series ~s, from: ~s", [Id, From]),
 			case probix_format:parse_timestamp(From) of
 				{ok, Ts} -> {from, Ts};
 				_ -> throw(bad_arguments)
 			end;
 
 		[From, To] when is_list(From); is_list(To) ->
-			log4erl:info(http_logger, "deleting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
+			log4erl:info(rest_logger, "deleting all data for series ~s, from: ~s, to: ~s", [Id, From, To]),
 			case [probix_format:parse_timestamp(From), probix_format:parse_timestamp(To)] of
 				[{ok, F}, {ok, T}] -> {F, T};
 				_ -> throw(bad_arguments)
@@ -180,7 +181,7 @@ ok(Content) ->
             {"Cache-Control", "no-cache"}], Content }.
 
 error(Error) ->
-	log4erl:error(http_logger, Error),
+	log4erl:error(rest_logger, Error),
 	{http_code(Error), [], ""}.
 
 % redirect(Location) ->

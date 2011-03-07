@@ -15,8 +15,8 @@ series_crud_test_() ->
               application:start(log4erl),
               application:start(mochiweb),
               application:start(probix),
-              emongo:delete(test_pool, "series"),
-              emongo:delete(test_pool, "ticks")
+              {ok, Backend} = application:get_env(probix, db_backend),
+              Backend:clean_db()
       end,
       fun(_) ->
               ok
@@ -86,8 +86,8 @@ tick_crud_test_() ->
               application:start(log4erl),
               application:start(mochiweb),
               application:start(probix),
-              emongo:delete(test_pool, "series"),
-              emongo:delete(test_pool, "ticks"),
+              {ok, Backend} = application:get_env(probix, db_backend),
+              Backend:clean_db(),
               Series = probix_series:new_series(),
               proplists:get_value(id, Series)
       end,

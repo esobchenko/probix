@@ -14,9 +14,8 @@
                  ]},
   {mod, { probix_app, []}},
   {env, [
-          {probix_host, "127.0.0.1"},
-          {probix_port, "8000"},
-          {probix_test_port, "8888"},
+          {probix_rest_port, "8080"},
+          {probix_rest_test_port, "8090"},
           {db_backend, probix_db_mongo}
         ]
   }

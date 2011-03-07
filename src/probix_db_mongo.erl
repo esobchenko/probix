@@ -3,16 +3,28 @@
 -include("probix.hrl").
 
 -ifdef(TEST).
--define(POOL, test_pool).
+-define(POOL, test_db_pool).
 -else.
--define(POOL, production_pool).
+-define(POOL, prod_db_pool).
 -endif.
 
 init() ->
+    %% adding default pool if not pools set up in config
+    %% otherwise emongo will init by itself
+    case application:get_env(emongo, pools) of 
+        undefined ->
+            emongo:add_pool(test_db_pool, "localhost", 27017, "probix_test_db", 1);
+        {ok, _Pools} ->
+            false
+    end,
     {ok, undefined}.
 
 terminate() ->
     ok.
+
+clean_db() ->
+    emongo:delete(?POOL, "series"),
+    emongo:delete(?POOL, "ticks").
 
 new_series(Label) when is_binary(Label) ->
     Id = probix_util:random_string(10),
