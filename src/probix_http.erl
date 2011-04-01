@@ -1,6 +1,11 @@
 -module(probix_http).
 
--export([dispatch_request/2, ok/0, ok/1, error/1, redirect/2]).
+-export([dispatch_request/2, 
+         ok/0, ok/1, ok/2, 
+         ok_json/1, 
+         ok_html/1, 
+         error/1, 
+         redirect/2]).
 
 % common methods for mochiweb servers
 dispatch_request(Req, Module) ->
@@ -40,15 +45,25 @@ dispatch_request(Req, Module) ->
 %%
 
 %% empty response
-ok() ->
-	{200, [{"Content-Type", "application/json"}], ""}.
 
+ok_html(Content) ->
+    ok(Content, "text/html").
+
+ok_json(Content) ->
+    ok(Content, "application/json").
+
+ok() ->
+    ok("").
+    
 ok(Content) ->
+    ok(Content, "text/plain").
+
+ok(Content, ContentType) ->
 	{200, [ { "Access-Control-Allow-Origin", "*" },
             { "Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, DELETE" },
             { "Access-Control-Allow-Headers", "Accept, X-Requested-With" },
-            {"Content-Type", "application/json"},
-            {"Cache-Control", "no-cache"}], Content }.
+            { "Content-Type", ContentType },
+            { "Cache-Control", "no-cache"} ], Content }.
 
 error(Error) ->
 	log4erl:error(rest_logger, Error),

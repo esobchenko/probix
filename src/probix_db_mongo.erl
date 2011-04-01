@@ -150,3 +150,7 @@ series_to_proplist(Series) when is_list(Series) ->
        { time_created, probix_time:from_secs_tuple(proplists:get_value(<<"time_created">>, Series)) },
        { label, proplists:get_value(<<"label">>, Series) } 
     ].
+
+create_user(User) ->
+    emongo:insert(?POOL, "users", [User]).
+    

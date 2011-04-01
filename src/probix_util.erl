@@ -1,5 +1,5 @@
 -module(probix_util).
--export([random_string/1, very_unique_id/0]).
+-export([random_string/1, very_unique_id/0, not_empty/1]).
 
 %% random strings are used for series ids
 random_string(Length) ->
@@ -15,4 +15,16 @@ do_rand(_R) ->
 
 %% truly unique id for series
 very_unique_id() -> mochihex:to_hex(crypto:sha(term_to_binary({make_ref(), now()}))).
+
+not_empty(String) ->
+    case String of 
+        [] ->
+            false;
+        undefined ->
+            false;
+        Value when is_list(Value)->
+            {ok, Value}
+    end.
+
+
 
