@@ -16,8 +16,8 @@ dispatch_request(Req) ->
     probix_http:dispatch_request(Req, ?MODULE).
 
 handle('GET', [], _, _) ->
-    erlydtl:compile("src/templates/index.html", index_template),
-    index_template:render([name, "foobar"]);
+    {ok, Content} = index_tpl:render([{name, "foobar"}]),
+    probix_http:ok(Content);
 
 handle('POST', ["signup"], _, _) ->
     ok.

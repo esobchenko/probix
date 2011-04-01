@@ -20,7 +20,7 @@ dispatch_request(Req, Module) ->
 	Splitted = string:tokens(Path, "/"),
 
 	R = try
-        log4erl:info(http_logger, "Request-> Method: ~p, Path: ~p, Query: ~p, Post: ~p, Splitted: ~p", [Method, Path, Query, Post, Splitted]),
+        log4erl:debug(http_logger, "~p: ~p ~p -> Query: ~p, Post: ~p", [Module, Method, Path, Query, Post]),
 		 Module:handle(Method, Splitted, Query, Post)
 	catch
 		%% regular throw exceptions

@@ -6,8 +6,10 @@
 
 -ifndef(TEST).
 -define(REST_PORT_KEY, probix_rest_port).
+-define(WEB_PORT_KEY, probix_web_port).
 -else.
 -define(REST_PORT_KEY, probix_rest_test_port).
+-define(WEB_PORT_KEY, probix_web_test_port).
 -endif.
 
 
@@ -31,6 +33,13 @@ init([]) ->
 		{probix_rest, start, [[{port, Rest_port}]]},
 		permanent, 2048, worker, dynamic
 	},
+    {ok, Web_port} = application:get_env(probix, ?WEB_PORT_KEY),
+    application:set_env(probix, probix_web_hostname, "http://127.0.0.1:" ++ Web_port),
+	Web = {
+		probix_web,
+		{probix_web, start, [[{port, Web_port}]]},
+		permanent, 2048, worker, dynamic
+	},
 
     %% configuring series gen_server
 	Series = {
@@ -39,5 +48,5 @@ init([]) ->
 		permanent, 2048, worker, dynamic
 	},
 
-	Processes = [Rest, Series],
+	Processes = [Rest, Series, Web],
 	{ok, {{one_for_one, 10, 10}, Processes}}.

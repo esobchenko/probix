@@ -16,6 +16,8 @@
   {env, [
           {probix_rest_port, "8080"},
           {probix_rest_test_port, "8090"},
+          {probix_web_port, "8081"},
+          {probix_web_test_port, "8091"},
           {db_backend, probix_db_mongo}
         ]
   }
